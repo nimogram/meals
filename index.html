@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nimo-Eats">
+    <title>Nimo-Eats Logic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .protein-gauge { transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .safe-area-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 1rem); }
+        input, button { outline: none !important; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased overflow-x-hidden">
+
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col shadow-2xl bg-white relative">
+        
+        <!-- Header: Protein Progress -->
+        <header class="bg-slate-900 text-white p-6 rounded-b-[2.5rem] shadow-xl sticky top-0 z-50">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-xl font-black tracking-tighter">NIMO-EATS LOGIC</h1>
+                    <p class="text-slate-400 text-[10px] uppercase tracking-widest">Architect Mode v2.2</p>
+                </div>
+                <div class="bg-slate-800 p-2 rounded-2xl border border-slate-700">
+                    <i data-lucide="chef-hat" class="text-blue-400 w-5 h-5"></i>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <div class="flex justify-between items-end">
+                    <span class="text-xs font-bold text-slate-400 uppercase">Protein Goal</span>
+                    <span class="text-3xl font-black text-blue-400" id="current-p">0<span class="text-sm text-slate-500 font-normal ml-1">/ 120g</span></span>
+                </div>
+                <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                    <div id="p-bar" class="protein-gauge h-full bg-blue-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-5 space-y-8 pb-32 overflow-y-auto">
+            
+            <!-- Quick Action -->
+            <section>
+                <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Quick Routine</h2>
+                <button onclick="recordQuickBreakfast()" class="w-full bg-white border-2 border-slate-100 p-4 rounded-3xl flex items-center justify-between active:scale-95 transition-all shadow-sm">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-blue-50 p-3 rounded-2xl">
+                            <i data-lucide="coffee" class="text-blue-600 w-6 h-6"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="font-bold text-slate-800">朝セットを記録</p>
+                            <p class="text-[10px] text-slate-400">マカ・プロテイン・コーヒー (30g P)</p>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="text-slate-300 w-5 h-5"></i>
+                </button>
+            </section>
+
+            <!-- Manual Form -->
+            <section class="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 shadow-inner">
+                <div class="flex items-center space-x-2 mb-6">
+                    <i data-lucide="plus-circle" class="text-blue-500 w-5 h-5"></i>
+                    <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Meal Report</h2>
+                </div>
+
+                <div class="space-y-5">
+                    <div class="flex bg-white p-1 rounded-2xl border border-slate-200">
+                        <button onclick="setType('朝')" class="type-btn flex-1 py-2 text-xs font-bold rounded-xl transition-all text-slate-400">朝</button>
+                        <button onclick="setType('昼')" class="type-btn flex-1 py-2 text-xs font-bold rounded-xl transition-all bg-blue-600 text-white shadow-md">昼</button>
+                        <button onclick="setType('夜')" class="type-btn flex-1 py-2 text-xs font-bold rounded-xl transition-all text-slate-400">夜</button>
+                        <button onclick="setType('他')" class="type-btn flex-1 py-2 text-xs font-bold rounded-xl transition-all text-slate-400">他</button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <input type="text" id="main-menu" placeholder="主菜（例：サツドラのサラダチキン）" class="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-blue-500 transition-all shadow-sm">
+                        <input type="text" id="side-menu" placeholder="副菜（例：ブロッコリー）" class="w-full bg-white border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-blue-500 transition-all shadow-sm">
+                    </div>
+
+                    <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[10px] font-black text-slate-400 uppercase">Protein</span>
+                            <span class="text-xl font-black text-blue-600" id="protein-val">25g</span>
+                        </div>
+                        <input type="range" id="protein-slider" min="0" max="80" step="5" value="25" oninput="updateProteinLabel(this.value)" class="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                    </div>
+
+                    <div class="flex items-center justify-between bg-amber-50 border border-amber-100 p-4 rounded-3xl">
+                        <div class="flex items-center space-x-3 text-amber-900 font-bold text-sm">
+                            <i data-lucide="beer" class="w-5 h-5 text-amber-500"></i>
+                            <span>接待モード</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="reception-toggle" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                        </label>
+                    </div>
+
+                    <button id="save-btn" onclick="saveMeal()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black text-sm uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center space-x-2">
+                        <span>レポを保存</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- History Summary -->
+            <section id="log-section">
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Today's Log</h2>
+                </div>
+                <div id="log-list" class="space-y-3 pb-10">
+                    <!-- Logs will appear here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Tab Bar -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-slate-100 flex justify-around p-4 safe-area-bottom shadow-[0_-10px_30px_rgba(0,0,0,0.08)]">
+            <button class="flex flex-col items-center text-blue-600">
+                <i data-lucide="plus" class="w-6 h-6"></i>
+                <span class="text-[8px] font-black mt-1 uppercase">Record</span>
+            </button>
+            <button class="flex flex-col items-center text-slate-300 opacity-50">
+                <i data-lucide="chef-hat" class="w-6 h-6"></i>
+                <span class="text-[8px] font-black mt-1 uppercase">Suggest</span>
+            </button>
+            <button class="flex flex-col items-center text-slate-300 opacity-50">
+                <i data-lucide="trending-up" class="w-6 h-6"></i>
+                <span class="text-[8px] font-black mt-1 uppercase">Stats</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        let state = {
+            currentType: '昼',
+            meals: [],
+            targetProtein: 120
+        };
+
+        // GAS URLが正しいか最終確認してください
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwX5Rzz597mdqB8rw6BLK6BM7Ayy6uKnV9ty3JU2vBDCe2DIQ15b-34ffg217Nbag8E-w/exec"; 
+
+        function init() {
+            lucide.createIcons();
+            // ローカルストレージから今日のデータを復元（GitHub Pages用）
+            const saved = localStorage.getItem('nimo_today_meals');
+            const savedDate = localStorage.getItem('nimo_last_save_date');
+            const today = new Date().toDateString();
+
+            if (saved && savedDate === today) {
+                state.meals = JSON.parse(saved);
+            }
+            updateUI();
+        }
+
+        function setType(type) {
+            state.currentType = type;
+            const buttons = document.querySelectorAll('.type-btn');
+            buttons.forEach(btn => {
+                if (btn.innerText === type) {
+                    btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+                    btn.classList.remove('text-slate-400');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                    btn.classList.add('text-slate-400');
+                }
+            });
+        }
+
+        function updateProteinLabel(val) {
+            document.getElementById('protein-val').innerText = val + 'g';
+        }
+
+        async function saveMeal() {
+            const saveBtn = document.getElementById('save-btn');
+            const main = document.getElementById('main-menu').value;
+            const side = document.getElementById('side-menu').value;
+            const p = parseInt(document.getElementById('protein-slider').value);
+            const isRec = document.getElementById('reception-toggle').checked;
+
+            if (!main) {
+                alert("主菜（タンパク源）を教えてください！");
+                return;
+            }
+
+            const meal = {
+                id: Date.now(),
+                type: state.currentType,
+                main: main,
+                side: side || '-',
+                protein: p,
+                isReception: isRec,
+                time: new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'})
+            };
+
+            state.meals.unshift(meal);
+            saveToLocal();
+            updateUI();
+            
+            document.getElementById('main-menu').value = '';
+            document.getElementById('side-menu').value = '';
+
+            if (GAS_URL) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4 mr-2"></i> 同期中...';
+                lucide.createIcons();
+
+                try {
+                    await fetch(GAS_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(meal)
+                    });
+                } catch (e) { console.error(e); } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<span>レポを保存</span>';
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        function recordQuickBreakfast() {
+            const breakfast = {
+                id: Date.now(),
+                type: '朝',
+                main: '朝セット',
+                side: 'マカ・プロテイン・コーヒー',
+                protein: 30,
+                isReception: false,
+                time: new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'})
+            };
+            state.meals.unshift(breakfast);
+            saveToLocal();
+            updateUI();
+            if (GAS_URL) fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(breakfast) });
+        }
+
+        function saveToLocal() {
+            localStorage.setItem('nimo_today_meals', JSON.stringify(state.meals));
+            localStorage.setItem('nimo_last_save_date', new Date().toDateString());
+        }
+
+        function updateUI() {
+            const totalP = state.meals.reduce((sum, m) => sum + m.protein, 0);
+            document.getElementById('current-p').innerHTML = `${totalP}<span class="text-sm text-slate-500 font-normal ml-1">/ ${state.targetProtein}g</span>`;
+            
+            const progress = Math.min((totalP / state.targetProtein) * 100, 100);
+            const bar = document.getElementById('p-bar');
+            bar.style.width = progress + '%';
+            if (totalP >= state.targetProtein) bar.classList.replace('bg-blue-500', 'bg-green-400');
+
+            const logList = document.getElementById('log-list');
+            if (state.meals.length === 0) {
+                logList.innerHTML = '<div class="text-center py-10 text-slate-300 text-xs italic font-medium">本日のログはまだありません</div>';
+            } else {
+                logList.innerHTML = state.meals.map(m => `
+                    <div class="bg-white border border-slate-100 p-4 rounded-[1.5rem] flex items-center justify-between shadow-sm">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center text-[10px] font-black text-slate-400 border border-slate-100 uppercase">
+                                ${m.type}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800 leading-none mb-1">${m.main}</p>
+                                <p class="text-[10px] text-slate-500">${m.side} • ${m.time}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-black text-blue-600">+${m.protein}g</span>
+                            ${m.isReception ? '<div class="text-[8px] text-amber-500 font-black uppercase mt-1 flex items-center justify-end">接待</div>' : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            lucide.createIcons();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
