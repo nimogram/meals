@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Meal Log">
-    <title>Meal Log v3.3</title>
+    <title>Meal Log v3.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -43,12 +43,12 @@
         
         <!-- Header: Slim Protein Progress -->
         <header class="bg-slate-900/80 backdrop-blur-lg text-white p-4 rounded-b-[2.5rem] border-b border-slate-800 sticky top-0 z-50">
-            <div id="sync-status" class="absolute top-2 left-0 right-0 flex justify-center pointer-events-none"></div>
+            <div id="sync-status" class="absolute top-2 left-0 right-0 flex justify-center pointer-events-none text-center"></div>
             
             <div class="flex justify-between items-center mb-2">
                 <div>
                     <h1 class="text-2xl font-black tracking-tighter text-emerald-400">MEAL LOG</h1>
-                    <p class="text-slate-500 text-[10px] uppercase tracking-widest">AI Engine v3.3</p>
+                    <p class="text-slate-500 text-[10px] uppercase tracking-widest">AI Engine v3.4</p>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="testConnection()" class="bg-slate-800 p-2 rounded-xl border border-slate-700 active:scale-95 transition-all text-slate-400 hover:text-emerald-400">
@@ -65,7 +65,7 @@
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Protein Goal</span>
                     <span class="text-2xl font-black text-white" id="current-p">0<span class="text-sm text-slate-600 font-normal ml-1">/ 120g</span></span>
                 </div>
-                <div class="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
                     <div id="p-bar" class="protein-gauge h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" style="width: 0%"></div>
                 </div>
             </div>
@@ -186,8 +186,8 @@
     </div>
 
     <script>
-        const apiKey = ""; // 実行環境から自動注入
-        // --- GASのデプロイURLをここに貼り付けてください ---
+        const apiKey = ""; // 実行環境から自動供給
+        // --- あなたのGASのURLを貼り付けてください ---
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec"; 
 
         let state = {
@@ -235,13 +235,10 @@
             if (GAS_URL.includes("ここに") || !GAS_URL) return [];
             try {
                 const response = await fetch(GAS_URL, { redirect: 'follow' });
-                if (!response.ok) throw new Error("FETCH_FAILED");
+                if (!response.ok) return [];
                 const data = await response.json();
                 return Array.isArray(data) ? data : [];
-            } catch (e) { 
-                console.error("Sheet Fetch Error:", e);
-                return []; 
-            }
+            } catch (e) { return []; }
         }
 
         async function generateGeminiSuggestions() {
@@ -258,7 +255,7 @@
 
             if (gap <= 0) {
                 loading.classList.add('hidden');
-                status.innerText = "目標タンパク質達成済み！完璧な規律です。";
+                status.innerText = "目標タンパク質達成済み！";
                 list.innerHTML = '<div class="p-8 text-center text-emerald-400 font-bold italic text-xl">Perfect Goal Reached!</div>';
                 return;
             }
@@ -270,21 +267,20 @@
             const systemPrompt = `あなたはニモさん（INTJ-A, 外資系IT営業, 札幌在住, O型）専属の優秀な管理栄養士です。
 目標タンパク質量120gを達成するための夕食を3案提案してください。今日の不足分は ${gap}g です。
 【重要ルール】
-1. 過去の履歴 [${historyStr}] や今日の摂取物 [${todayStr}] とメイン食材やジャンルを絶対に被らせない。
-2. 日曜の夜なので、明日の16時間ファスティングに備えた持続性のあるタンパク質源を推奨する。
-3. 札幌の寒さを考慮した温かいメニューを1つ以上含める。
-4. 主菜と副菜をセットにし、論理的な解説（INTJ-A向け）を添える。
-5. 出力は純粋なJSON配列のみとし、説明文などは一切含めない。
-JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", "p": 数値, "desc": "解説"}, ...]`;
+1. 過去の履歴 [${historyStr}] や今日の摂取物 [${todayStr}] と食材ジャンルを絶対に被らせない。
+2. 日曜夜は翌朝のファスティングに備え、持続性のあるタンパク質源を推奨。
+3. 札幌の寒さを考慮。主菜と副菜のセット。解説はINTJ-A向けに論理的に。
+4. 出力は純粋なJSON配列のみ。説明不要。
+JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", "p": 数値, "desc": "解説"}]`;
 
             try {
-                const resultText = await callGemini(`不足分${gap}gを補完する3案を提案してください。JSON形式のみで回答してください。`, systemPrompt);
+                const resultText = await callGemini(`不足分${gap}gを補う3案。JSONのみ。`, systemPrompt);
                 
-                // 強力なJSON抽出: 最初の '[' から 最後の ']' までを切り出す
-                const jsonMatch = resultText.match(/\[[\s\S]*\]/);
-                if (!jsonMatch) throw new Error("JSON_NOT_FOUND");
+                // 頑健なJSON抽出ロジック
+                const match = resultText.match(/\[[\s\S]*\]/);
+                if (!match) throw new Error("解析失敗: 有効なデータが見つかりません。");
                 
-                const options = JSON.parse(jsonMatch[0]);
+                const options = JSON.parse(match[0]);
                 
                 loading.classList.add('hidden');
                 status.innerText = `残り ${gap}g を補完するAI推奨案を表示します。`;
@@ -293,14 +289,14 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
                     <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl space-y-2 animate-in slide-in-from-bottom-2">
                         <div class="flex justify-between items-center mb-1">
                             <span class="text-xs font-black text-emerald-500 uppercase tracking-widest">${opt.tag}</span>
-                            <span class="bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-lg font-black tracking-tighter shadow-inner">
-                                +${opt.p}g <span class="text-xs font-normal">P</span>
+                            <span class="bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-lg font-black tracking-tighter">
+                                +${opt.p}g <span class="text-xs font-normal text-emerald-600">P</span>
                             </span>
                         </div>
                         <div>
-                            <h3 class="text-white font-black text-xl tracking-tight leading-tight">${opt.main}</h3>
+                            <h3 class="text-white font-black text-2xl tracking-tight leading-tight">${opt.main}</h3>
                             <p class="text-slate-400 text-sm mt-1 flex items-center">
-                                <i data-lucide="info" class="w-4 h-4 mr-1.5 text-emerald-600"></i> ${opt.side}
+                                <i data-lucide="info" class="w-4 h-4 mr-2 text-emerald-600"></i> ${opt.side}
                             </p>
                         </div>
                         <p class="text-slate-500 text-xs leading-snug italic border-t border-slate-800 pt-2 opacity-80">${opt.desc}</p>
@@ -309,21 +305,16 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
                 lucide.createIcons();
             } catch (e) {
                 loading.classList.add('hidden');
-                status.innerText = `エラー: ${e.message === 'JSON_NOT_FOUND' ? '解析失敗' : 'API通信失敗'}。再試行してください。`;
-                console.error("Gemini Request Error:", e);
+                status.innerText = `エラー: ${e.message}。接続環境を確認してください。`;
+                console.error("Gemini Error:", e);
             }
         }
 
         async function callGemini(prompt, system, retries = 5) {
-            // apiKeyは環境から自動供給されます
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: system }] },
-                generationConfig: { 
-                    responseMimeType: "application/json",
-                    temperature: 0.7
-                }
+                systemInstruction: { parts: [{ text: system }] }
             };
 
             for (let i = 0; i < retries; i++) {
@@ -334,8 +325,8 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
                         body: JSON.stringify(payload) 
                     });
                     if (!resp.ok) {
-                        const errBody = await resp.text();
-                        throw new Error(`STATUS_${resp.status}`);
+                        const errorBody = await resp.text();
+                        throw new Error(`STATUS_${resp.status}: ${errorBody}`);
                     }
                     const result = await resp.json();
                     return result.candidates?.[0]?.content?.parts?.[0]?.text || "";
@@ -430,13 +421,13 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
                         <div class="flex items-center space-x-4">
                             <div class="w-11 h-11 bg-slate-800 rounded-2xl flex items-center justify-center text-xs font-black text-slate-500 border border-slate-700 uppercase">${m.type}</div>
                             <div>
-                                <p class="text-lg font-bold text-white leading-none mb-1">${m.main}</p>
+                                <p class="text-xl font-bold text-white leading-none mb-1">${m.main}</p>
                                 <p class="text-sm text-slate-500">${m.side} • ${m.time}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-4">
                             <div class="text-right">
-                                <span class="text-lg font-black text-emerald-400">+${m.protein}g</span>
+                                <span class="text-xl font-black text-emerald-400">+${m.protein}g</span>
                                 ${m.isReception ? '<div class="text-[9px] text-amber-500 font-black uppercase mt-1">接待</div>' : ''}
                             </div>
                             <div class="flex flex-col space-y-2 border-l border-slate-800 pl-4 ml-2">
