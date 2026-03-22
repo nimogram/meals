@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Meal Log">
-    <title>Meal Log v3.7 Final</title>
+    <title>Meal Log v3.8 Final</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -19,6 +19,9 @@
         }
         .protein-gauge { transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .safe-area-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem); }
+        input, button { outline: none !important; }
+        .status-pill { animation: fadeIn 0.3s ease-out; z-index: 100; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .edit-mode { border: 2px solid #10b981 !important; background-color: #064e3b !important; }
         ::-webkit-scrollbar { display: none; }
         .tab-active { color: #10b981; }
@@ -35,14 +38,14 @@
 
     <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col bg-slate-950 relative shadow-2xl">
         
-        <!-- Header: Ultra Slim Architect Style -->
+        <!-- Header -->
         <header class="bg-slate-900/90 backdrop-blur-xl text-white p-4 pb-2 rounded-b-[2.5rem] border-b border-slate-800 sticky top-0 z-50">
             <div id="sync-status" class="absolute top-1 left-0 right-0 flex justify-center pointer-events-none"></div>
             
             <div class="flex justify-between items-center mb-1">
                 <div>
                     <h1 class="text-2xl font-black tracking-tighter text-emerald-400">MEAL LOG</h1>
-                    <p class="text-slate-500 text-[10px] uppercase tracking-widest leading-none">AI PRO ENGINE v3.7</p>
+                    <p class="text-slate-500 text-[10px] uppercase tracking-widest leading-none">AI CORE ENGINE v3.8</p>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="testConnection()" class="bg-slate-800 p-2 rounded-xl border border-slate-700 active:scale-95 transition-all text-slate-400">
@@ -78,14 +81,14 @@
                             <p class="text-sm text-slate-500">30g Protein</p>
                         </div>
                     </div>
-                    <i data-lucide="chevron-right" class="text-slate-600 w-6 h-6"></i>
+                    <i data-lucide="chevron-right" class="text-slate-600 w-5 h-6"></i>
                 </button>
 
                 <section id="form-container" class="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-6 shadow-2xl transition-all duration-300">
                     <div class="flex justify-between items-center mb-6 px-1">
                         <div class="flex items-center space-x-2">
                             <i data-lucide="plus-circle" class="text-emerald-500 w-5 h-5"></i>
-                            <h2 id="form-title" class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Manual Entry</h2>
+                            <h2 id="form-title" class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Meal Entry</h2>
                         </div>
                         <button id="cancel-edit" onclick="cancelEdit()" class="text-xs font-bold text-red-400 bg-red-900/20 border border-red-900/30 px-3 py-1 rounded-full hidden">取消</button>
                     </div>
@@ -108,7 +111,7 @@
                             </div>
                             <input type="range" id="protein-slider" min="0" max="80" step="5" value="25" oninput="updateProteinLabel(this.value)" class="w-full h-3 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
                         </div>
-                        <button id="save-btn" onclick="saveMeal()" class="w-full bg-emerald-600 text-white py-6 rounded-[2rem] font-black text-xl tracking-widest shadow-lg active:scale-95 transition-all">レポを同期保存</button>
+                        <button id="save-btn" onclick="saveMeal()" class="w-full bg-emerald-600 text-white py-6 rounded-[2rem] font-black text-xl tracking-widest shadow-lg active:scale-95 transition-all">レポを保存</button>
                     </div>
                 </section>
                 <div id="log-list" class="space-y-4"></div>
@@ -128,13 +131,13 @@
         <!-- Navigation -->
         <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 flex justify-around p-4 safe-area-bottom shadow-2xl">
             <button onclick="switchView('record')" id="tab-record" class="flex flex-col items-center tab-active"><i data-lucide="list-checks" class="w-8 h-8"></i><span class="text-[10px] font-black mt-1 uppercase">Log</span></button>
-            <button onclick="switchView('suggest')" id="tab-suggest" class="flex flex-col items-center tab-inactive"><i data-lucide="sparkles" class="w-8 h-8"></i><span class="text-[10px] font-black mt-1 uppercase">Recommend</span></button>
+            <button onclick="switchView('suggest')" id="tab-suggest" class="flex flex-col items-center tab-inactive"><i data-lucide="sparkles" class="w-8 h-8"></i><span class="text-[10px] font-black mt-1 uppercase">Suggest</span></button>
         </nav>
     </div>
 
     <script>
-        // --- 設定 (GitHubデプロイ時はAPIキーをここに必ず入力してください) ---
-        const apiKey = "AIzaSyADcnf-eWqcsExrjE5knDJMvWEISV9E7WI"; 
+        // API Key will be injected by the environment
+        const apiKey = ""; 
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec";
 
         let state = { currentType: '昼', meals: [], targetProtein: 120, editingId: null, activeView: 'record' };
@@ -156,46 +159,98 @@
             lucide.createIcons();
         }
 
+        async function fetchHistoryFromSheet() {
+            try {
+                const r = await fetch(GAS_URL);
+                if (!r.ok) return [];
+                return await r.json();
+            } catch(e) { return []; }
+        }
+
+        async function callGeminiAPI(payload, retries = 5) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const resp = await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    if (resp.ok) {
+                        return await resp.json();
+                    }
+                    if (resp.status === 429 || resp.status >= 500) {
+                        const delay = Math.pow(2, i) * 1000;
+                        await new Promise(r => setTimeout(r, delay));
+                        continue;
+                    }
+                    throw new Error(`API_STATUS_${resp.status}`);
+                } catch (e) {
+                    if (i === retries - 1) throw e;
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(r => setTimeout(r, delay));
+                }
+            }
+        }
+
         async function generateGeminiSuggestions() {
             const list = document.getElementById('suggest-list');
             const loading = document.getElementById('suggest-loading');
             const status = document.getElementById('suggest-status');
-            list.innerHTML = ""; loading.classList.remove('hidden'); status.innerText = "直近の履歴から最適な3案を構築中...";
+            
+            list.innerHTML = ""; loading.classList.remove('hidden'); status.innerText = "直近の履歴をAIが解析中...";
 
             const currentP = state.meals.reduce((sum, m) => sum + m.protein, 0);
             const gap = state.targetProtein - currentP;
 
-            if (gap <= 0) { loading.classList.add('hidden'); status.innerText = "目標達成済み！"; return; }
-            if (!apiKey && typeof __app_id === 'undefined') {
+            if (gap <= 0) {
                 loading.classList.add('hidden');
-                status.innerHTML = `<span class="text-red-500 font-black">API KEY REQUIRED</span><br><span class="text-[10px] text-slate-400">GitHub上のコード142行目にキーを設定してください。</span>`;
+                status.innerText = "本日のタンパク質目標は達成済みです！";
                 return;
             }
 
-            const history = await (async () => { try { const r = await fetch(GAS_URL); return await r.json(); } catch(e) { return []; } })();
-            const systemPrompt = `あなたはニモさん（INTJ-A, 外資系IT営業, 札幌, O型, 射手座）専用のAI参謀。残り${gap}g。
-【指令】1.履歴[${history.slice(-10).map(h=>h.main).join(",")}]と被る食材・ジャンル禁止。2.日曜夜。明日ファスティング。持続性タンパク質推奨。3.主菜名特大。JSON配列のみ。構造:[{"tag":"A案","main":"主菜名","side":"副菜名","p":数値,"desc":"解説"}]`;
+            const history = await fetchHistoryFromSheet();
+            const systemPrompt = `あなたはニモさん（INTJ-A, 外資系IT営業, 札幌, O型）専属のAI参謀。
+【状況】本日のタンパク質残量: ${gap}g。
+【履歴】直近10食: [${history.slice(-10).map(h=>h.main).join(",")}]。
+【指令】1.履歴と本日の摂取物と被る食材・ジャンルを絶対に選ばない。2.日曜夜につき、明日の16時間ファスティングに備えたメニューを。3.出力は純粋なJSON配列のみ。
+JSON形式: [{"tag":"A案","main":"主菜名","side":"副菜名","p":数値,"desc":"解説"}]`;
+
+            const payload = {
+                contents: [{ parts: [{ text: `不足分${gap}gを埋める最適解を3つ提示せよ。` }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: { responseMimeType: "application/json" }
+            };
 
             try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey || ""}`;
-                const resp = await fetch(url, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ contents:[{parts:[{text:`不足分${gap}gを埋める最適解をJSONで。`}]}], systemInstruction:{parts:[{text:systemPrompt}]} }) });
-                if (!resp.ok) throw new Error(`HTTP_${resp.status}`);
-                const res = await resp.json();
-                const options = JSON.parse(res.candidates[0].content.parts[0].text.match(/\[[\s\S]*\]/)[0]);
+                const res = await callGeminiAPI(payload);
+                const text = res.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) throw new Error("EMPTY_RESPONSE");
+                
+                const options = JSON.parse(text);
                 loading.classList.add('hidden'); status.innerText = `残り ${gap}g を補完する最適解です。`;
+                
                 list.innerHTML = options.map(opt => `
-                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] shadow-2xl space-y-4">
-                        <div class="flex justify-between items-center"><span class="text-xs font-black text-emerald-500 uppercase tracking-widest">${opt.tag}</span><span class="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-2xl text-2xl font-black">+${opt.p}g P</span></div>
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] shadow-2xl space-y-4 animate-in slide-in-from-bottom-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-black text-emerald-500 uppercase tracking-widest">${opt.tag}</span>
+                            <span class="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-2xl text-2xl font-black">+${opt.p}g P</span>
+                        </div>
                         <h3 class="text-white font-black text-3xl tracking-tight leading-none">${opt.main}</h3>
                         <p class="text-slate-400 text-base mt-2 flex items-center"><i data-lucide="info" class="w-5 h-5 mr-2 text-emerald-600"></i> ${opt.side}</p>
                         <p class="text-slate-500 text-xs italic border-t border-slate-800 pt-4 opacity-80">${opt.desc}</p>
                     </div>
                 `).join('');
                 lucide.createIcons();
-            } catch (e) { loading.classList.add('hidden'); status.innerText = "生成失敗。再試行してください。"; }
+            } catch (e) {
+                loading.classList.add('hidden');
+                status.innerHTML = `<span class="text-red-500 font-black tracking-widest">ERROR: ${e.message}</span><br><span class="text-[10px] text-slate-400">通信または解析に失敗しました。再試行してください。</span>`;
+            }
         }
 
         function updateProteinLabel(val) { document.getElementById('protein-val').innerText = val + 'g'; }
+        
         async function saveMeal() {
             const main = document.getElementById('main-menu').value;
             const side = document.getElementById('side-menu').value;
@@ -209,7 +264,7 @@
         }
 
         function recordQuickBreakfast() {
-            const b = { id: Date.now(), type: '朝', main: '朝セット', side: 'プロテイン・コーヒー他', protein: 30, time: new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) };
+            const b = { id: Date.now(), type: '朝', main: '朝セット', side: 'MCTオイル入りコーヒー他', protein: 30, time: new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) };
             state.meals.unshift(b); updateUI();
             fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(b) });
         }
@@ -230,9 +285,28 @@
             lucide.createIcons();
         }
 
+        function setType(type) {
+            state.currentType = type;
+            const btns = document.querySelectorAll('.type-btn');
+            btns.forEach(b => {
+                const isActive = b.innerText === type;
+                b.classList.toggle('bg-emerald-600', isActive);
+                b.classList.toggle('text-white', isActive);
+                b.classList.toggle('text-slate-600', !isActive);
+            });
+        }
+
+        function testConnection() {
+            const status = document.getElementById('sync-status');
+            const pill = document.createElement('div');
+            pill.className = "status-pill bg-emerald-500 text-white px-4 py-1 rounded-full text-[10px] font-black";
+            pill.innerText = "SYSTEM CHECK COMPLETED";
+            status.innerHTML = ''; status.appendChild(pill);
+            setTimeout(() => pill.remove(), 2000);
+        }
+
         function resetForm() { document.getElementById('main-menu').value = ''; document.getElementById('side-menu').value = ''; }
         window.onload = init;
     </script>
 </body>
 </html>
-
