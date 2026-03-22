@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Meal Log">
-    <title>Meal Log v4.2</title>
+    <title>Meal Log v4.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -45,7 +45,7 @@
             <div class="flex justify-between items-center mb-1">
                 <div>
                     <h1 class="text-xl font-black tracking-tighter text-emerald-400">MEAL LOG</h1>
-                    <p class="text-slate-500 text-[10px] uppercase tracking-widest leading-none text-emerald-600/50">Sheet Analysis v4.2</p>
+                    <p class="text-slate-500 text-[10px] uppercase tracking-widest leading-none text-emerald-600/50">Custom Menu v4.6</p>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="testConnection()" class="bg-slate-800 p-2 rounded-xl border border-slate-700 active:scale-95 transition-all text-slate-400">
@@ -62,7 +62,7 @@
                     <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Protein Goal</span>
                     <span class="text-xl font-black text-white" id="current-p">0<span class="text-xs text-slate-600 font-normal ml-1">/ 120g</span></span>
                 </div>
-                <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-800">
                     <div id="p-bar" class="protein-gauge h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" style="width: 0%"></div>
                 </div>
             </div>
@@ -75,10 +75,10 @@
             <div id="view-record" class="space-y-5 animate-in fade-in duration-300">
                 <button onclick="recordQuickBreakfast()" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-between active:scale-95 transition-all shadow-lg">
                     <div class="flex items-center space-x-3">
-                        <div class="bg-emerald-500/10 p-2 rounded-xl text-emerald-400"><i data-lucide="coffee" class="w-6 h-6"></i></div>
+                        <div class="bg-emerald-500/10 p-2 rounded-xl text-emerald-400"><i data-lucide="zap" class="w-6 h-6"></i></div>
                         <div class="text-left">
                             <p class="text-base font-bold text-slate-100 tracking-tight">朝セットを記録</p>
-                            <p class="text-xs text-slate-500">マカ・プロテイン・コーヒー (30g P)</p>
+                            <p class="text-xs text-slate-500 mt-0.5">マカ・プロテイン・コーヒー・納豆 (45g P)</p>
                         </div>
                     </div>
                     <i data-lucide="chevron-right" class="text-slate-600 w-5 h-5"></i>
@@ -109,7 +109,7 @@
                                 <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Protein</span>
                                 <span class="text-3xl font-black text-emerald-400" id="protein-val">25g</span>
                             </div>
-                            <input type="range" id="protein-slider" min="0" max="80" step="5" value="25" oninput="updateProteinLabel(this.value)" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                            <input type="range" id="protein-slider" min="0" max="110" step="0.1" value="25" oninput="updateProteinLabel(this.value)" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
                         </div>
                         <button id="save-btn" onclick="saveMeal()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black text-base tracking-widest shadow-lg active:scale-95 transition-all">レポを保存</button>
                     </div>
@@ -180,46 +180,90 @@
             const loading = document.getElementById('suggest-loading');
             const status = document.getElementById('suggest-status');
             
-            list.innerHTML = ""; 
-            loading.classList.remove('hidden'); 
-            status.innerText = "シート履歴を分析中...";
+            list.innerHTML = ""; loading.classList.remove('hidden'); status.innerText = "シート履歴を分析中...";
 
             const currentP = state.meals.reduce((sum, m) => sum + m.protein, 0);
             const gap = state.targetProtein - currentP;
 
             if (gap <= 0) {
                 loading.classList.add('hidden');
-                status.innerText = "目標タンパク質達成済みです！";
+                status.innerText = "目標タンパク質達成済みです！完璧な規律ですね。";
                 list.innerHTML = '<div class="p-8 text-center text-emerald-400 font-bold italic text-lg">Perfect Goal Reached!</div>';
                 return;
             }
 
             const history = await fetchHistoryFromSheet();
             loading.classList.add('hidden');
-            status.innerText = `残り ${gap}g を補完。履歴に基づき重複を排除しました。`;
+            status.innerText = `残り ${gap.toFixed(1)}g を補完。履歴に基づき最適案を抽出。`;
 
-            const recentMains = history.slice(-15).map(h => h.main.toLowerCase());
+            const recentMains = history.slice(-25).map(h => h.main.toLowerCase());
+
+            // --- ニモさん専用: 拡張・統合推奨プール (全45種) ---
             const menuPool = [
-                { main: "鶏ささみのグリル", side: "ブロッコリー", p: 40, keywords: ["鶏", "ささみ"] },
-                { main: "サバの塩焼き", side: "冷奴", p: 25, keywords: ["魚", "サバ"] },
-                { main: "豚ヒレ肉のソテー", side: "海藻サラダ", p: 30, keywords: ["豚", "ヒレ"] },
-                { main: "秋鮭のホイル焼き", side: "キノコ添え", p: 28, keywords: ["魚", "鮭"] },
-                { main: "牛赤身肉のステーキ", side: "ほうれん草", p: 35, keywords: ["牛", "ステーキ"] },
+                { main: "ジンギスカン", side: "焼き野菜（もやし・玉ねぎ）", p: 100, keywords: ["羊", "ジンギスカン", "食べ放題", "ラム", "精力"] },
+                { main: "ザクチキ・白身魚の南蛮漬け", side: "ナムル・アボカドサラダ・五穀米", p: 52, keywords: ["鶏", "揚げ物", "白身魚", "コンビニ"] },
+                { main: "鮭の塩焼き・豚の生姜炒め", side: "ハムサラダ・五穀米・味噌汁", p: 48, keywords: ["鮭", "豚", "ハム", "魚肉W"] },
+                { main: "豚生姜焼き・目玉焼き・春巻き", side: "サラダ・ご飯・味噌汁", p: 41, keywords: ["豚", "卵", "春巻き", "定食"] },
+                { main: "牛肉ステーキ", side: "ブロッコリーサラダ", p: 40, keywords: ["牛", "ステーキ", "赤身", "筋トレ", "鉄分"] },
+                { main: "チキンステーキ", side: "野菜スティック・アボカド・五穀米", p: 40, keywords: ["鶏", "ステーキ", "アボカド"] },
+                { main: "ささみ・エビチリごはん", side: "きゅうりの漬物", p: 39, keywords: ["ささみ", "海老", "中華"] },
+                { main: "鶏むね肉の低温調理", side: "ブロッコリースプラウト", p: 35, keywords: ["鶏", "むね肉", "筋トレ", "抗酸化"] },
+                { main: "手巻き寿司", side: "海苔・酢飯・卵", p: 35, keywords: ["魚", "刺身", "家族", "海鮮"] },
+                { main: "鹿肉（ジビエ）ステーキ", side: "舞茸のソテー", p: 34, keywords: ["鹿", "ジビエ", "鉄分", "超低脂質"] },
+                { main: "ラムチョップ香草焼き", side: "焼きトマト・ズッキーニ", p: 32, keywords: ["羊", "ラム", "亜鉛", "燃焼"] },
+                { main: "チキンカレー", side: "ごはん・ルイボスティー", p: 32, keywords: ["鶏", "カレー"] },
                 { main: "厚揚げと鶏肉の煮物", side: "小松菜", p: 32, keywords: ["鶏", "豆腐"] },
-                { main: "カツオのたたき", side: "玉ねぎスライス", p: 26, keywords: ["魚", "カツオ"] }
+                { main: "豚ヒレ肉のピカタ", side: "粉チーズ・パセリ添え", p: 31, keywords: ["豚", "ヒレ", "ビタミンB"] },
+                { main: "赤身牛のローストビーフ", side: "クレソン・ホースラディッシュ", p: 30, keywords: ["牛", "赤身", "鉄分"] },
+                { main: "刺身盛り合わせ", side: "ほうれん草お浸し", p: 30, keywords: ["魚", "刺身", "アンチエイジング"] },
+                { main: "豆乳鍋（鶏肉・団子）", side: "春菊・しいたけ", p: 30, keywords: ["鶏", "鍋", "温活"] },
+                { main: "生カツオのたたき", side: "玉ねぎスライス・ポン酢", p: 28.5, keywords: ["魚", "カツオ", "血流改善"] },
+                { main: "サーモンステーキ", side: "アスパラガスのグリル", p: 28, keywords: ["サーモン", "アスタキサンチン", "Tie2"] },
+                { main: "レバニラ炒め", side: "キクラゲと卵の炒め物", p: 28, keywords: ["レバー", "豚", "造血", "デトックス"] },
+                { main: "茹で鶏のバンバンジー", side: "クラゲと胡瓜の酢の物", p: 28, keywords: ["鶏", "疲労回復"] },
+                { main: "ネギトロ丼", side: "納豆・めかぶ", p: 28, keywords: ["マグロ", "血管ケア", "ネバネバ"] },
+                { main: "カジキマグロのソテー", side: "ピーマンのジャコ炒め", p: 27, keywords: ["魚", "カジキ"] },
+                { main: "鶏天（むね肉）", side: "卸しポン酢・大葉", p: 27, keywords: ["鶏", "むね肉", "抗疲労"] },
+                { main: "茹で豚の冷しゃぶ", side: "叩ききゅうり（梅肉和え）", p: 26, keywords: ["豚", "疲労回復", "クエン酸"] },
+                { main: "真鯛のアクアパッツァ", side: "あさりとドライトマト", p: 26, keywords: ["真鯛", "魚", "タウリン"] },
+                { main: "ブリの照り焼き", side: "叩き長いも", p: 26, keywords: ["ブリ", "魚", "DHA", "滋養強壮"] },
+                { main: "サケのホイル焼き", side: "きのこ類・レモン", p: 26, keywords: ["サケ", "ビタミンD", "免疫"] },
+                { main: "スペアリブ（脂身除去）", side: "グリルポテト（少量）", p: 26, keywords: ["豚", "スペアリブ", "バルクアップ"] },
+                { main: "うなぎの白焼き", side: "肝吸い・わさび", p: 25, keywords: ["うなぎ", "スタミナ", "精力"] },
+                { main: "厚揚げの肉巻き", side: "オクラの胡麻和え", p: 25, keywords: ["厚揚げ", "豚", "食物繊維"] },
+                { main: "マグロの山かけ", side: "刻み海苔・わさび", p: 25, keywords: ["マグロ", "血流改善"] },
+                { main: "豚キムチ", side: "アボカドトマトサラダ", p: 25, keywords: ["豚", "キムチ", "発酵"] },
+                { main: "寒サバの塩焼き", side: "大根おろし・なめこ汁", p: 24, keywords: ["サバ", "魚", "血管掃除"] },
+                { main: "イカの刺身", side: "納豆・めかぶ和え", p: 24, keywords: ["イカ", "タウリン", "血流"] },
+                { main: "エビのチリソース", side: "卵とレタスのスープ", p: 24, keywords: ["海老", "タウリン", "代謝"] },
+                { main: "サワラの西京焼き", side: "小松菜のお浸し", p: 24, keywords: ["サワラ", "魚", "カルシウム"] },
+                { main: "金目鯛の煮付け", side: "ゴボウのきんぴら", p: 23, keywords: ["金目鯛", "魚", "美肌"] },
+                { main: "ゴーヤチャンプルー", side: "島豆腐・削り節", p: 23, keywords: ["豚", "ゴーヤ", "血糖値"] },
+                { main: "蒸し牡蠣（レモン搾り）", side: "ほうれん草のソテー", p: 22, keywords: ["牡蠣", "亜鉛", "テストステロン"] },
+                { main: "鶏レバーの甘辛煮", side: "ピーマンの素焼き", p: 22, keywords: ["レバー", "鶏", "粘膜保護"] },
+                { main: "秋刀魚の塩焼き", side: "きのこたっぷり味噌汁", p: 22, keywords: ["サンマ", "魚", "オメガ3"] },
+                { main: "銀だらの西京焼き", side: "具沢山けんちん汁", p: 21, keywords: ["魚", "発酵"] },
+                { main: "サバ味噌煮缶", side: "雑穀米・生姜漬", p: 20.9, keywords: ["サバ", "魚", "Tie2", "時短"] },
+                { main: "牛丼（吉野家）", side: "生野菜サラダ・味噌汁", p: 20.2, keywords: ["牛", "外食"] },
+                { main: "いわし団子汁", side: "根菜たっぷり煮物", p: 20, keywords: ["いわし", "魚", "血管年齢"] }
             ];
 
             let filteredMenu = menuPool.filter(menu => {
-                return !recentMains.some(recent => menu.main.toLowerCase().includes(recent) || menu.keywords.some(k => recent.includes(k.toLowerCase())));
+                const lowerMain = menu.main.toLowerCase();
+                return !recentMains.some(recent => lowerMain.includes(recent) || menu.keywords.some(k => recent.includes(k.toLowerCase())));
             });
 
             if (filteredMenu.length < 3) filteredMenu = menuPool;
-            filteredMenu.sort((a, b) => Math.abs(gap - b.p) - Math.abs(gap - a.p));
+            
+            filteredMenu.sort((a, b) => {
+                if (gap >= 80) return b.p - a.p;
+                return Math.abs(gap - b.p) - Math.abs(gap - a.p);
+            });
 
             const finalOptions = [
-                { tag: "A案: 最速補完", ...filteredMenu[0], desc: "不足分を最短で埋めるための高効率な選択肢です。" },
-                { tag: "B案: 重複なし", ...filteredMenu[1], desc: "最近の食事と被らない食材を選び、栄養バランスを整えます。" },
-                { tag: "C案: コンディション", ...filteredMenu[2], desc: "明日への影響を考慮した、消化の良い組み合わせです。" }
+                { tag: "A案: 戦略的補完", ...filteredMenu[0], desc: "不足分を最短で埋めるための高効率案。INTJ-Aの合理性を追求した選択肢です。" },
+                { tag: "B案: 履歴重複回避", ...filteredMenu[1], desc: "直近の食材を避けたリスク分散案。多角的な栄養摂取を狙います。" },
+                { tag: "C案: コンディション維持", ...filteredMenu[2], desc: "身体のケアを優先した機能性重視案。明日の営業パフォーマンスを支えます。" }
             ];
 
             list.innerHTML = finalOptions.map(opt => `
@@ -236,12 +280,12 @@
             lucide.createIcons();
         }
 
-        function updateProteinLabel(val) { document.getElementById('protein-val').innerText = val + 'g'; }
+        function updateProteinLabel(val) { document.getElementById('protein-val').innerText = parseFloat(val).toFixed(1) + 'g'; }
         
         async function saveMeal() {
             const main = document.getElementById('main-menu').value;
             const side = document.getElementById('side-menu').value;
-            const p = parseInt(document.getElementById('protein-slider').value);
+            const p = parseFloat(document.getElementById('protein-slider').value);
             if (!main) return;
 
             const meal = { 
@@ -261,23 +305,19 @@
                 state.meals.unshift(meal);
             }
 
-            updateUI();
-            resetForm();
+            updateUI(); resetForm();
             localStorage.setItem('nimo_today_meals', JSON.stringify(state.meals));
             localStorage.setItem('nimo_last_save_date', new Date().toDateString());
             
             try { 
                 await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(meal) }); 
                 showStatus("同期完了");
-            } catch(e) { 
-                showStatus("同期失敗", true); 
-            }
+            } catch(e) { showStatus("同期失敗", true); }
         }
 
         function recordQuickBreakfast() {
-            const b = { id: Date.now(), type: '朝', main: '朝セット', side: 'マカ・プロテイン・コーヒー', protein: 30, time: new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) };
-            state.meals.unshift(b);
-            updateUI();
+            const b = { id: Date.now(), type: '朝', main: '朝セット（納豆込み）', side: 'マカ・プロテイン・コーヒー', protein: 45, time: new Date().toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'}) };
+            state.meals.unshift(b); updateUI();
             localStorage.setItem('nimo_today_meals', JSON.stringify(state.meals));
             localStorage.setItem('nimo_last_save_date', new Date().toDateString());
             fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(b) });
@@ -292,7 +332,6 @@
             document.getElementById('protein-slider').value = meal.protein;
             updateProteinLabel(meal.protein);
             setType(meal.type);
-            
             document.getElementById('form-container').classList.add('edit-mode');
             document.getElementById('form-title').innerText = "Edit Entry";
             document.getElementById('cancel-edit').classList.remove('hidden');
@@ -307,8 +346,7 @@
         }
 
         function cancelEdit() {
-            state.editingId = null;
-            resetForm();
+            state.editingId = null; resetForm();
             document.getElementById('form-container').classList.remove('edit-mode');
             document.getElementById('form-title').innerText = "Meal Entry";
             document.getElementById('cancel-edit').classList.add('hidden');
@@ -316,7 +354,7 @@
 
         function updateUI() {
             const totalP = state.meals.reduce((sum, m) => sum + m.protein, 0);
-            document.getElementById('current-p').innerHTML = `${totalP}<span class="text-sm text-slate-600 font-normal ml-1">/ 120g</span>`;
+            document.getElementById('current-p').innerHTML = `${totalP.toFixed(1)}<span class="text-sm text-slate-600 font-normal ml-1">/ 120g</span>`;
             document.getElementById('p-bar').style.width = Math.min((totalP / 120) * 100, 100) + '%';
             document.getElementById('log-list').innerHTML = state.meals.map(m => `
                 <div class="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-lg">
@@ -328,7 +366,7 @@
                         </div>
                     </div>
                     <div class="flex items-center space-x-3">
-                        <div class="text-right"><span class="text-lg font-black text-emerald-400">+${m.protein}g</span></div>
+                        <div class="text-right"><span class="text-lg font-black text-emerald-400">+${parseFloat(m.protein).toFixed(1)}g</span></div>
                         <div class="flex flex-col space-y-2 border-l border-slate-800 pl-3">
                             <button onclick="editMeal(${m.id})" class="text-slate-600 hover:text-emerald-400"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
                             <button onclick="deleteMeal(${m.id})" class="text-slate-600 hover:text-red-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
@@ -361,11 +399,8 @@
 
         function testConnection() { showStatus("CONNECTION CHECK: OK"); }
         function resetForm() { 
-            document.getElementById('main-menu').value = ''; 
-            document.getElementById('side-menu').value = ''; 
-            document.getElementById('protein-slider').value = 25;
-            updateProteinLabel(25);
-            setType('昼');
+            document.getElementById('main-menu').value = ''; document.getElementById('side-menu').value = ''; 
+            document.getElementById('protein-slider').value = 25; updateProteinLabel(25); setType('昼');
         }
         window.onload = init;
     </script>
