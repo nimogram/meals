@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Meal Log">
-    <title>Meal Log v3.4</title>
+    <title>Meal Log v3.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -37,36 +37,36 @@
         }
     </style>
 </head>
-<body class="text-slate-200 antialiased overflow-x-hidden">
+<body class="text-slate-100 antialiased overflow-x-hidden">
 
     <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col bg-slate-950 relative shadow-2xl">
         
-        <!-- Header: Slim Protein Progress -->
-        <header class="bg-slate-900/80 backdrop-blur-lg text-white p-4 rounded-b-[2.5rem] border-b border-slate-800 sticky top-0 z-50">
-            <div id="sync-status" class="absolute top-2 left-0 right-0 flex justify-center pointer-events-none text-center"></div>
+        <!-- Header: Ultra Slim -->
+        <header class="bg-slate-900/80 backdrop-blur-xl text-white p-4 pb-2 rounded-b-[2rem] border-b border-slate-800 sticky top-0 z-50">
+            <div id="sync-status" class="absolute top-1 left-0 right-0 flex justify-center pointer-events-none"></div>
             
-            <div class="flex justify-between items-center mb-2">
+            <div class="flex justify-between items-center mb-1">
                 <div>
                     <h1 class="text-2xl font-black tracking-tighter text-emerald-400">MEAL LOG</h1>
-                    <p class="text-slate-500 text-[10px] uppercase tracking-widest">AI Engine v3.4</p>
+                    <p class="text-slate-500 text-[9px] uppercase tracking-widest leading-none">AI Logic v3.5 Final</p>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="testConnection()" class="bg-slate-800 p-2 rounded-xl border border-slate-700 active:scale-95 transition-all text-slate-400 hover:text-emerald-400">
-                        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                     </button>
                     <div class="bg-slate-800 p-2 rounded-xl border border-slate-700">
-                        <i data-lucide="brain-circuit" class="text-emerald-400 w-5 h-5"></i>
+                        <i data-lucide="brain-circuit" class="text-emerald-400 w-4 h-4"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="space-y-2">
+            <div class="space-y-1.5 pb-1">
                 <div class="flex justify-between items-end">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Protein Goal</span>
-                    <span class="text-2xl font-black text-white" id="current-p">0<span class="text-sm text-slate-600 font-normal ml-1">/ 120g</span></span>
+                    <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Goal Status</span>
+                    <span class="text-2xl font-black text-white" id="current-p">0<span class="text-xs text-slate-600 font-normal ml-1">/ 120g</span></span>
                 </div>
-                <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
-                    <div id="p-bar" class="protein-gauge h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" style="width: 0%"></div>
+                <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                    <div id="p-bar" class="protein-gauge h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" style="width: 0%"></div>
                 </div>
             </div>
         </header>
@@ -74,120 +74,109 @@
         <!-- Main Content -->
         <main id="main-scroll" class="flex-1 p-5 space-y-6 pb-32 overflow-y-auto">
             
-            <!-- Views: Record -->
+            <!-- View: Record (Input/History) -->
             <div id="view-record" class="space-y-6 animate-in fade-in duration-300">
                 <!-- Quick Action -->
-                <section>
-                    <h2 class="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-3 ml-1">Quick Routine</h2>
-                    <button onclick="recordQuickBreakfast()" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-between active:scale-95 transition-all shadow-lg">
-                        <div class="flex items-center space-x-4">
-                            <div class="bg-emerald-500/10 p-3 rounded-2xl text-emerald-400">
-                                <i data-lucide="zap" class="w-6 h-6"></i>
-                            </div>
-                            <div class="text-left">
-                                <p class="text-base font-bold text-slate-200">朝セットを記録</p>
-                                <p class="text-xs text-slate-500 mt-0.5">マカ・プロテイン・コーヒー (30g P)</p>
-                            </div>
+                <button onclick="recordQuickBreakfast()" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-between active:scale-95 transition-all shadow-xl">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-emerald-500/10 p-3 rounded-2xl text-emerald-400">
+                            <i data-lucide="zap" class="w-6 h-6"></i>
                         </div>
-                        <i data-lucide="chevron-right" class="text-slate-600 w-5 h-5"></i>
-                    </button>
-                </section>
+                        <div class="text-left">
+                            <p class="text-lg font-bold text-slate-100 tracking-tight">朝セットを瞬時記録</p>
+                            <p class="text-xs text-slate-500 mt-1">プロテイン・コーヒー他 (30g P)</p>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="text-slate-600 w-5 h-5"></i>
+                </button>
 
                 <!-- Manual Form -->
-                <section id="form-container" class="bg-slate-900/50 border border-slate-800 rounded-[2rem] p-6 shadow-xl transition-all duration-300">
+                <section id="form-container" class="bg-slate-900/40 border border-slate-800 rounded-[2.5rem] p-6 shadow-2xl transition-all duration-300">
                     <div class="flex justify-between items-center mb-6">
                         <div class="flex items-center space-x-2">
                             <i data-lucide="plus-circle" id="form-icon" class="text-emerald-500 w-5 h-5"></i>
-                            <h2 id="form-title" class="text-sm font-black text-slate-300 uppercase tracking-widest text-emerald-400">Meal Report</h2>
+                            <h2 id="form-title" class="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">Meal Report</h2>
                         </div>
-                        <button id="cancel-edit" onclick="cancelEdit()" class="text-xs font-bold text-red-400 bg-red-900/20 border border-red-900/30 px-3 py-1 rounded-full hidden">キャンセル</button>
+                        <button id="cancel-edit" onclick="cancelEdit()" class="text-xs font-bold text-red-400 bg-red-900/20 border border-red-900/30 px-3 py-1 rounded-full hidden">取消</button>
                     </div>
 
                     <div class="space-y-6">
-                        <div class="flex bg-slate-950 p-1 rounded-2xl border border-slate-800">
-                            <button onclick="setType('朝')" class="type-btn flex-1 py-2 text-sm font-bold rounded-xl transition-all text-slate-500">朝</button>
-                            <button onclick="setType('昼')" class="type-btn flex-1 py-2 text-sm font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-lg">昼</button>
-                            <button onclick="setType('夜')" class="type-btn flex-1 py-2 text-sm font-bold rounded-xl transition-all text-slate-500">夜</button>
-                            <button onclick="setType('他')" class="type-btn flex-1 py-2 text-sm font-bold rounded-xl transition-all text-slate-500">他</button>
+                        <div class="flex bg-slate-950 p-1 rounded-2xl border border-slate-800 shadow-inner">
+                            <button onclick="setType('朝')" class="type-btn flex-1 py-2 text-sm font-black rounded-xl transition-all text-slate-600">朝</button>
+                            <button onclick="setType('昼')" class="type-btn flex-1 py-2 text-sm font-black rounded-xl transition-all bg-emerald-600 text-white shadow-lg">昼</button>
+                            <button onclick="setType('夜')" class="type-btn flex-1 py-2 text-sm font-black rounded-xl transition-all text-slate-600">夜</button>
+                            <button onclick="setType('他')" class="type-btn flex-1 py-2 text-sm font-black rounded-xl transition-all text-slate-600">他</button>
                         </div>
 
                         <div class="space-y-4">
-                            <div class="relative">
-                                <i data-lucide="utensils" class="absolute left-4 top-4 w-5 h-5 text-slate-500"></i>
-                                <input type="text" id="main-menu" placeholder="主菜（タンパク源）" class="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 text-base text-slate-200 focus:ring-2 focus:ring-emerald-500 transition-all outline-none">
+                            <div class="relative group">
+                                <i data-lucide="utensils" class="absolute left-4 top-4 w-5 h-5 text-slate-600 group-focus-within:text-emerald-500 transition-colors"></i>
+                                <input type="text" id="main-menu" placeholder="主菜（タンパク源）" class="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 text-lg text-slate-100 focus:ring-2 focus:ring-emerald-500/50 transition-all outline-none placeholder-slate-700">
                             </div>
-                            <div class="relative">
-                                <i data-lucide="leaf" class="absolute left-4 top-4 w-5 h-5 text-slate-500"></i>
-                                <input type="text" id="side-menu" placeholder="副菜（野菜など）" class="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 text-base text-slate-200 focus:ring-2 focus:ring-emerald-500 transition-all outline-none">
+                            <div class="relative group">
+                                <i data-lucide="leaf" class="absolute left-4 top-4 w-5 h-5 text-slate-600 group-focus-within:text-emerald-500 transition-colors"></i>
+                                <input type="text" id="side-menu" placeholder="副菜（野菜など）" class="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 text-lg text-slate-100 focus:ring-2 focus:ring-emerald-500/50 transition-all outline-none placeholder-slate-700">
                             </div>
                         </div>
 
-                        <div class="bg-slate-950 p-5 rounded-3xl border border-slate-800 space-y-3">
+                        <div class="bg-slate-950 p-5 rounded-[2rem] border border-slate-800 space-y-3">
                             <div class="flex justify-between items-center px-1">
-                                <span class="text-xs font-black text-slate-500 uppercase tracking-widest">Est. Protein</span>
-                                <span class="text-2xl font-black text-emerald-400" id="protein-val">25g</span>
+                                <span class="text-xs font-black text-slate-500 uppercase tracking-widest">Protein g</span>
+                                <span class="text-3xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]" id="protein-val">25g</span>
                             </div>
                             <input type="range" id="protein-slider" min="0" max="80" step="5" value="25" oninput="updateProteinLabel(this.value)" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
                         </div>
 
-                        <div class="flex items-center justify-between bg-amber-900/10 border border-amber-900/20 p-4 rounded-3xl">
-                            <div class="flex items-center space-x-3 text-amber-200 font-bold text-base">
+                        <div class="flex items-center justify-between bg-emerald-950/10 border border-emerald-900/20 p-4 rounded-3xl">
+                            <div class="flex items-center space-x-3 text-slate-300 font-bold text-lg">
                                 <i data-lucide="beer" class="w-5 h-5 text-amber-500"></i>
                                 <span>接待モード</span>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="reception-toggle" class="sr-only peer">
-                                <div class="w-12 h-6 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                                <div class="w-12 h-6 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
                             </label>
                         </div>
 
-                        <button id="save-btn" onclick="saveMeal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-5 rounded-3xl font-black text-base uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center space-x-2">
+                        <button id="save-btn" onclick="saveMeal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-5 rounded-3xl font-black text-lg uppercase tracking-widest shadow-lg shadow-emerald-900/20 active:scale-95 transition-all flex items-center justify-center space-x-2">
                             <span id="save-btn-text">レポを同期保存</span>
                         </button>
                     </div>
                 </section>
 
-                <!-- History -->
-                <section>
-                    <div class="flex items-center justify-between mb-4 px-1">
-                        <h2 class="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Today's Log</h2>
-                    </div>
-                    <div id="log-list" class="space-y-4"></div>
-                </section>
+                <div id="log-list" class="space-y-4"></div>
             </div>
 
-            <!-- Views: Suggest -->
-            <div id="view-suggest" class="hidden space-y-2 animate-in slide-in-from-right-8 duration-300">
-                <p class="text-xs text-slate-500 text-center py-2" id="suggest-status"></p>
-                <div id="suggest-loading" class="space-y-3 hidden">
-                    <div class="h-32 bg-slate-900 rounded-3xl loading-shimmer opacity-30"></div>
-                    <div class="h-32 bg-slate-900 rounded-3xl loading-shimmer opacity-30"></div>
-                    <div class="h-32 bg-slate-900 rounded-3xl loading-shimmer opacity-30"></div>
+            <!-- View: Suggest -->
+            <div id="view-suggest" class="hidden space-y-4 animate-in slide-in-from-right-8 duration-300">
+                <p class="text-xs text-slate-500 text-center py-2 italic" id="suggest-status"></p>
+                <div id="suggest-loading" class="space-y-4 hidden">
+                    <div class="h-40 bg-slate-900 rounded-3xl loading-shimmer opacity-30"></div>
+                    <div class="h-40 bg-slate-900 rounded-3xl loading-shimmer opacity-30"></div>
                 </div>
-                <div id="suggest-list" class="space-y-3"></div>
+                <div id="suggest-list" class="space-y-4"></div>
             </div>
         </main>
 
         <!-- Navigation -->
         <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-900/90 backdrop-blur-xl border-t border-slate-800 flex justify-around p-4 safe-area-bottom shadow-2xl">
             <button onclick="switchView('record')" id="tab-record" class="flex flex-col items-center tab-active transition-all">
-                <i data-lucide="plus-square" class="w-7 h-7"></i>
-                <span class="text-[9px] font-black mt-1 uppercase">Record</span>
+                <i data-lucide="clipboard-list" class="w-7 h-7"></i>
+                <span class="text-[10px] font-black mt-1 uppercase">Log</span>
             </button>
             <button onclick="switchView('suggest')" id="tab-suggest" class="flex flex-col items-center tab-inactive transition-all">
-                <i data-lucide="chef-hat" class="w-7 h-7"></i>
-                <span class="text-[9px] font-black mt-1 uppercase">Suggest</span>
+                <i data-lucide="sparkles" class="w-7 h-7"></i>
+                <span class="text-[10px] font-black mt-1 uppercase">AI Recommend</span>
             </button>
-            <button class="flex flex-col items-center tab-inactive opacity-30 cursor-not-allowed">
+            <button class="flex flex-col items-center tab-inactive opacity-30">
                 <i data-lucide="bar-chart-3" class="w-7 h-7"></i>
-                <span class="text-[9px] font-black mt-1 uppercase">Stats</span>
+                <span class="text-[10px] font-black mt-1 uppercase">Stats</span>
             </button>
         </nav>
     </div>
 
     <script>
-        const apiKey = ""; // 実行環境から自動供給
-        // --- あなたのGASのURLを貼り付けてください ---
+        const apiKey = ""; // 実行環境から自動注入（GitHubデプロイ時はここにキーを貼る）
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec"; 
 
         let state = {
@@ -232,12 +221,11 @@
         }
 
         async function fetchHistoryFromSheet() {
-            if (GAS_URL.includes("ここに") || !GAS_URL) return [];
+            if (!GAS_URL || GAS_URL.includes("ここに")) return [];
             try {
-                const response = await fetch(GAS_URL, { redirect: 'follow' });
+                const response = await fetch(GAS_URL);
                 if (!response.ok) return [];
-                const data = await response.json();
-                return Array.isArray(data) ? data : [];
+                return await response.json();
             } catch (e) { return []; }
         }
 
@@ -248,65 +236,62 @@
             
             list.innerHTML = "";
             loading.classList.remove('hidden');
-            status.innerText = "過去のログと本日の摂取量を分析中...";
+            status.innerText = "直近のログを解析し、重複を排除中...";
 
             const currentP = state.meals.reduce((sum, m) => sum + m.protein, 0);
             const gap = state.targetProtein - currentP;
 
             if (gap <= 0) {
                 loading.classList.add('hidden');
-                status.innerText = "目標タンパク質達成済み！";
-                list.innerHTML = '<div class="p-8 text-center text-emerald-400 font-bold italic text-xl">Perfect Goal Reached!</div>';
+                status.innerText = "目標タンパク質達成済み！完璧な建築です。";
+                list.innerHTML = '<div class="p-10 text-center text-emerald-400 font-black italic text-2xl">Mission Complete!</div>';
                 return;
             }
 
             const history = await fetchHistoryFromSheet();
-            const historyStr = history.length > 0 ? history.map(h => `${h.main}(${h.protein}g)`).join(", ") : "履歴なし";
-            const todayStr = state.meals.length > 0 ? state.meals.map(m => m.main).join(", ") : "本日の摂取なし";
+            const historyStr = history.slice(-15).map(h => `${h.main}`).join(", ");
+            const todayStr = state.meals.map(m => m.main).join(", ");
 
-            const systemPrompt = `あなたはニモさん（INTJ-A, 外資系IT営業, 札幌在住, O型）専属の優秀な管理栄養士です。
-目標タンパク質量120gを達成するための夕食を3案提案してください。今日の不足分は ${gap}g です。
-【重要ルール】
-1. 過去の履歴 [${historyStr}] や今日の摂取物 [${todayStr}] と食材ジャンルを絶対に被らせない。
-2. 日曜夜は翌朝のファスティングに備え、持続性のあるタンパク質源を推奨。
-3. 札幌の寒さを考慮。主菜と副菜のセット。解説はINTJ-A向けに論理的に。
-4. 出力は純粋なJSON配列のみ。説明不要。
-JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", "p": 数値, "desc": "解説"}]`;
+            const systemPrompt = `あなたはニモさん（INTJ-A, 外資系IT営業, 札幌, O型）専用のAI参謀です。
+目標タンパク質量120gまで残り ${gap}g です。
+【重要制約】
+1. 食事履歴 [${historyStr}] および今日の摂取 [${todayStr}] と重複する食材・ジャンルは【禁止】。
+2. 札幌の気温と、日曜夜であることを考慮（翌朝ファスティング）。
+3. 主菜名を強調した3案をJSON配列で出力。説明不要。
+[{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", "p": 数値, "desc": "ロジカルな解説"}]`;
 
             try {
-                const resultText = await callGemini(`不足分${gap}gを補う3案。JSONのみ。`, systemPrompt);
+                const resultText = await callGemini(`不足分${gap}gを補完する3案を提案してください。`, systemPrompt);
                 
-                // 頑健なJSON抽出ロジック
-                const match = resultText.match(/\[[\s\S]*\]/);
-                if (!match) throw new Error("解析失敗: 有効なデータが見つかりません。");
+                // 強力な抽出ロジック: 最初の'['から最後の']'までを抜き出す
+                const jsonMatch = resultText.match(/\[[\s\S]*\]/);
+                if (!jsonMatch) throw new Error("解析失敗: データ形式が不正です。");
                 
-                const options = JSON.parse(match[0]);
-                
+                const options = JSON.parse(jsonMatch[0]);
                 loading.classList.add('hidden');
-                status.innerText = `残り ${gap}g を補完するAI推奨案を表示します。`;
+                status.innerText = `残り ${gap}g を補完する最適案を表示。`;
                 
                 list.innerHTML = options.map(opt => `
-                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl space-y-2 animate-in slide-in-from-bottom-2">
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-[2.5rem] shadow-2xl space-y-3 animate-in slide-in-from-bottom-3">
                         <div class="flex justify-between items-center mb-1">
-                            <span class="text-xs font-black text-emerald-500 uppercase tracking-widest">${opt.tag}</span>
-                            <span class="bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-lg font-black tracking-tighter">
-                                +${opt.p}g <span class="text-xs font-normal text-emerald-600">P</span>
+                            <span class="text-xs font-black text-emerald-500 uppercase tracking-[0.2em]">${opt.tag}</span>
+                            <span class="bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-2xl text-xl font-black tracking-tighter">
+                                +${opt.p}g <span class="text-xs font-normal opacity-70">P</span>
                             </span>
                         </div>
                         <div>
-                            <h3 class="text-white font-black text-2xl tracking-tight leading-tight">${opt.main}</h3>
-                            <p class="text-slate-400 text-sm mt-1 flex items-center">
+                            <h3 class="text-white font-black text-2xl tracking-tight leading-none">${opt.main}</h3>
+                            <p class="text-slate-400 text-sm mt-2 flex items-center">
                                 <i data-lucide="info" class="w-4 h-4 mr-2 text-emerald-600"></i> ${opt.side}
                             </p>
                         </div>
-                        <p class="text-slate-500 text-xs leading-snug italic border-t border-slate-800 pt-2 opacity-80">${opt.desc}</p>
+                        <p class="text-slate-500 text-xs leading-relaxed italic border-t border-slate-800 pt-3 opacity-90">${opt.desc}</p>
                     </div>
                 `).join('');
                 lucide.createIcons();
             } catch (e) {
                 loading.classList.add('hidden');
-                status.innerText = `エラー: ${e.message}。接続環境を確認してください。`;
-                console.error("Gemini Error:", e);
+                status.innerHTML = `<span class="text-red-400 font-bold">Error: ${e.message}</span><br><span class="text-[10px]">※GitHub Pagesで使用する場合、ソース内のapiKey変数の設定が必要です。</span>`;
             }
         }
 
@@ -314,22 +299,19 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: system }] }
+                systemInstruction: { parts: [{ text: system }] },
+                generationConfig: { responseMimeType: "application/json", temperature: 0.7 }
             };
 
             for (let i = 0; i < retries; i++) {
                 try {
-                    const resp = await fetch(url, { 
-                        method: "POST", 
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload) 
-                    });
+                    const resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
                     if (!resp.ok) {
-                        const errorBody = await resp.text();
-                        throw new Error(`STATUS_${resp.status}: ${errorBody}`);
+                        const err = await resp.json();
+                        throw new Error(`STATUS_${resp.status}: ${err.error?.message || "Unknown"}`);
                     }
                     const result = await resp.json();
-                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                    return result.candidates[0].content.parts[0].text;
                 } catch (e) {
                     if (i === retries - 1) throw e;
                     await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
@@ -337,10 +319,11 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
             }
         }
 
+        // --- Core Utility Functions ---
         function showStatus(msg, isError = false) {
             const container = document.getElementById('sync-status');
             const pill = document.createElement('div');
-            pill.className = `status-pill px-4 py-1 rounded-full text-xs font-black shadow-2xl ${isError ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`;
+            pill.className = `status-pill px-5 py-1.5 rounded-full text-xs font-black shadow-2xl ${isError ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`;
             pill.innerText = msg;
             container.innerHTML = '';
             container.appendChild(pill);
@@ -348,9 +331,9 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
         }
 
         async function testConnection() {
-            showStatus("接続テスト中...");
+            showStatus("疎通確認中...");
             try {
-                await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ type: 'TEST', main: '接続テスト', side: '疎通確認', protein: 0, isReception: false }) });
+                const res = await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ type: 'TEST', main: '疎通確認', side: '-', protein: 0, isReception: false }) });
                 showStatus("同期テスト完了！");
             } catch (e) { showStatus("接続失敗", true); }
         }
@@ -361,10 +344,10 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
             buttons.forEach(btn => {
                 if (btn.innerText === type) {
                     btn.classList.add('bg-emerald-600', 'text-white', 'shadow-lg');
-                    btn.classList.remove('text-slate-500');
+                    btn.classList.remove('text-slate-600');
                 } else {
                     btn.classList.remove('bg-emerald-600', 'text-white', 'shadow-lg');
-                    btn.classList.add('text-slate-500');
+                    btn.classList.add('text-slate-600');
                 }
             });
         }
@@ -392,21 +375,28 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
 
             const saveBtn = document.getElementById('save-btn');
             saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4 mr-2"></i> 同期中...';
+            saveBtn.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-5 h-5 mr-2 text-emerald-200"></i> 同期中...';
             lucide.createIcons();
 
-            try { await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(meal) }); showStatus("同期完了"); }
-            catch (e) { showStatus("同期失敗", true); }
-            finally { saveBtn.disabled = false; saveBtn.innerHTML = '<span>レポを同期保存</span>'; lucide.createIcons(); }
+            try { 
+                await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(meal) }); 
+                showStatus("スプレッドシートに同期完了"); 
+            } catch (e) { showStatus("同期失敗", true); }
+            finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<span>レポを同期保存</span>';
+                lucide.createIcons();
+            }
         }
 
         function recordQuickBreakfast() {
-            const breakfast = { id: Date.now(), type: '朝', main: '朝セット', side: 'マカ・プロテイン・コーヒー', protein: 30, isReception: false, time: new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'}) };
+            const breakfast = { id: Date.now(), type: '朝', main: '朝セット', side: 'プロテイン・コーヒー他', protein: 30, isReception: false, time: new Date().toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'}) };
             state.meals.unshift(breakfast);
             localStorage.setItem('nimo_today_meals', JSON.stringify(state.meals));
             localStorage.setItem('nimo_last_save_date', new Date().toDateString());
             updateUI();
             fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(breakfast) });
+            showStatus("朝セットを同期...");
         }
 
         function updateUI() {
@@ -417,20 +407,20 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
             if (state.meals.length === 0) { logList.innerHTML = '<div class="text-center py-10 text-slate-700 text-sm italic">本日のログはありません</div>'; }
             else {
                 logList.innerHTML = state.meals.map(m => `
-                    <div class="bg-slate-900/50 border border-slate-800 p-4 rounded-[1.5rem] flex items-center justify-between shadow-lg">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-11 h-11 bg-slate-800 rounded-2xl flex items-center justify-center text-xs font-black text-slate-500 border border-slate-700 uppercase">${m.type}</div>
+                    <div class="bg-slate-900/50 border border-slate-800 p-5 rounded-[2rem] flex items-center justify-between shadow-xl animate-in slide-in-from-bottom-2 duration-300">
+                        <div class="flex items-center space-x-5">
+                            <div class="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center text-xs font-black text-slate-500 border border-slate-700 uppercase">${m.type}</div>
                             <div>
-                                <p class="text-xl font-bold text-white leading-none mb-1">${m.main}</p>
+                                <p class="text-xl font-bold text-white leading-none mb-1.5">${m.main}</p>
                                 <p class="text-sm text-slate-500">${m.side} • ${m.time}</p>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-5">
                             <div class="text-right">
                                 <span class="text-xl font-black text-emerald-400">+${m.protein}g</span>
-                                ${m.isReception ? '<div class="text-[9px] text-amber-500 font-black uppercase mt-1">接待</div>' : ''}
+                                ${m.isReception ? '<div class="text-[10px] text-amber-500 font-black uppercase mt-1">接待</div>' : ''}
                             </div>
-                            <div class="flex flex-col space-y-2 border-l border-slate-800 pl-4 ml-2">
+                            <div class="flex flex-col space-y-3 border-l border-slate-800 pl-4 ml-2">
                                 <button onclick="editMeal(${m.id})" class="text-slate-600 hover:text-emerald-400"><i data-lucide="edit-3" class="w-5 h-5"></i></button>
                                 <button onclick="deleteMeal(${m.id})" class="text-slate-600 hover:text-red-500"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
                             </div>
@@ -481,3 +471,4 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
     </script>
 </body>
 </html>
+
