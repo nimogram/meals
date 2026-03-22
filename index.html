@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Meal Log">
-    <title>Meal Log v3.1</title>
+    <title>Meal Log v3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -48,7 +48,7 @@
             <div class="flex justify-between items-center mb-2">
                 <div>
                     <h1 class="text-2xl font-black tracking-tighter text-emerald-400">MEAL LOG</h1>
-                    <p class="text-slate-500 text-[10px] uppercase tracking-widest">AI Engine v3.1</p>
+                    <p class="text-slate-500 text-[10px] uppercase tracking-widest">AI Engine v3.2</p>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="testConnection()" class="bg-slate-800 p-2 rounded-xl border border-slate-700 active:scale-95 transition-all text-slate-400 hover:text-emerald-400">
@@ -236,6 +236,7 @@
             if (GAS_URL.includes("ここに")) return [];
             try {
                 const response = await fetch(GAS_URL);
+                if (!response.ok) return [];
                 const data = await response.json();
                 return Array.isArray(data) ? data : [];
             } catch (e) { return []; }
@@ -276,9 +277,12 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
 
             try {
                 const resultText = await callGemini(`不足分${gap}gを補完する3案を生成してください。`, systemPrompt);
-                // Geminiがコードブロックで囲んだ場合のクレンジング
-                const cleanedJson = resultText.replace(/```json|```/g, "").trim();
-                const options = JSON.parse(cleanedJson);
+                
+                // 強力なJSON抽出: 最初の '[' から 最後の ']' までを切り出す
+                const jsonMatch = resultText.match(/\[[\s\S]*\]/);
+                if (!jsonMatch) throw new Error("JSON_NOT_FOUND");
+                
+                const options = JSON.parse(jsonMatch[0]);
                 
                 loading.classList.add('hidden');
                 status.innerText = `残り ${gap}g を補完するAI推奨案です。`;
@@ -303,8 +307,12 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
                 lucide.createIcons();
             } catch (e) {
                 loading.classList.add('hidden');
-                status.innerText = "推奨エンジンの解析に失敗しました。API設定を確認してください。";
-                console.error("Gemini Parse Error:", e);
+                if (e.message === "JSON_NOT_FOUND" || e.name === "SyntaxError") {
+                    status.innerText = "AIの回答を解析できませんでした。もう一度お試しください。";
+                } else {
+                    status.innerText = "APIリクエストに失敗しました。接続環境を確認してください。";
+                }
+                console.error("Gemini Logic Error:", e);
             }
         }
 
@@ -326,7 +334,7 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(payload) 
                     });
-                    if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+                    if (!resp.ok) throw new Error(`HTTP_${resp.status}`);
                     const result = await resp.json();
                     return result.candidates[0].content.parts[0].text;
                 } catch (e) {
@@ -431,8 +439,8 @@ JSON構造: [{"tag": "A案: P死守", "main": "主菜名", "side": "副菜名", 
                                 ${m.isReception ? '<div class="text-[9px] text-amber-500 font-black uppercase mt-1">接待</div>' : ''}
                             </div>
                             <div class="flex flex-col space-y-2 border-l border-slate-800 pl-4 ml-2">
-                                <button onclick="editMeal(${m.id})" class="text-slate-600 hover:text-emerald-400"><i data-lucide="edit-3" class="w-5 h-5"></i></button>
-                                <button onclick="deleteMeal(${m.id})" class="text-slate-600 hover:text-red-500"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                                <button onclick="editMeal(${m.id})" class="text-slate-600 hover:text-emerald-400"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                <button onclick="deleteMeal(${m.id})" class="text-slate-600 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                             </div>
                         </div>
                     </div>
