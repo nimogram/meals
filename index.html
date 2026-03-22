@@ -39,7 +39,7 @@
             <div class="flex justify-between items-center mb-6">
                 <div>
                     <h1 class="text-xl font-black tracking-tighter text-emerald-400">MEAL LOG</h1>
-                    <p class="text-slate-500 text-[10px] uppercase tracking-widest">Architect Mode v2.9</p>
+                    <p class="text-slate-500 text-[10px] uppercase tracking-widest">Architect Mode v2.9.1</p>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="testConnection()" class="bg-slate-800 p-2 rounded-2xl border border-slate-700 active:scale-95 transition-all text-slate-400 hover:text-emerald-400">
@@ -148,15 +148,8 @@
             </div>
 
             <!-- Suggest View (Hidden by Default) -->
-            <div id="view-suggest" class="hidden space-y-3 animate-in slide-in-from-right-8 duration-300">
-                <div class="bg-emerald-950/20 border border-emerald-900/30 p-4 rounded-3xl text-center">
-                    <h2 class="text-sm font-black text-white flex items-center justify-center space-x-2">
-                        <i data-lucide="sparkles" class="text-emerald-400 w-4 h-4"></i>
-                        <span>AI 推奨メニュー</span>
-                    </h2>
-                    <p class="text-[10px] text-slate-500 mt-1" id="suggest-status"></p>
-                </div>
-                
+            <div id="view-suggest" class="hidden space-y-2 animate-in slide-in-from-right-8 duration-300">
+                <p class="text-[10px] text-slate-500 text-center py-2" id="suggest-status"></p>
                 <div id="suggest-list" class="space-y-2">
                     <!-- Suggested cards will appear here -->
                 </div>
@@ -320,12 +313,12 @@
             const status = document.getElementById('suggest-status');
             
             if (gap <= 0) {
-                status.innerText = "本日のタンパク質目標は達成済みです！";
+                status.innerText = "目標タンパク質達成済みです！";
                 suggestList.innerHTML = '<div class="p-8 text-center text-emerald-400 font-bold italic">Perfect Goal Reached!</div>';
                 return;
             }
 
-            status.innerText = `残り ${gap}g のタンパク質が必要です。`;
+            status.innerText = `残り ${gap}g を補完する3案を表示します。`;
 
             const options = [
                 { 
@@ -352,18 +345,20 @@
             ];
 
             suggestList.innerHTML = options.map(opt => `
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="text-[9px] font-black text-emerald-500 uppercase tracking-widest">${opt.tag}</span>
-                        <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-md text-[9px] font-black">+${opt.p}g P</span>
+                <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-xl space-y-1.5">
+                    <div class="flex justify-between items-center mb-0.5">
+                        <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">${opt.tag}</span>
+                        <span class="bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg text-sm font-black tracking-tighter">
+                            +${opt.p}g <span class="text-[10px]">P</span>
+                        </span>
                     </div>
                     <div>
-                        <h3 class="text-white font-bold text-xs">${opt.main}</h3>
-                        <p class="text-slate-500 text-[9px] mt-0.5 flex items-center">
-                            <i data-lucide="info" class="w-2.5 h-2.5 mr-1"></i> ${opt.side}
+                        <h3 class="text-white font-bold text-sm tracking-tight leading-tight">${opt.main}</h3>
+                        <p class="text-slate-500 text-[10px] mt-0.5 flex items-center">
+                            <i data-lucide="info" class="w-2.5 h-2.5 mr-1 text-emerald-600"></i> ${opt.side}
                         </p>
                     </div>
-                    <p class="text-slate-400 text-[9px] leading-tight italic border-t border-slate-800 pt-2">${opt.desc}</p>
+                    <p class="text-slate-400 text-[9px] leading-tight italic border-t border-slate-800 pt-2 opacity-80">${opt.desc}</p>
                 </div>
             `).join('');
             lucide.createIcons();
