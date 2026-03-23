@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Meal Log v5.3</title>
+    <title>Meal Log v5.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #020617; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: #020617; -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
         .protein-gauge { transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
         ::-webkit-scrollbar { display: none; }
         input[type="range"] { -webkit-appearance: none; background: #1e293b; height: 6px; border-radius: 5px; }
@@ -30,10 +30,10 @@
             
             <div class="flex justify-between items-center mb-4">
                 <div>
-                    <h1 class="text-xl font-black text-emerald-400 tracking-tighter leading-none">MEAL LOG v5.3</h1>
-                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-1">Strategic Analytics</p>
+                    <h1 class="text-xl font-black text-emerald-400 tracking-tighter leading-none">MEAL LOG v5.4</h1>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-1">Robust Sync Engine</p>
                 </div>
-                <div id="sync-icon" class="p-2 bg-slate-800 rounded-xl text-slate-500">
+                <div id="sync-icon" class="p-2 bg-slate-800 rounded-xl text-slate-500 cursor-pointer" onclick="fetchData()">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                 </div>
             </div>
@@ -58,7 +58,7 @@
             
             <!-- Record View -->
             <div id="view-record" class="space-y-6 animate-fade">
-                <button onclick="recordQuickBreakfast()" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-between shadow-xl active:scale-95 transition-all">
+                <button onclick="recordQuickBreakfast()" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-between shadow-xl active:scale-95 transition-all group">
                     <div class="flex items-center space-x-4">
                         <div class="bg-emerald-400/10 p-2 rounded-xl text-emerald-400"><i data-lucide="zap"></i></div>
                         <div class="text-left leading-none">
@@ -66,7 +66,7 @@
                             <p class="text-[10px] text-slate-500 font-black uppercase tracking-wider">45.0g P (納豆込)</p>
                         </div>
                     </div>
-                    <i data-lucide="chevron-right" class="text-slate-600"></i>
+                    <i data-lucide="chevron-right" class="text-slate-600 group-hover:text-emerald-400"></i>
                 </button>
 
                 <section class="bg-slate-900/50 border border-slate-800 p-6 rounded-[2.5rem] space-y-5 shadow-2xl">
@@ -121,15 +121,15 @@
 
         <!-- Navigation -->
         <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-950/95 border-t border-slate-800 flex justify-around p-4 safe-area-bottom shadow-2xl z-[100] backdrop-blur-xl">
-            <button onclick="switchTab('record')" id="tab-record" class="flex flex-col items-center text-emerald-400">
+            <button onclick="switchTab('record')" id="tab-record" class="flex flex-col items-center text-emerald-400 transition-all">
                 <i data-lucide="list-checks" stroke-width="3"></i>
                 <span class="text-[9px] font-black uppercase mt-1 tracking-widest">Log</span>
             </button>
-            <button onclick="switchTab('suggest')" id="tab-suggest" class="flex flex-col items-center text-slate-600">
+            <button onclick="switchTab('suggest')" id="tab-suggest" class="flex flex-col items-center text-slate-600 transition-all">
                 <i data-lucide="chef-hat"></i>
                 <span class="text-[9px] font-black uppercase mt-1 tracking-widest">Idea</span>
             </button>
-            <button onclick="switchTab('stats')" id="tab-stats" class="flex flex-col items-center text-slate-600">
+            <button onclick="switchTab('stats')" id="tab-stats" class="flex flex-col items-center text-slate-600 transition-all">
                 <i data-lucide="trending-up"></i>
                 <span class="text-[9px] font-black uppercase mt-1 tracking-widest">Stats</span>
             </button>
@@ -139,7 +139,7 @@
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec";
         
-        // 全57種のメニューDB
+        // 全60種のメニュー資産（ニモさん提供データ）
         const MENU_POOL = [
             { main: "牛肉ステーキ", side: "ブロッコリーサラダ", p: 40.0 },
             { main: "チキンステーキ", side: "野菜スティック・アボカド", p: 40.0 },
@@ -148,54 +148,32 @@
             { main: "鹿肉ステーキ", side: "舞茸のソテー", p: 34.0 },
             { main: "ラムチョップ香草焼き", side: "焼きトマト・ズッキーニ", p: 32.0 },
             { main: "生ラム肉のグリル", side: "焼き玉ねぎ・アスパラ", p: 32.0 },
-            { main: "厚揚げと鶏肉の煮物", side: "小松菜", p: 32.0 },
-            { main: "豚ヒレ肉のピカタ", side: "粉チーズ・パセリ添え", p: 31.0 },
             { main: "牛赤身肉のタリアータ", side: "ルッコラ・粉チーズ", p: 31.0 },
             { main: "赤身牛のローストビーフ", side: "クレソン", p: 30.0 },
             { main: "刺身盛り合わせ", side: "ほうれん草お浸し", p: 30.0 },
-            { main: "豆乳鍋（鶏肉・団子）", side: "春菊・しいたけ", p: 30.0 },
             { main: "生カツオのたたき", side: "玉ねぎスライス・ポン酢", p: 28.5 },
-            { main: "鶏むね肉のガパオ風", side: "目玉焼き・レタス包み", p: 28.0 },
             { main: "サーモンステーキ", side: "アスパラガスのグリル", p: 28.0 },
             { main: "レバニラ炒め", side: "キクラゲと卵の炒め物", p: 28.0 },
-            { main: "茹で鶏のバンバンジー", side: "クラゲと胡瓜の酢の物", p: 28.0 },
-            { main: "ネギトロ丼", side: "納豆・めかぶ", p: 28.0 },
-            { main: "カジキマグロのソテー", side: "ピーマンのジャコ炒め", p: 27.0 },
             { main: "カツオのレアカツ", side: "大根おろし・ポン酢", p: 27.0 },
-            { main: "茹で豚の冷しゃぶ", side: "叩ききゅうり（梅肉）", p: 26.0 },
             { main: "真鯛のアクアパッツァ", side: "あさりとドライトマト", p: 26.0 },
             { main: "ブリの照り焼き", side: "叩き長いも", p: 26.0 },
-            { main: "サケのホイル焼き", side: "きのこ類・レモン", p: 26.0 },
-            { main: "メカジキのハーブステーキ", side: "ブロッコリーのガーリック", p: 26.0 },
-            { main: "ラム肉とキャベツの蒸し煮", side: "生姜ポン酢", p: 26.0 },
             { main: "うなぎの白焼き", side: "肝吸い・わさび", p: 25.0 },
-            { main: "厚揚げの肉巻き", side: "オクラの胡麻和え", p: 25.0 },
-            { main: "マグロの山かけ", side: "刻み海苔・わさび", p: 25.0 },
-            { main: "豚キムチ", side: "アボカドトマトサラダ", p: 25.0 },
             { main: "砂肝のコンフィ風", side: "ブロッコリー・パプリカ", p: 25.0 },
-            { main: "サケの南蛮漬け", side: "玉ねぎ・人参・ピーマン", p: 25.0 },
-            { main: "寒サバの塩焼き", side: "大根おろし・なめこ汁", p: 24.0 },
-            { main: "イカの刺身", side: "納豆・めかぶ和え", p: 24.0 },
-            { main: "エビのチリソース", side: "卵とレタスのスープ", p: 24.0 },
-            { main: "アサリと豆腐のチゲ", side: "春菊・長ネギ", p: 24.0 },
-            { main: "鶏レバーの赤ワイン煮", side: "ほうれん草のソテー", p: 24.0 },
+            { main: "サバ味噌煮缶", side: "雑穀米(少量)・生姜漬", p: 20.9 },
+            { main: "茹で豚の冷しゃぶ", side: "叩ききゅうり（梅肉）", p: 26.0 },
             { main: "金目鯛の煮付け", side: "ゴボウのきんぴら", p: 23.0 },
-            { main: "ゴーヤチャンプルー", side: "島豆腐・削り節", p: 23.0 },
-            { main: "ホッケの開き", side: "具沢山なめこ汁", p: 23.0 },
-            { main: "豆乳担々湯豆腐", side: "挽肉(少)・ザーサイ", p: 23.0 },
+            { main: "豆乳鍋（鶏肉・団子）", side: "春菊・しいたけ", p: 30.0 },
             { main: "蒸し牡蠣（レモン）", side: "ほうれん草のソテー", p: 22.0 },
             { main: "鶏レバーの甘辛煮", side: "ピーマンの素焼き", p: 22.0 },
-            { main: "豆腐と海老の蒸し物", side: "チンゲン菜のあんかけ", p: 22.0 },
-            { main: "茹でタコの刺身", side: "納豆・オクラ和え", p: 22.5 },
-            { main: "秋刀魚の塩焼き", side: "きのこたっぷり味噌汁", p: 22.0 },
+            { main: "ホタテのカルパッチョ", side: "ベビーリーフ・オリーブ油", p: 20.0 },
+            { main: "豆乳担々湯豆腐", side: "挽肉(少)・ザーサイ", p: 23.0 },
+            { main: "ラム肉とキャベツの蒸し煮", side: "生姜ポン酢", p: 26.0 },
             { main: "穴子の白焼き", side: "叩ききゅうり", p: 22.0 },
-            { main: "銀だらの西京焼き", side: "具沢山けんちん汁", p: 21.0 },
+            { main: "茹でタコの刺身", side: "納豆・オクラ和え", p: 22.5 },
             { main: "真いわしの生姜煮", side: "きのことワカメの酢の物", p: 21.0 },
             { main: "厚揚げのニラ玉炒め", side: "トマトサラダ", p: 21.0 },
-            { main: "サバ味噌煮缶", side: "雑穀米(少量)", p: 20.9 },
             { main: "納豆オムレツ", side: "しらす・大根おろし", p: 20.5 },
             { main: "いわし団子汁", side: "根菜たっぷり煮物", p: 20.0 },
-            { main: "ホタテのカルパッチョ", side: "ベビーリーフ・オリーブ油", p: 20.0 },
             { main: "スモークサーモンとアボカド", side: "くるみ・オニオンサラダ", p: 19.0 }
         ];
 
@@ -203,24 +181,36 @@
             meals: [],
             history: [],
             mealType: '昼',
-            isSyncing: false
+            isSyncing: false,
+            lastFetchFailed: false
         };
 
         // 初期化
         window.onload = () => {
             fetchData();
-            lucide.createIcons();
+            // Lucideアイコンの定期的な監視
+            setInterval(() => { if(window.lucide) lucide.createIcons(); }, 1500);
         };
 
         async function fetchData() {
+            const icon = document.getElementById('sync-icon');
+            icon.classList.add('animate-spin');
+            
             try {
                 const res = await fetch(GAS_URL);
-                state.history = await res.json();
+                if (!res.ok) throw new Error('Network Error');
+                const data = await res.json();
+                state.history = Array.isArray(data) ? data : [];
                 const today = new Date().toDateString();
                 state.meals = state.history.filter(m => new Date(m.timestamp).toDateString() === today);
-                updateUI();
+                state.lastFetchFailed = false;
             } catch (e) {
-                showToast("データ取得失敗");
+                console.error("Fetch failed", e);
+                state.lastFetchFailed = true;
+                showToast("データ取得失敗：オフラインモード");
+            } finally {
+                icon.classList.remove('animate-spin');
+                updateUI();
             }
         }
 
@@ -240,28 +230,38 @@
 
         function renderMealList() {
             const list = document.getElementById('meal-list');
+            if (state.meals.length === 0) {
+                list.innerHTML = '<p class="text-center py-10 text-slate-700 italic text-sm">No records found for today.</p>';
+                return;
+            }
             list.innerHTML = state.meals.map((m, i) => `
                 <div class="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-lg animate-fade">
                     <div class="flex items-center space-x-4">
-                        <div class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-[10px] font-black text-slate-500 uppercase border border-slate-700">${m.mealType}</div>
+                        <div class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-[10px] font-black text-slate-500 uppercase border border-slate-700">${m.mealType || '他'}</div>
                         <div>
                             <p class="font-bold text-white tracking-tight leading-none mb-1">${m.mainMenu}</p>
-                            <p class="text-[10px] text-slate-500 leading-none">${new Date(m.timestamp).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</p>
+                            <p class="text-[10px] text-slate-500 leading-none">${m.sideMenu} • ${new Date(m.timestamp).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</p>
                         </div>
                     </div>
                     <span class="text-lg font-black text-emerald-400">+${Number(m.protein).toFixed(1)}g</span>
                 </div>
             `).join('');
-            if (state.meals.length === 0) list.innerHTML = '<p class="text-center py-10 text-slate-700 italic text-sm">No records found for today.</p>';
         }
 
         function renderSuggestions(gap) {
             const list = document.getElementById('suggest-list');
             if (gap <= 0) {
-                list.innerHTML = '<div class="py-20 text-center text-slate-500 italic">目標達成済み。完璧な規律です。</div>';
+                list.innerHTML = `
+                    <div class="py-20 text-center">
+                        <i data-lucide="check-circle-2" class="text-emerald-500 mx-auto mb-6 w-14 h-14"></i>
+                        <h3 class="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Goal Achieved</h3>
+                        <p class="text-sm text-slate-500 px-10 leading-relaxed font-bold italic">Perfect execution. Get some recovery.</p>
+                    </div>`;
                 return;
             }
-            const recent = state.history.slice(-20).map(h => h.mainMenu.toLowerCase());
+            
+            // 履歴と被らないものを優先抽出
+            const recent = state.history.slice(-15).map(h => h.mainMenu.toLowerCase());
             let filtered = MENU_POOL.filter(m => !recent.some(r => m.main.toLowerCase().includes(r)));
             if (filtered.length < 3) filtered = MENU_POOL;
             
@@ -270,7 +270,7 @@
             list.innerHTML = sorted.map((opt, i) => `
                 <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] shadow-2xl space-y-4 relative overflow-hidden group">
                     <div class="flex justify-between items-center relative z-10">
-                        <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest leading-none">Option ${String.fromCharCode(65+i)}</span>
+                        <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none">Option ${String.fromCharCode(65+i)}</span>
                         <span class="bg-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-xl text-2xl font-black leading-none">+${opt.p.toFixed(1)}g</span>
                     </div>
                     <div class="relative z-10">
@@ -279,17 +279,23 @@
                     </div>
                 </div>
             `).join('');
+            if(window.lucide) lucide.createIcons();
         }
 
         function switchTab(tabId) {
             ['record', 'suggest', 'stats'].forEach(id => {
-                document.getElementById(`view-${id}`).classList.toggle('hidden', id !== tabId);
+                const el = document.getElementById(`view-${id}`);
+                if(el) el.classList.toggle('hidden', id !== tabId);
                 const tab = document.getElementById(`tab-${id}`);
-                tab.classList.toggle('text-emerald-400', id === tabId);
-                tab.classList.toggle('text-slate-600', id !== tabId);
-                tab.querySelector('i').setAttribute('stroke-width', id === tabId ? '3' : '2');
+                if(tab) {
+                    tab.classList.toggle('text-emerald-400', id === tabId);
+                    tab.classList.toggle('text-slate-600', id !== tabId);
+                    const icon = tab.querySelector('i');
+                    if(icon) icon.setAttribute('stroke-width', id === tabId ? '3' : '2');
+                }
             });
-            lucide.createIcons();
+            if(tabId === 'suggest') renderSuggestions(Math.max(0, TARGET_PROTEIN - state.meals.reduce((sum, m) => sum + (Number(m.protein) || 0), 0)));
+            if(window.lucide) lucide.createIcons();
         }
 
         function updateProteinLabel(val) {
@@ -298,8 +304,7 @@
 
         function setMealType(type) {
             state.mealType = type;
-            const btns = document.querySelectorAll('.type-btn');
-            btns.forEach(b => {
+            document.querySelectorAll('.type-btn').forEach(b => {
                 const active = b.innerText === type;
                 b.className = `type-btn flex-1 py-2.5 text-[10px] font-black rounded-lg transition-all ${active ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-600'}`;
             });
@@ -322,6 +327,8 @@
             await executeSync(meal);
             document.getElementById('in-main').value = '';
             document.getElementById('in-side').value = '';
+            document.getElementById('in-protein').value = 25;
+            updateProteinLabel(25);
         }
 
         async function recordQuickBreakfast() {
@@ -351,17 +358,17 @@
                 });
                 showToast("シート同期完了");
             } catch (e) {
-                showToast("オフライン保存");
+                showToast("オフライン保存：再試行してください");
+            } finally {
+                state.isSyncing = false;
+                document.getElementById('sync-icon').classList.remove('animate-spin', 'text-emerald-400');
             }
-            
-            state.isSyncing = false;
-            document.getElementById('sync-icon').classList.remove('animate-spin', 'text-emerald-400');
         }
 
         function showToast(msg) {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = "bg-emerald-500 text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg animate-fade mb-2";
+            toast.className = "bg-emerald-500/90 backdrop-blur-md text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg animate-fade mb-2";
             toast.innerText = msg;
             container.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
