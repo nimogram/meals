@@ -1,7 +1,375 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
+import { getFirestore, collection, addDoc, onSnapshot, qimport React, { useState, useEffect, useMemo } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, query, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { 
+  Utensils, 
+  Plus, 
+  History, 
+  Zap, 
+  Beer, 
+  CheckCircle2, 
+  ChefHat, 
+  Coffee,
+  ChevronRight,
+  TrendingUp,
+  Trash2,
+  Edit3,
+  Search,
+  RefreshCw
+} from 'lucide-react';
+
+// --- Firebase Configuration ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'nimo-eats-logic-v4-7';
+
+const TARGET_PROTEIN = 120;
+
+const App = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [meals, setMeals] = useState([]);
+  const [activeTab, setActiveTab] = useState('record'); // 'record', 'suggest', 'history'
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Form State
+  const [mealType, setMealType] = useState('昼');
+  const [mainMenu, setMainMenu] = useState('');
+  const [sideMenu, setSideMenu] = useState('');
+  const [protein, setProtein] = useState(25.0);
+
+  // --- Auth & Initial Load ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) { console.error("Auth failed", error); }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
+    return () => unsubscribe();
+  }, []);
+
+  // --- Real-time Data Sync ---
+  useEffect(() => {
+    if (!user) return;
+    const today = new Date().toISOString().split('T')[0];
+    const q = collection(db, 'artifacts', appId, 'users', user.uid, 'meal_logs');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedMeals = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(m => m.timestamp && m.timestamp.startsWith(today))
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      setMeals(fetchedMeals);
+    }, (err) => console.error("Firestore error", err));
+    return () => unsubscribe();
+  }, [user]);
+
+  // --- Calculations ---
+  const currentProtein = useMemo(() => meals.reduce((sum, m) => sum + (Number(m.protein) || 0), 0), [meals]);
+  const gap = Math.max(0, TARGET_PROTEIN - currentProtein);
+  const progress = Math.min((currentProtein / TARGET_PROTEIN) * 100, 100);
+
+  // --- Actions ---
+  const handleSaveMeal = async (e) => {
+    if (e) e.preventDefault();
+    if (!user || !mainMenu) return;
+    setIsSyncing(true);
+    const mealData = {
+      timestamp: editingId ? meals.find(m => m.id === editingId).timestamp : new Date().toISOString(),
+      mealType, mainMenu, sideMenu: sideMenu || '-',
+      protein: parseFloat(protein),
+    };
+    try {
+      if (editingId) {
+        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'meal_logs', editingId), mealData);
+        setEditingId(null);
+      } else {
+        await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'meal_logs'), mealData);
+      }
+      setMainMenu(''); setSideMenu(''); setProtein(25.0);
+      setShowSuccess(true); setTimeout(() => setShowSuccess(false), 3000);
+    } catch (err) { console.error("Save error", err); }
+    setIsSyncing(false);
+  };
+
+  const recordQuickBreakfast = async () => {
+    if (!user) return;
+    setIsSyncing(true);
+    const breakfast = {
+      timestamp: new Date().toISOString(), mealType: '朝',
+      mainMenu: '朝セット（納豆込み）', sideMenu: 'マカ・プロテイン・コーヒー', protein: 45.0
+    };
+    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'meal_logs'), breakfast);
+    setIsSyncing(false);
+    setShowSuccess(true); setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const editMeal = (m) => {
+    setEditingId(m.id); setMealType(m.mealType); setMainMenu(m.mainMenu);
+    setSideMenu(m.sideMenu); setProtein(m.protein); setActiveTab('record');
+  };
+
+  const deleteMeal = async (id) => {
+    if (!user || !window.confirm("このレポを削除しますか？")) return;
+    await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'meal_logs', id));
+  };
+
+  // --- AI Suggestion Logic (Local Analysis) ---
+  const menuPool = [
+    { main: "牛肉ステーキ", side: "ブロッコリーサラダ", p: 40.0, kw: ["牛", "ステーキ", "鉄分"] },
+    { main: "チキンステーキ", side: "野菜スティック・アボカド", p: 40.0, kw: ["鶏", "低脂質", "アボカド"] },
+    { main: "鶏むね肉の低温調理", side: "ブロッコリースプラウト", p: 35.0, kw: ["鶏", "むね肉", "抗酸化"] },
+    { main: "手巻き寿司", side: "海苔・酢飯(少量)・卵", p: 35.0, kw: ["魚", "刺身", "海鮮"] },
+    { main: "鹿肉ステーキ", side: "舞茸のソテー", p: 34.0, kw: ["鹿", "鉄分", "超低脂質"] },
+    { main: "ラムチョップ香草焼き", side: "焼きトマト・ズッキーニ", p: 32.0, kw: ["羊", "亜鉛", "カルニチン"] },
+    { main: "生ラム肉のグリル", side: "焼き玉ねぎ・アスパラ", p: 32.0, kw: ["羊", "カルニチン", "燃焼"] },
+    { main: "厚揚げと鶏肉の煮物", side: "小松菜", p: 32.0, kw: ["鶏", "豆腐", "イソフラボン"] },
+    { main: "豚ヒレ肉のピカタ", side: "粉チーズ・パセリ添え", p: 31.0, kw: ["豚", "ヒレ", "低脂質"] },
+    { main: "牛赤身肉のタリアータ", side: "ルッコラ・粉チーズ", p: 31.0, kw: ["牛", "鉄分", "糖質オフ"] },
+    { main: "赤身牛のローストビーフ", side: "クレソン", p: 30.0, kw: ["牛", "赤身", "アルギニン"] },
+    { main: "刺身盛り合わせ", side: "ほうれん草お浸し", p: 30.0, kw: ["魚", "刺身", "血管ケア"] },
+    { main: "豆乳鍋（鶏肉・団子）", side: "春菊・しいたけ", p: 30.0, kw: ["鶏", "温活"] },
+    { main: "生カツオのたたき", side: "玉ねぎスライス・ポン酢", p: 28.5, kw: ["魚", "カツオ", "血流改善"] },
+    { main: "鶏むね肉のガパオ風", side: "目玉焼き・レタス包み", p: 28.0, kw: ["鶏", "高タンパク"] },
+    { main: "サーモンステーキ", side: "アスパラガスのグリル", p: 28.0, kw: ["サケ", "アスタキサンチン", "Tie2"] },
+    { main: "茹で鶏のバンバンジー", side: "クラゲと胡瓜の酢の物", p: 28.0, kw: ["鶏", "疲労回復"] },
+    { main: "ネギトロ丼", side: "納豆・めかぶ", p: 28.0, kw: ["マグロ", "血管ケア"] },
+    { main: "カジキマグロのソテー", side: "ピーマンのジャコ炒め", p: 27.0, kw: ["魚", "カジキ"] },
+    { main: "カツオのレアカツ", side: "大根おろし・ポン酢", p: 27.0, kw: ["カツオ", "アンセリン", "尿酸値ケア"] },
+    { main: "茹で豚の冷しゃぶ", side: "叩ききゅうり（梅肉）", p: 26.0, kw: ["豚", "クエン酸"] },
+    { main: "真鯛のアクアパッツァ", side: "あさりとドライトマト", p: 26.0, kw: ["魚", "タウリン"] },
+    { main: "ブリの照り焼き", side: "叩き長いも", p: 26.0, kw: ["ブリ", "DHA"] },
+    { main: "サケのホイル焼き", side: "きのこ類・レモン", p: 26.0, kw: ["サケ", "免疫"] },
+    { main: "メカジキのハーブステーキ", side: "ブロッコリーのガーリック", p: 26.0, kw: ["魚", "アリシン"] },
+    { main: "ラム肉とキャベツの蒸し煮", side: "生姜ポン酢", p: 26.0, kw: ["羊", "胃腸ケア"] },
+    { main: "うなぎの白焼き", side: "肝吸い・わさび", p: 25.0, kw: ["うなぎ", "スタミナ"] },
+    { main: "厚揚げの肉巻き", side: "オクラの胡麻和え", p: 25.0, kw: ["豚", "厚揚げ"] },
+    { main: "マグロの山かけ", side: "刻み海苔・わさび", p: 25.0, kw: ["マグロ", "血流改善"] },
+    { main: "砂肝のコンフィ風", side: "ブロッコリー・パプリカ", p: 25.0, kw: ["鶏", "亜鉛"] },
+    { main: "サケの南蛮漬け", side: "玉ねぎ・人参・ピーマン", p: 25.0, kw: ["サケ", "酢"] },
+    { main: "寒サバの塩焼き", side: "大根おろし・なめこ汁", p: 24.0, kw: ["サバ", "血管掃除"] },
+    { main: "イカの刺身", side: "納豆・めかぶ和え", p: 24.0, kw: ["イカ", "タウリン"] },
+    { main: "エビのチリソース", side: "卵とレタスのスープ", p: 24.0, kw: ["海老", "代謝"] },
+    { main: "アサリと豆腐のチゲ", side: "春菊・長ネギ", p: 24.0, kw: ["アサリ", "亜鉛"] },
+    { main: "鶏レバーの赤ワイン煮", side: "ほうれん草のソテー", p: 24.0, kw: ["鶏", "造血"] },
+    { main: "金目鯛の煮付け", side: "ゴボウのきんぴら", p: 23.0, kw: ["魚", "美肌"] },
+    { main: "ゴーヤチャンプルー", side: "島豆腐・削り節", p: 23.0, kw: ["豚", "ビタミンC"] },
+    { main: "ホッケの開き", side: "具沢山ななめこ汁", p: 23.0, kw: ["魚", "カルシウム"] },
+    { main: "豆乳担々湯豆腐", side: "挽肉(少)・ザーサイ", p: 23.0, kw: ["豆腐", "温活"] },
+    { main: "蒸し牡蠣（レモン）", side: "ほうれん草のソテー", p: 22.0, kw: ["牡蠣", "亜鉛", "テストステロン"] },
+    { main: "鶏レバーの甘辛煮", side: "ピーマンの素焼き", p: 22.0, kw: ["鶏", "ビタミンA"] },
+    { main: "豆腐と海老の蒸し物", side: "チンゲン菜のあんかけ", p: 22.0, kw: ["豆腐", "海老", "消化"] },
+    { main: "茹でタコの刺身", side: "納豆・オクラ和え", p: 22.5, kw: ["タコ", "タウリン"] },
+    { main: "秋刀魚の塩焼き", side: "きのこたっぷり味噌汁", p: 22.0, kw: ["魚", "オメガ3"] },
+    { main: "銀だらの西京焼き", side: "具沢山けんちん汁", p: 21.0, kw: ["魚", "不飽和脂肪酸"] },
+    { main: "真いわしの生姜煮", side: "きのことワカメの酢の物", p: 21.0, kw: ["魚", "中性脂肪"] },
+    { main: "厚揚げのニラ玉炒め", side: "トマトサラダ", p: 21.0, kw: ["厚揚げ", "アリシン"] },
+    { main: "納豆オムレツ", side: "しらす・大根おろし", p: 20.5, kw: ["卵", "納豆"] },
+    { main: "サバ味噌煮缶", side: "雑穀米(少量)", p: 20.9, kw: ["サバ", "Tie2"] },
+    { main: "いわし団子汁", side: "根菜たっぷり煮物", p: 20.0, kw: ["魚", "血管年齢"] },
+    { main: "ホタテのカルパッチョ", side: "ベビーリーフ", p: 20.0, kw: ["ホタテ", "タウリン"] },
+    { main: "スモークサーモンとアボカド", side: "くるみ・オニオン", p: 19.0, kw: ["サケ", "オメガ3"] }
+  ];
+
+  const suggestions = useMemo(() => {
+    if (gap <= 0) return [];
+    const recentKws = meals.flatMap(m => m.mainMenu.toLowerCase());
+    let filtered = menuPool.filter(menu => !recentKws.some(recent => menu.main.toLowerCase().includes(recent) || menu.kw.some(k => recent.includes(k.toLowerCase()))));
+    if (filtered.length < 3) filtered = menuPool;
+    return filtered.sort((a, b) => Math.abs(gap - b.p) - Math.abs(gap - a.p)).slice(0, 3);
+  }, [meals, gap]);
+
+  if (loading) return <div className="h-screen bg-slate-950 flex items-center justify-center text-emerald-500 font-black animate-pulse">SYSTEM INITIALIZING...</div>;
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 pb-24 font-sans max-w-md mx-auto relative flex flex-col shadow-2xl">
+      
+      {/* Header & Gauge */}
+      <header className="bg-slate-900/90 backdrop-blur-xl p-6 rounded-b-[2.5rem] border-b border-slate-800 sticky top-0 z-50">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h1 className="text-xl font-black tracking-tighter text-emerald-400">MEAL LOG v4.7</h1>
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest leading-none">Enterprise Strategic Edition</p>
+          </div>
+          <div className={`p-2 rounded-xl border border-slate-700 ${isSyncing ? 'animate-spin' : ''}`}>
+            <RefreshCw size={18} className="text-emerald-500" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="flex justify-between items-end">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Target 120g P</span>
+            <span className="text-3xl font-black text-white">{currentProtein.toFixed(1)}<span className="text-xs text-slate-600 ml-1">g</span></span>
+          </div>
+          <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+            <div className="h-full bg-emerald-500 protein-gauge shadow-[0_0_15px_rgba(16,185,129,0.5)]" style={{ width: `${progress}%` }} />
+          </div>
+          {gap > 0 ? (
+            <p className="text-[10px] text-slate-500 text-right uppercase tracking-widest">Gap: <span className="text-emerald-400 font-bold">{gap.toFixed(1)}g</span> to Accomplish</p>
+          ) : (
+            <p className="text-[10px] text-emerald-400 text-right font-black uppercase tracking-widest italic">Mission Accomplished!</p>
+          )}
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 p-5 space-y-6 overflow-y-auto">
+        {showSuccess && (
+          <div className="bg-emerald-500 text-white px-4 py-3 rounded-2xl flex items-center text-xs font-bold animate-in fade-in slide-in-from-top-2">
+            <CheckCircle2 size={16} className="mr-2" /> レポを同期しました。規律ある一日を。
+          </div>
+        )}
+
+        {/* Record View */}
+        {activeTab === 'record' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <button onClick={recordQuickBreakfast} className="w-full bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-between shadow-xl active:scale-95 transition-all group">
+              <div className="flex items-center space-x-4">
+                <div className="bg-emerald-500/10 p-2 rounded-xl text-emerald-400"><Zap size={24} /></div>
+                <div className="text-left">
+                  <p className="text-base font-bold text-white tracking-tight">朝セットを記録</p>
+                  <p className="text-[10px] text-slate-500 uppercase">Protein 45.0g (納豆込)</p>
+                </div>
+              </div>
+              <ChevronRight className="text-slate-600" size={20} />
+            </button>
+
+            <section className={`bg-slate-900/50 border ${editingId ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'border-slate-800'} rounded-[2.5rem] p-6 shadow-2xl`}>
+              <div className="flex justify-between items-center mb-6 px-1">
+                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
+                  <Utensils size={14} className="mr-2 text-emerald-500" /> {editingId ? "Edit Entry" : "Meal Entry"}
+                </h2>
+                {editingId && (
+                  <button onClick={() => { setEditingId(null); setMainMenu(''); setSideMenu(''); setProtein(25.0); }} className="text-[10px] font-black text-red-400 bg-red-900/20 px-3 py-1 rounded-full uppercase">Cancel</button>
+                )}
+              </div>
+              <form onSubmit={handleSaveMeal} className="space-y-5">
+                <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+                  {['朝', '昼', '夜', '他'].map(t => (
+                    <button key={t} type="button" onClick={() => setMealType(t)} className={`flex-1 py-2 text-xs font-black rounded-lg transition-all ${mealType === t ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-600'}`}>{t}</button>
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  <input type="text" placeholder="主菜 (タンパク源)" value={mainMenu} onChange={e => setMainMenu(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-4 text-lg font-bold text-white focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder-slate-800" />
+                  <input type="text" placeholder="副菜" value={sideMenu} onChange={e => setSideMenu(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-300 focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder-slate-800" />
+                </div>
+                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
+                  <div className="flex justify-between items-center mb-2 px-1">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Protein g</span>
+                    <span className="text-3xl font-black text-emerald-400">{Number(protein).toFixed(1)}g</span>
+                  </div>
+                  <input type="range" min="0" max="110" step="0.1" value={protein} onChange={e => setProtein(e.target.value)} className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
+                </div>
+                <button type="submit" className="w-full bg-emerald-600 text-white py-5 rounded-[1.5rem] font-black text-lg tracking-widest shadow-xl active:scale-95 transition-all hover:bg-emerald-500">{editingId ? "修正を同期" : "レポを同期"}</button>
+              </form>
+            </section>
+
+            <section className="space-y-3">
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center"><History size={14} className="mr-2" /> Today's Log</h2>
+                <span className="text-[8px] bg-slate-800 text-slate-400 px-2 py-1 rounded-full font-black uppercase tracking-tighter">{meals.length} Records</span>
+              </div>
+              {meals.map(m => (
+                <div key={m.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-[10px] font-black text-slate-500 uppercase border border-slate-700">{m.mealType}</div>
+                    <div>
+                      <p className="text-base font-bold text-white tracking-tight leading-none mb-1">{m.mainMenu}</p>
+                      <p className="text-[10px] text-slate-500">{m.sideMenu} • {new Date(m.timestamp).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <span className="text-lg font-black text-emerald-400">+{Number(m.protein).toFixed(1)}g</span>
+                    </div>
+                    <div className="flex flex-col space-y-2 border-l border-slate-800 pl-4">
+                      <button onClick={() => editMeal(m)} className="text-slate-600 hover:text-emerald-400 transition-colors"><Edit3 size={14} /></button>
+                      <button onClick={() => deleteMeal(m.id)} className="text-slate-600 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </section>
+          </div>
+        )}
+
+        {/* AI Suggest View */}
+        {activeTab === 'suggest' && (
+          <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-3xl">
+              <p className="text-[10px] text-emerald-400 text-center font-black tracking-widest uppercase">Analysis Result: Optimized Menu</p>
+            </div>
+            {gap <= 0 ? (
+              <div className="py-20 text-center">
+                <div className="inline-block p-5 bg-emerald-500/10 rounded-full mb-6 border border-emerald-500/20"><CheckCircle2 size={48} className="text-emerald-500" /></div>
+                <h3 className="text-xl font-black text-white mb-2">Goal Accomplished!</h3>
+                <p className="text-sm text-slate-500">本日のタンパク質目標は完全に達成されました。<br/>規律ある管理に敬意を表します。</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {suggestions.map((opt, i) => (
+                  <div key={i} className="bg-slate-900 border border-slate-800 p-5 rounded-[2.5rem] shadow-2xl space-y-4 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-125 transition-transform duration-700" />
+                    <div className="flex justify-between items-center relative z-10">
+                      <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Option {String.fromCharCode(65+i)}</span>
+                      <span className="bg-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-xl text-xl font-black">+{opt.p.toFixed(1)}g</span>
+                    </div>
+                    <div className="relative z-10">
+                      <h3 className="text-white font-black text-xl tracking-tight leading-tight">{opt.main}</h3>
+                      <p className="text-slate-400 text-sm mt-2 flex items-center italic">
+                        <Search size={14} className="mr-2 text-emerald-600" /> {opt.side}
+                      </p>
+                    </div>
+                    <p className="text-slate-500 text-[10px] leading-snug italic border-t border-slate-800 pt-4 opacity-80 uppercase tracking-tighter">
+                      Analysis: Optimized for current Gap and functional benefits
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Stats View (Placeholder) */}
+        {activeTab === 'history' && (
+          <div className="py-20 text-center animate-in zoom-in-95 duration-300">
+            <div className="inline-block p-6 bg-slate-900 rounded-full mb-6 border border-slate-800"><TrendingUp size={48} className="text-slate-700" /></div>
+            <h3 className="text-lg font-black text-slate-500 mb-2 uppercase">Analysis Progress</h3>
+            <p className="text-xs text-slate-700 italic px-10">週次中間レポート、および月末の推移まとめは<br/>ニモさんの規律に基づいて自動生成されます。</p>
+          </div>
+        )}
+      </main>
+
+      {/* Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-950/90 backdrop-blur-xl border-t border-slate-800 flex justify-around p-4 safe-area-bottom shadow-2xl z-[100]">
+        {[
+          { id: 'record', icon: Utensils, label: 'Record' },
+          { id: 'suggest', icon: ChefHat, label: 'Suggest' },
+          { id: 'history', icon: TrendingUp, label: 'Stats' }
+        ].map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex flex-col items-center space-y-1 transition-all ${activeTab === t.id ? 'text-emerald-400 scale-110' : 'text-slate-600 hover:text-slate-400'}`}>
+            <t.icon size={activeTab === t.id ? 28 : 24} strokeWidth={activeTab === t.id ? 3 : 2} />
+            <span className="text-[9px] font-black uppercase tracking-widest">{t.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+};
+
+export default App;uery, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { 
   Utensils, 
   Plus, 
