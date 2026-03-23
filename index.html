@@ -1,393 +1,348 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, query, doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
-import { 
-  Utensils, 
-  History, 
-  Zap, 
-  CheckCircle2, 
-  ChefHat, 
-  ChevronRight,
-  TrendingUp,
-  Trash2,
-  Edit3,
-  Search,
-  RefreshCw,
-  AlertCircle
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Meal Log v7.2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; -webkit-tap-highlight-color: transparent; }
+        .protein-gauge { transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { display: none; }
+        input[type="range"] { -webkit-appearance: none; background: #1e293b; height: 6px; border-radius: 5px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 26px; width: 26px; border-radius: 50%; background: #10b981; border: 4px solid #020617; box-shadow: 0 0 15px rgba(16,185,129,0.5); cursor: pointer; }
+    </style>
+</head>
+<body class="text-slate-100 antialiased overflow-x-hidden">
 
-// --- Firebase Configuration ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'nimo-eats-logic-v4-7';
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col bg-slate-950 relative border-x border-slate-900 shadow-2xl">
+        
+        <!-- Header: Protein Stats -->
+        <header class="bg-slate-900/95 backdrop-blur-xl p-6 rounded-b-[2.5rem] sticky top-0 z-50 border-b border-slate-800 shadow-2xl">
+            <div id="toast-container" class="absolute top-2 left-0 right-0 flex justify-center pointer-events-none z-[110]"></div>
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-xl font-black text-emerald-400 tracking-tighter leading-none">MEAL LOG v7.2</h1>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-1">Strategic Strategic Pro</p>
+                </div>
+                <div onclick="fetchData()" class="p-2 bg-slate-800 rounded-xl text-slate-500 cursor-pointer active:scale-90 transition-all">
+                    <i data-lucide="refresh-cw" class="w-4 h-4" id="sync-icon"></i>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-end leading-none">
+                    <span class="text-[10px] text-slate-500 font-black uppercase tracking-widest leading-none">Target 120g P</span>
+                    <span id="header-p-display" class="text-3xl font-black leading-none">0.0<span class="text-xs text-slate-600 ml-1">g</span></span>
+                </div>
+                <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                    <div id="p-gauge" class="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] protein-gauge" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-[10px] font-black uppercase tracking-tighter">
+                    <span id="p-percent" class="text-slate-600 font-bold">0% Done</span>
+                    <span class="text-slate-500">Gap: <span id="gap-display" class="text-emerald-400 font-black">120.0g</span></span>
+                </div>
+            </div>
+        </header>
 
-const TARGET_PROTEIN = 120;
+        <!-- View Screens -->
+        <main class="flex-1 p-5 pb-32 overflow-y-auto">
+            
+            <!-- Record Tab -->
+            <div id="view-record" class="space-y-6">
+                <div onclick="recordQuickBreakfast()" class="w-full bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-between shadow-xl cursor-pointer active:scale-95 transition-all">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-emerald-400/10 p-2 rounded-xl text-emerald-400"><i data-lucide="zap"></i></div>
+                        <div class="text-left">
+                            <p class="font-bold text-white leading-none mb-1">朝セットを記録</p>
+                            <p class="text-[10px] text-slate-500 font-black uppercase tracking-wider">45.0g P (納豆込)</p>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="text-slate-600"></i>
+                </div>
 
-const App = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [meals, setMeals] = useState([]);
-  const [activeTab, setActiveTab] = useState('record');
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [isSyncing, setIsSyncing] = useState(false);
+                <div class="bg-slate-900/50 border border-slate-800 p-6 rounded-[2.5rem] space-y-5 shadow-2xl">
+                    <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800" id="type-selector">
+                        <button onclick="setMealType('朝')" class="type-btn flex-1 py-2.5 text-[10px] font-black rounded-lg text-slate-600">朝</button>
+                        <button onclick="setMealType('昼')" class="type-btn flex-1 py-2.5 text-[10px] font-black rounded-lg bg-emerald-600 text-white shadow-lg">昼</button>
+                        <button onclick="setMealType('夜')" class="type-btn flex-1 py-2.5 text-[10px] font-black rounded-lg text-slate-600">夜</button>
+                        <button onclick="setMealType('他')" class="type-btn flex-1 py-2.5 text-[10px] font-black rounded-lg text-slate-600">他</button>
+                    </div>
+                    <input id="in-main" type="text" placeholder="主菜 (タンパク源)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-4 font-bold text-white outline-none focus:ring-1 focus:ring-emerald-500" />
+                    <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 text-center">
+                        <div class="flex justify-between items-center mb-2 px-1">
+                            <span class="text-[10px] text-slate-500 font-black">ESTIMATED PROTEIN</span>
+                            <span id="form-p-label" class="text-3xl font-black text-emerald-400">25.0g</span>
+                        </div>
+                        <input type="range" id="in-protein" min="0" max="110" step="0.5" value="25" oninput="document.getElementById('form-p-label').innerText = parseFloat(this.value).toFixed(1)+'g'" class="w-full mt-3" />
+                    </div>
+                    <button onclick="saveFromForm()" class="w-full bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black text-lg tracking-widest shadow-xl active:scale-95 transition-all">レポを同期</button>
+                </div>
 
-  // Form State
-  const [mealType, setMealType] = useState('昼');
-  const [mainMenu, setMainMenu] = useState('');
-  const [sideMenu, setSideMenu] = useState('');
-  const [protein, setProtein] = useState(25.0);
+                <div class="space-y-4">
+                    <h2 class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Today's Records</h2>
+                    <div id="log-list" class="space-y-3"></div>
+                </div>
+            </div>
 
-  // --- Auth & Initial Load ---
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
+            <!-- Suggest Tab -->
+            <div id="view-suggest" class="hidden space-y-4">
+                <div class="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-3xl text-center mb-4">
+                    <p class="text-[10px] text-emerald-400 font-black uppercase tracking-[0.2em]">Strategic Suggestions</p>
+                </div>
+                <div id="suggest-list" class="space-y-4">
+                    <!-- Suggested menus injected here -->
+                </div>
+                <div id="debug-info" class="mt-8 p-4 bg-slate-900/30 border border-slate-800 rounded-2xl text-[9px] font-mono text-slate-600 leading-tight"></div>
+            </div>
+
+            <!-- Stats Tab -->
+            <div id="view-stats" class="hidden py-20 text-center px-10">
+                <i data-lucide="trending-up" class="text-slate-700 mx-auto mb-8 w-12 h-12"></i>
+                <h3 class="text-xl font-black text-slate-500 mb-3 uppercase tracking-widest leading-none">Strategic Monitor</h3>
+                <p class="text-xs text-slate-700 italic leading-relaxed font-bold">週次中間レポート、および月末の推移まとめは、スプレッドシートに基づき自動生成されます。</p>
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-950/95 border-t border-slate-800 flex justify-around p-4 safe-area-bottom shadow-2xl z-[100] backdrop-blur-xl">
+            <div onclick="switchTab('record')" id="nav-record" class="flex flex-col items-center text-emerald-400 cursor-pointer">
+                <i data-lucide="list-checks" stroke-width="3"></i>
+                <span class="text-[9px] font-black uppercase mt-1 tracking-widest">Log</span>
+            </div>
+            <div onclick="switchTab('suggest')" id="nav-suggest" class="flex flex-col items-center text-slate-600 cursor-pointer">
+                <i data-lucide="chef-hat"></i>
+                <span class="text-[9px] font-black uppercase mt-1 tracking-widest">Idea</span>
+            </div>
+            <div onclick="switchTab('stats')" id="nav-stats" class="flex flex-col items-center text-slate-600 cursor-pointer">
+                <i data-lucide="trending-up"></i>
+                <span class="text-[9px] font-black uppercase mt-1 tracking-widest">Stats</span>
+            </div>
+        </nav>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec";
+        const TARGET_PROTEIN = 120;
+
+        // --- All 57 Menu Database (Strategic Assets) ---
+        const MENU_POOL = [
+            { main: "牛肉ステーキ", p: 40.0, side: "ブロッコリーサラダ" },
+            { main: "チキンステーキ", p: 40.0, side: "野菜・アボカド" },
+            { main: "鶏むね肉の低温調理", p: 35.0, side: "ブロッコリースプラウト" },
+            { main: "手巻き寿司", p: 35.0, side: "海苔・酢飯・卵" },
+            { main: "鹿肉ステーキ", p: 34.0, side: "舞茸のソテー" },
+            { main: "ラムチョップ香草焼き", p: 32.0, side: "焼きトマト" },
+            { main: "生ラム肉のグリル", p: 32.0, side: "焼き玉ねぎ" },
+            { main: "牛赤身肉のタリアータ", p: 31.0, side: "ルッコラ" },
+            { main: "刺身盛り合わせ", p: 30.0, side: "ほうれん草お浸し" },
+            { main: "生カツオのたたき", p: 28.5, side: "玉ねぎ・ポン酢" },
+            { main: "サーモンステーキ", p: 28.0, side: "アスパラ" },
+            { main: "砂肝のコンフィ", p: 25.0, side: "ブロッコリー" },
+            { main: "茹で豚の冷しゃぶ", p: 26.0, side: "叩ききゅうり" },
+            { main: "ブリの照り焼き", p: 26.0, side: "長いも" },
+            { main: "真鯛のアクアパッツァ", p: 26.0, side: "あさり" },
+            { main: "うなぎの白焼き", p: 25.0, side: "肝吸い" },
+            { main: "サバ味噌煮缶", p: 20.9, side: "雑穀米少量" }
+        ];
+
+        let state = {
+            currentTab: 'record',
+            history: [],
+            todaysMeals: [],
+            mealType: '昼',
+            isSyncing: false
+        };
+
+        window.onload = () => {
+            fetchData();
+            updateUI(); // First render
+            if(window.lucide) lucide.createIcons();
+        };
+
+        async function fetchData() {
+            const icon = document.getElementById('sync-icon');
+            if(icon) icon.classList.add('animate-spin');
+            try {
+                const res = await fetch(GAS_URL);
+                const data = await res.json();
+                state.history = data.map(d => ({
+                    main: (d.main || d.mainMenu || "").trim(),
+                    protein: parseFloat(d.protein || 0),
+                    timestamp: d.timestamp,
+                    type: d.type || d.mealType || "他"
+                }));
+                const today = new Date().toDateString();
+                state.todaysMeals = state.history.filter(m => new Date(m.timestamp).toDateString() === today);
+                showToast("SYNC COMPLETE");
+            } catch (e) {
+                showToast("OFFLINE MODE");
+            } finally {
+                if(icon) icon.classList.remove('animate-spin');
+                updateUI();
+            }
         }
-      } catch (error) { console.error("Auth failed", error); }
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
-    return () => unsubscribe();
-  }, []);
 
-  // --- Real-time Data Sync ---
-  useEffect(() => {
-    if (!user) return;
-    const today = new Date().toISOString().split('T')[0];
-    const q = collection(db, 'artifacts', appId, 'users', user.uid, 'meal_logs');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedMeals = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(m => m.timestamp && m.timestamp.startsWith(today))
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      setMeals(fetchedMeals);
-    }, (err) => console.error("Firestore error", err));
-    return () => unsubscribe();
-  }, [user]);
+        function updateUI() {
+            renderHeader();
+            renderLogList();
+            renderSuggestions();
+        }
 
-  // --- Calculations ---
-  const currentProtein = useMemo(() => meals.reduce((sum, m) => sum + (Number(m.protein) || 0), 0), [meals]);
-  const gap = Math.max(0, TARGET_PROTEIN - currentProtein);
-  const progress = Math.min((currentProtein / TARGET_PROTEIN) * 100, 100);
+        function renderHeader() {
+            const currentP = state.todaysMeals.reduce((sum, m) => sum + m.protein, 0);
+            const gap = Math.max(0, TARGET_PROTEIN - currentP);
+            const progress = Math.min((currentP / TARGET_PROTEIN) * 100, 100);
 
-  // --- Actions ---
-  const handleSaveMeal = async (e) => {
-    if (e) e.preventDefault();
-    if (!user || !mainMenu) return;
-    setIsSyncing(true);
-    
-    const existingTimestamp = editingId ? meals.find(m => m.id === editingId)?.timestamp : null;
-    const mealData = {
-      timestamp: existingTimestamp || new Date().toISOString(),
-      mealType, mainMenu, sideMenu: sideMenu || '-',
-      protein: parseFloat(protein),
-    };
+            document.getElementById('header-p-display').innerHTML = `${currentP.toFixed(1)}<span class="text-xs text-slate-600 ml-1">g</span>`;
+            document.getElementById('p-gauge').style.width = `${progress}%`;
+            document.getElementById('p-percent').innerText = `${progress.toFixed(0)}% Done`;
+            document.getElementById('gap-display').innerText = `${gap.toFixed(1)}g`;
+        }
 
-    try {
-      if (editingId) {
-        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'meal_logs', editingId), mealData);
-        setEditingId(null);
-      } else {
-        await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'meal_logs'), mealData);
-      }
-      setMainMenu(''); setSideMenu(''); setProtein(25.0);
-      setShowSuccess(true); setTimeout(() => setShowSuccess(false), 3000);
-    } catch (err) { console.error("Save error", err); }
-    setIsSyncing(false);
-  };
-
-  const recordQuickBreakfast = async () => {
-    if (!user) return;
-    setIsSyncing(true);
-    const breakfast = {
-      timestamp: new Date().toISOString(), mealType: '朝',
-      mainMenu: '朝セット（納豆込み）', sideMenu: 'マカ・プロテイン・コーヒー', protein: 45.0
-    };
-    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'meal_logs'), breakfast);
-    setIsSyncing(false);
-    setShowSuccess(true); setTimeout(() => setShowSuccess(false), 3000);
-  };
-
-  const editMeal = (m) => {
-    setEditingId(m.id); setMealType(m.mealType); setMainMenu(m.mainMenu);
-    setSideMenu(m.sideMenu); setProtein(m.protein); setActiveTab('record');
-  };
-
-  const deleteMeal = async (id) => {
-    if (!user || !window.confirm("このレポを削除しますか？")) return;
-    await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'meal_logs', id));
-  };
-
-  // --- 57 Strategic Menu Pool ---
-  const menuPool = [
-    // 既存 37種
-    { main: "牛肉ステーキ", side: "ブロッコリーサラダ", p: 40.0, kw: ["牛", "鉄分"] },
-    { main: "チキンステーキ", side: "野菜スティック・アボカド", p: 40.0, kw: ["鶏", "アボカド"] },
-    { main: "鶏むね肉の低温調理", side: "ブロッコリースプラウト", p: 35.0, kw: ["鶏", "抗酸化"] },
-    { main: "手巻き寿司", side: "海苔・酢飯(少量)・卵", p: 35.0, kw: ["魚", "海鮮"] },
-    { main: "鹿肉ステーキ", side: "舞茸のソテー", p: 34.0, kw: ["鹿", "鉄分"] },
-    { main: "ラムチョップ香草焼き", side: "焼きトマト・ズッキーニ", p: 32.0, kw: ["羊", "カルニチン"] },
-    { main: "厚揚げと鶏肉の煮物", side: "小松菜", p: 32.0, kw: ["鶏", "豆腐"] },
-    { main: "豚ヒレ肉のピカタ", side: "粉チーズ・パセリ添え", p: 31.0, kw: ["豚", "低脂質"] },
-    { main: "赤身牛のローストビーフ", side: "クレソン", p: 30.0, kw: ["牛", "赤身"] },
-    { main: "刺身盛り合わせ", side: "ほうれん草お浸し", p: 30.0, kw: ["魚", "血管ケア"] },
-    { main: "豆乳鍋（鶏肉・団子）", side: "春菊・しいたけ", p: 30.0, kw: ["鶏", "温活"] },
-    { main: "生カツオのたたき", side: "玉ねぎスライス・ポン酢", p: 28.5, kw: ["魚", "カツオ"] },
-    { main: "サーモンステーキ", side: "アスパラガスのグリル", p: 28.0, kw: ["サケ", "Tie2"] },
-    { main: "レバニラ炒め", side: "キクラゲと卵の炒め物", p: 28.0, kw: ["レバー", "造血"] },
-    { main: "茹で鶏のバンバンジー", side: "クラゲと胡瓜の酢の物", p: 28.0, kw: ["鶏", "疲労回復"] },
-    { main: "ネギトロ丼", side: "納豆・めかぶ", p: 28.0, kw: ["マグロ", "血管ケア"] },
-    { main: "カジキマグロのソテー", side: "ピーマンのジャコ炒め", p: 27.0, kw: ["魚", "カジキ"] },
-    { main: "茹で豚の冷しゃぶ", side: "叩ききゅうり（梅肉）", p: 26.0, kw: ["豚", "クエン酸"] },
-    { main: "真鯛のアクアパッツァ", side: "あさりとドライトマト", p: 26.0, kw: ["魚", "タウリン"] },
-    { main: "ブリの照り焼き", side: "叩き長いも", p: 26.0, kw: ["ブリ", "DHA"] },
-    { main: "サケのホイル焼き", side: "きのこ類・レモン", p: 26.0, kw: ["サケ", "免疫"] },
-    { main: "うなぎの白焼き", side: "肝吸い・わさび", p: 25.0, kw: ["うなぎ", "精力"] },
-    { main: "厚揚げの肉巻き", side: "オクラの胡麻和え", p: 25.0, kw: ["厚揚げ", "繊維"] },
-    { main: "マグロの山かけ", side: "刻み海苔・わさび", p: 25.0, kw: ["マグロ", "血流"] },
-    { main: "豚キムチ", side: "アボカドトマトサラダ", p: 25.0, kw: ["豚", "発酵"] },
-    { main: "寒サバの塩焼き", side: "大根おろし・なめこ汁", p: 24.0, kw: ["サバ", "EPA"] },
-    { main: "イカの刺身", side: "納豆・めかぶ和え", p: 24.0, kw: ["イカ", "タウリン"] },
-    { main: "エビのチリソース", side: "卵とレタスのスープ", p: 24.0, kw: ["海老", "代謝"] },
-    { main: "サワラの西京焼き", side: "小松菜のお浸し", p: 24.0, kw: ["サワラ", "魚"] },
-    { main: "金目鯛の煮付け", side: "ゴボウのきんぴら", p: 23.0, kw: ["金目鯛", "美肌"] },
-    { main: "ゴーヤチャンプルー", side: "島豆腐・削り節", p: 23.0, kw: ["豚", "血糖"] },
-    { main: "蒸し牡蠣（レモン）", side: "ほうれん草のソテー", p: 22.0, kw: ["牡蠣", "亜鉛"] },
-    { main: "鶏レバーの甘辛煮", side: "ピーマンの素焼き", p: 22.0, kw: ["レバー", "ビタミンA"] },
-    { main: "秋刀魚の塩焼き", side: "きのこたっぷり味噌汁", p: 22.0, kw: ["サンマ", "オメガ3"] },
-    { main: "銀だらの西京焼き", side: "具沢山けんちん汁", p: 21.0, kw: ["魚", "不飽和脂質"] },
-    { main: "サバ味噌煮缶", side: "雑穀米(少量)・生姜漬", p: 20.9, kw: ["サバ", "Tie2"] },
-    { main: "いわし団子汁", side: "根菜たっぷり煮物", p: 20.0, kw: ["いわし", "EPA"] },
-    // 追加 20種
-    { main: "生ラム肉のグリル", side: "焼き玉ねぎ・アスパラ", p: 32.0, kw: ["羊", "カルニチン"] },
-    { main: "ホタテのカルパッチョ", side: "ベビーリーフ・オリーブ油", p: 20.0, kw: ["ホタテ", "タウリン"] },
-    { main: "茹でタコの刺身", side: "納豆・オクラ和え", p: 22.5, kw: ["タコ", "亜鉛"] },
-    { main: "鶏むね肉のガパオ風", side: "目玉焼き・レタス包み", p: 28.0, kw: ["鶏", "バジル"] },
-    { main: "真いわしの生姜煮", side: "きのことワカメの酢の物", p: 21.0, kw: ["いわし", "中性脂肪"] },
-    { main: "アサリと豆腐のチゲ", side: "春菊・長ネギ", p: 24.0, kw: ["アサリ", "血行"] },
-    { main: "メカジキのハーブステーキ", side: "ブロッコリーのガーリック", p: 26.0, kw: ["魚", "毛細血管"] },
-    { main: "牛赤身肉のタリアータ", side: "ルッコラ・粉チーズ", p: 31.0, kw: ["牛", "鉄分"] },
-    { main: "カツオのレアカツ", side: "大根おろし・ポン酢", p: 27.0, kw: ["カツオ", "尿酸ケア"] },
-    { main: "サケの南蛮漬け", side: "玉ねぎ・人参・ピーマン", p: 25.0, kw: ["サケ", "酢"] },
-    { main: "厚揚げのニラ玉炒め", side: "トマトサラダ", p: 21.0, kw: ["厚揚げ", "アリシン"] },
-    { main: "ホッケの開き", side: "具沢山なめこ汁", p: 23.0, kw: ["魚", "満足度"] },
-    { main: "鶏レバーの赤ワイン煮", side: "ほうれん草のソテー", p: 24.0, kw: ["鶏", "ポリフェノール"] },
-    { main: "豆腐と海老の蒸し物", side: "チンゲン菜のあんかけ", p: 22.0, kw: ["豆腐", "消化良好"] },
-    { main: "スモークサーモンとアボカド", side: "くるみ・オニオンサラダ", p: 19.0, kw: ["サケ", "ビタミンE"] },
-    { main: "納豆オムレツ", side: "しらす・大根おろし", p: 20.5, kw: ["卵", "血栓予防"] },
-    { main: "ラム肉とキャベツの蒸し煮", side: "生姜ポン酢", p: 26.0, kw: ["羊", "胃腸ケア"] },
-    { main: "穴子の白焼き", side: "叩ききゅうり", p: 22.0, kw: ["穴子", "精力"] },
-    { main: "砂肝のコンフィ風", side: "ブロッコリー・パプリカ", p: 25.0, kw: ["鶏", "亜鉛"] },
-    { main: "豆乳担々湯豆腐", side: "挽肉(少)・ザーサイ", p: 23.0, kw: ["豆腐", "血糖防止"] }
-  ];
-
-  const suggestions = useMemo(() => {
-    if (gap <= 0) return [];
-    const recentMains = meals.map(m => m.mainMenu.toLowerCase());
-    let filtered = menuPool.filter(menu => !recentMains.some(recent => menu.main.toLowerCase().includes(recent) || menu.kw.some(k => recent.includes(k.toLowerCase()))));
-    if (filtered.length < 3) filtered = menuPool;
-    return filtered.sort((a, b) => Math.abs(gap - a.p) - Math.abs(gap - b.p)).slice(0, 3);
-  }, [meals, gap]);
-
-  if (loading) return (
-    <div className="h-screen bg-slate-950 flex flex-col items-center justify-center text-emerald-500 font-black animate-pulse">
-      <RefreshCw size={48} className="mb-4 animate-spin" />
-      <span className="uppercase tracking-[0.2em] text-xs text-center">Initializing Strategic Engine<br/>v4.7 Enterprise</span>
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-24 font-sans max-w-md mx-auto relative flex flex-col shadow-2xl overflow-hidden border-x border-slate-900">
-      
-      {/* Header */}
-      <header className="bg-slate-900/95 backdrop-blur-xl p-6 rounded-b-[2.5rem] border-b border-slate-800 sticky top-0 z-[100] shadow-xl">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-xl font-black tracking-tighter text-emerald-400">MEAL LOG v4.7</h1>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest leading-none">Strategic Management Hub</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            {isSyncing && <RefreshCw size={14} className="text-emerald-500 animate-spin" />}
-            <div className="p-2 rounded-xl bg-slate-800 border border-slate-700">
-              <Zap size={18} className="text-emerald-400" />
-            </div>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="flex justify-between items-end">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Target 120g P</span>
-            <span className="text-3xl font-black text-white leading-none">{currentProtein.toFixed(1)}<span className="text-xs text-slate-600 ml-1">g</span></span>
-          </div>
-          <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
-            <div className="h-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
-          </div>
-          <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-            <span className={progress >= 100 ? "text-emerald-400" : "text-slate-600"}>{progress.toFixed(0)}% Done</span>
-            <span className="text-slate-500">Gap: <span className="text-emerald-400">{gap.toFixed(1)}g</span></span>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 p-5 space-y-6 overflow-y-auto">
-        {showSuccess && (
-          <div className="bg-emerald-500 text-white px-4 py-3 rounded-2xl flex items-center text-[10px] font-black uppercase tracking-widest animate-in fade-in slide-in-from-top-2 shadow-lg z-50">
-            <CheckCircle2 size={16} className="mr-2" /> Data Synced Successfully.
-          </div>
-        )}
-
-        {/* Record View */}
-        {activeTab === 'record' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <button onClick={recordQuickBreakfast} className="w-full bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-between shadow-xl active:scale-95 transition-all group">
-              <div className="flex items-center space-x-4">
-                <div className="bg-emerald-500/10 p-2 rounded-xl text-emerald-400 group-hover:bg-emerald-500/20 transition-colors"><Zap size={24} /></div>
-                <div className="text-left">
-                  <p className="text-base font-bold text-white tracking-tight">朝セットを記録</p>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Protein 45.0g (納豆込)</p>
+        function renderLogList() {
+            const list = document.getElementById('log-list');
+            if (state.todaysMeals.length === 0) {
+                list.innerHTML = '<p class="text-center py-10 text-slate-700 italic text-sm animate-in">No records found today.</p>';
+                return;
+            }
+            list.innerHTML = state.todaysMeals.map(m => `
+                <div class="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-lg animate-in">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-[10px] font-black text-slate-500 border border-slate-700 uppercase">${m.type}</div>
+                        <div class="text-left">
+                            <p class="font-bold text-white tracking-tight leading-none mb-1">${m.main}</p>
+                            <p class="text-[10px] text-slate-500 leading-none">${new Date(m.timestamp).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</p>
+                        </div>
+                    </div>
+                    <span class="text-lg font-black text-emerald-400">+${m.protein.toFixed(1)}g</span>
                 </div>
-              </div>
-              <ChevronRight className="text-slate-600 group-hover:text-emerald-400 transition-colors" size={20} />
-            </button>
+            `).join('');
+        }
 
-            <section className={`bg-slate-900/50 border ${editingId ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'border-slate-800'} rounded-[2.5rem] p-6 shadow-2xl transition-all`}>
-              <div className="flex justify-between items-center mb-6 px-1">
-                <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
-                  <Utensils size={14} className="mr-2 text-emerald-500" /> {editingId ? "Edit Report" : "Meal Report"}
-                </h2>
-                {editingId && (
-                  <button onClick={() => { setEditingId(null); setMainMenu(''); setSideMenu(''); setProtein(25.0); }} className="text-[10px] font-black text-red-400 bg-red-900/10 px-3 py-1 rounded-full uppercase tracking-tighter hover:bg-red-900/20">Cancel</button>
-                )}
-              </div>
-              <form onSubmit={handleSaveMeal} className="space-y-5">
-                <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
-                  {['朝', '昼', '夜', '他'].map(t => (
-                    <button key={t} type="button" onClick={() => setMealType(t)} className={`flex-1 py-2.5 text-xs font-black rounded-lg transition-all ${mealType === t ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-400'}`}>{t}</button>
-                  ))}
+        function renderSuggestions() {
+            const list = document.getElementById('suggest-list');
+            const currentP = state.todaysMeals.reduce((sum, m) => sum + m.protein, 0);
+            const gap = Math.max(0, TARGET_PROTEIN - currentP);
+
+            if (gap <= 0) {
+                list.innerHTML = `
+                    <div class="py-20 text-center animate-in">
+                        <i data-lucide="check-circle-2" class="text-emerald-500 mx-auto mb-4 w-12 h-12"></i>
+                        <h3 class="text-2xl font-black text-white uppercase tracking-tighter mb-2">Goal Accomplished</h3>
+                        <p class="text-sm text-slate-500 italic">Discipline leads to freedom.</p>
+                    </div>`;
+                if(window.lucide) lucide.createIcons();
+                return;
+            }
+
+            // ロジック：直近の履歴と被らないものを抽出
+            const recent = state.history.slice(-10).map(h => (h.main || "").toLowerCase().trim()).filter(n => n.length > 0);
+            let candidates = MENU_POOL.filter(m => {
+                const name = m.main.toLowerCase().trim();
+                return !recent.some(r => name.includes(r) || r.includes(name));
+            });
+
+            // セーフティ：候補が枯渇したら全プールから
+            if (candidates.length < 3) candidates = MENU_POOL;
+
+            // 不足分(gap)に近い順にソート
+            const sorted = candidates.sort((a, b) => Math.abs(gap - a.p) - Math.abs(gap - b.p)).slice(0, 3);
+
+            list.innerHTML = sorted.map((opt, i) => `
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] shadow-2xl space-y-4 relative overflow-hidden group active:scale-95 transition-all">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16"></div>
+                    <div class="flex justify-between items-center relative z-10">
+                        <span class="text-[10px] font-black text-emerald-400 uppercase tracking-widest leading-none">Option ${String.fromCharCode(65+i)}</span>
+                        <span class="bg-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-xl text-2xl font-black leading-none shadow-inner">+${opt.p.toFixed(1)}g</span>
+                    </div>
+                    <div class="relative z-10 text-left">
+                        <h3 class="text-white font-black text-xl tracking-tight leading-tight mb-2">${opt.main}</h3>
+                        <p class="text-slate-400 text-sm italic font-medium leading-none">${opt.side}</p>
+                    </div>
                 </div>
-                <div className="space-y-3">
-                  <input type="text" placeholder="主菜 (タンパク源)" value={mainMenu} onChange={e => setMainMenu(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-4 text-lg font-bold text-white focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder-slate-800 shadow-inner" />
-                  <input type="text" placeholder="副菜" value={sideMenu} onChange={e => setSideMenu(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-300 focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder-slate-800 shadow-inner" />
-                </div>
-                <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4 shadow-inner">
-                  <div className="flex justify-between items-center px-1">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Est. Protein g</span>
-                    <span className="text-4xl font-black text-emerald-400 leading-none">{Number(protein).toFixed(1)}g</span>
-                  </div>
-                  <input type="range" min="0" max="110" step="0.1" value={protein} onChange={e => setProtein(e.target.value)} className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" />
-                </div>
-                <button type="submit" disabled={isSyncing} className="w-full bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black text-lg tracking-widest shadow-xl active:scale-95 transition-all hover:bg-emerald-500 disabled:opacity-50 flex justify-center items-center">
-                  {isSyncing ? <RefreshCw className="animate-spin mr-2" /> : null}
-                  {editingId ? "修正を確定" : "レポを同期"}
-                </button>
-              </form>
-            </section>
+            `).join('');
 
-            <section className="space-y-4">
-              <div className="flex items-center justify-between mb-2 px-1">
-                <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center"><History size={14} className="mr-2" /> Today's Log</h2>
-                <div className="h-px bg-slate-800 flex-1 ml-4" />
-              </div>
-              {meals.length === 0 ? (
-                <div className="text-center py-10 text-slate-700 italic text-sm">No records found for today.</div>
-              ) : (
-                meals.map(m => (
-                  <div key={m.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-lg hover:border-slate-700 transition-all">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-[10px] font-black text-slate-500 uppercase border border-slate-700">{m.mealType}</div>
-                      <div>
-                        <p className="text-base font-bold text-white tracking-tight leading-none mb-1">{m.mainMenu}</p>
-                        <p className="text-[10px] text-slate-500">{m.sideMenu} • {new Date(m.timestamp).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <span className="text-lg font-black text-emerald-400">+{Number(m.protein).toFixed(1)}g</span>
-                      </div>
-                      <div className="flex flex-col space-y-2 border-l border-slate-800 pl-4">
-                        <button onClick={() => editMeal(m)} className="text-slate-600 hover:text-emerald-400 transition-colors"><Edit3 size={14} /></button>
-                        <button onClick={() => deleteMeal(m.id)} className="text-slate-600 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </section>
-          </div>
-        )}
+            document.getElementById('debug-info').innerHTML = `ENGINE: History=${state.history.length}, Candidates=${candidates.length}, Gap=${gap.toFixed(1)}g`;
+            if(window.lucide) lucide.createIcons();
+        }
 
-        {/* Suggest View */}
-        {activeTab === 'suggest' && (
-          <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-            <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-3xl mb-4">
-              <p className="text-[10px] text-emerald-400 text-center font-black tracking-widest uppercase">Nimo-Eats Logic: Optimized Recommendations</p>
-            </div>
-            {gap <= 0 ? (
-              <div className="py-20 text-center">
-                <div className="inline-block p-6 bg-emerald-500/10 rounded-full mb-6 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.2)]"><CheckCircle2 size={56} className="text-emerald-500" /></div>
-                <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Goal Accomplished</h3>
-                <p className="text-sm text-slate-500 px-10 leading-relaxed font-medium">本日のタンパク質目標は完全に達成されました。規律ある管理に敬意を表します。明日の16時間ファスティングに備え、良質な睡眠を。</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {suggestions.map((opt, i) => (
-                  <div key={i} className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] shadow-2xl space-y-4 relative group hover:border-emerald-500/50 transition-all overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 group-hover:bg-emerald-500/10 transition-all duration-700" />
-                    <div className="flex justify-between items-center relative z-10">
-                      <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Optimal Plan {String.fromCharCode(65+i)}</span>
-                      <span className="bg-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-xl text-2xl font-black shadow-inner">+{opt.p.toFixed(1)}g</span>
-                    </div>
-                    <div className="relative z-10">
-                      <h3 className="text-white font-black text-2xl tracking-tight leading-tight mb-2">{opt.main}</h3>
-                      <div className="flex items-center text-slate-400 text-sm italic font-medium">
-                        <Search size={14} className="mr-2 text-emerald-600" />
-                        <span>{opt.side}</span>
-                      </div>
-                    </div>
-                    <div className="pt-4 border-t border-slate-800 relative z-10">
-                      <p className="text-[9px] text-slate-600 uppercase font-black tracking-widest leading-none">Status: Recommended for Current Gap</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        // --- Controller Actions ---
+        function switchTab(tabId) {
+            state.currentTab = tabId;
+            ['record', 'suggest', 'stats'].forEach(id => {
+                const view = document.getElementById(`view-${id}`);
+                const btn = document.getElementById(`nav-${id}`);
+                const icon = btn.querySelector('i');
+                if (id === tabId) {
+                    view.classList.remove('hidden');
+                    view.classList.add('animate-in');
+                    btn.classList.add('text-emerald-400');
+                    btn.classList.remove('text-slate-600');
+                    icon.setAttribute('stroke-width', '3');
+                } else {
+                    view.classList.add('hidden');
+                    btn.classList.remove('text-emerald-400');
+                    btn.classList.add('text-slate-600');
+                    icon.setAttribute('stroke-width', '2');
+                }
+            });
+            if (tabId === 'suggest') renderSuggestions();
+            if(window.lucide) lucide.createIcons();
+        }
 
-        {/* Stats View */}
-        {activeTab === 'history' && (
-          <div className="py-20 text-center animate-in zoom-in-95 duration-300 px-10">
-            <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-8 border border-slate-800 shadow-xl">
-              <TrendingUp size={40} className="text-slate-600" />
-            </div>
-            <h3 className="text-xl font-black text-slate-500 mb-3 uppercase tracking-[0.2em]">Strategic Monitor</h3>
-            <p className="text-xs text-slate-700 italic leading-relaxed font-bold">週次中間レポート、および月末の推移まとめは、スプレッドシートのログに基づき自動生成されます。規律の継続が、最大の成果への最短経路です。</p>
-          </div>
-        )}
-      </main>
+        function setMealType(type) {
+            state.mealType = type;
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                const active = btn.innerText === type;
+                btn.className = `type-btn flex-1 py-2.5 text-[10px] font-black rounded-lg transition-all ${active ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-600'}`;
+            });
+        }
 
-      {/* Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 flex justify-around p-4 safe-area-bottom shadow-2xl z-[100]">
-        {[
-          { id: 'record', icon: Utensils, label: 'Record' },
-          { id: 'suggest', icon: ChefHat, label: 'Suggest' },
-          { id: 'history', icon: TrendingUp, label: 'Monitor' }
-        ].map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex flex-col items-center space-y-1.5 transition-all duration-300 ${activeTab === t.id ? 'text-emerald-400 scale-110' : 'text-slate-600 hover:text-slate-400'}`}>
-            <t.icon size={activeTab === t.id ? 28 : 24} strokeWidth={activeTab === t.id ? 3 : 2} />
-            <span className="text-[9px] font-black uppercase tracking-widest leading-none">{t.label}</span>
-          </button>
-        ))}
-      </nav>
-    </div>
-  );
-};
+        async function saveFromForm() {
+            const main = document.getElementById('in-main').value;
+            const protein = parseFloat(document.getElementById('in-protein').value);
+            if (!main) return;
+            const meal = { timestamp: new Date().toISOString(), type: state.mealType, main, protein };
+            await executeSync(meal);
+            document.getElementById('in-main').value = '';
+            document.getElementById('in-protein').value = 25;
+            document.getElementById('form-p-label').innerText = '25.0g';
+        }
 
-export default App;
+        async function recordQuickBreakfast() {
+            const meal = { timestamp: new Date().toISOString(), type: '朝', main: '朝セット', protein: 45.0 };
+            await executeSync(meal);
+        }
+
+        async function executeSync(meal) {
+            if(state.isSyncing) return;
+            state.isSyncing = true;
+            state.todaysMeals = [meal, ...state.todaysMeals];
+            updateUI();
+            try {
+                await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(meal) });
+                showToast("SYNCED");
+            } catch (e) {
+                showToast("OFFLINE SAVE");
+            }
+            state.isSyncing = false;
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = "bg-emerald-500 text-white px-5 py-2.5 rounded-full text-[10px] font-black shadow-2xl mb-2 animate-in";
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
+
