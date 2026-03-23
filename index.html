@@ -1,807 +1,468 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>MEAL OS</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg:        #05060a;
-  --s1:        #0b0d14;
-  --s2:        #111420;
-  --border:    #1a1e2e;
-  --brt:       #252a3e;
-  --gold:      #10b981;
-  --gold-dim:  rgba(16,185,129,0.08);
-  --gold-mid:  rgba(16,185,129,0.18);
-  --gold-glow: rgba(16,185,129,0.35);
-  --text:      #dde0ea;
-  --muted:     #454a60;
-  --muted2:    #2a2f45;
-  --danger:    #e05a6a;
-  --mono: 'DM Mono', monospace;
-  --serif: 'DM Serif Display', serif;
-  --sans: 'Noto Sans JP', sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;overflow:hidden;background:var(--bg);}
-body{font-family:var(--sans);color:var(--text);}
+import React, { useState, useEffect, useMemo } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'firebase/auth';
+import { getFirestore, collection, addDoc, onSnapshot, query, doc, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { 
+  Utensils, 
+  Zap, 
+  CheckCircle2, 
+  ChefHat, 
+  ChevronRight,
+  TrendingUp,
+  Trash2,
+  Edit3,
+  Search,
+  RefreshCw,
+  Clock
+} from 'lucide-react';
 
-/* noise texture overlay */
-body::before{
-  content:'';position:fixed;inset:0;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events:none;z-index:0;opacity:0.5;
-}
+// --- Firebase Configuration ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'nimo-eats-logic-v4-8';
 
-#app{
-  max-width:430px;margin:0 auto;height:100dvh;
-  display:flex;flex-direction:column;
-  background:var(--bg);
-  position:relative;overflow:hidden;
-  border-left:1px solid var(--border);
-  border-right:1px solid var(--border);
-  z-index:1;
-}
+const TARGET_PROTEIN = 120;
 
-/* ── AMBIENT GLOW ── */
-.glow-orb{
-  position:absolute;width:300px;height:300px;border-radius:50%;
-  background:radial-gradient(circle, rgba(16,185,129,0.04) 0%, transparent 70%);
-  pointer-events:none;z-index:0;
-  top:-80px;left:50%;transform:translateX(-50%);
-}
-
-/* ── HEADER ── */
-header{
-  background:linear-gradient(180deg,var(--s1) 0%, var(--bg) 100%);
-  border-bottom:1px solid var(--border);
-  padding:18px 20px 22px;
-  flex-shrink:0;position:relative;z-index:10;
-}
-.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
-.logo-block{}
-.logo-main{
-  font-family:var(--serif);
-  font-size:20px;letter-spacing:0.04em;
-  color:var(--gold);
-  line-height:1;
-}
-.logo-sub{
-  font-family:var(--mono);font-size:8px;
-  color:var(--muted);letter-spacing:0.25em;
-  text-transform:uppercase;margin-top:5px;
-}
-.hdr-right{display:flex;align-items:center;gap:8px;}
-.date-chip{
-  font-family:var(--mono);font-size:8px;
-  color:var(--muted);letter-spacing:0.1em;
-  background:var(--s2);border:1px solid var(--border);
-  padding:5px 10px;border-radius:20px;
-}
-.sync-btn{
-  width:32px;height:32px;
-  background:var(--s2);border:1px solid var(--border);
-  border-radius:10px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all 0.2s;color:var(--muted);
-}
-.sync-btn:active{transform:scale(0.9);border-color:var(--gold);}
-.sync-btn svg{width:13px;height:13px;}
-.spin{animation:spin 1s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-
-/* gauge */
-.gauge-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;}
-.gauge-label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;}
-.gauge-main{display:flex;align-items:baseline;gap:4px;}
-.gauge-val{
-  font-family:var(--serif);font-size:36px;
-  color:var(--gold);line-height:1;
-}
-.gauge-unit{font-family:var(--mono);font-size:10px;color:var(--muted);}
-.gauge-track{
-  height:2px;background:var(--border);
-  border-radius:1px;overflow:visible;
-  position:relative;margin-bottom:10px;
-}
-.gauge-fill{
-  height:100%;background:linear-gradient(90deg,#059669,var(--gold));
-  border-radius:1px;
-  transition:width 1s cubic-bezier(0.34,1.56,0.64,1);
-  position:relative;
-}
-.gauge-fill::after{
-  content:'';position:absolute;right:-1px;top:-4px;
-  width:10px;height:10px;background:var(--gold);border-radius:50%;
-  box-shadow:0 0 12px var(--gold-glow),0 0 4px var(--gold);
-}
-.gauge-meta{display:flex;justify-content:space-between;}
-.g-pct,.g-gap{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.1em;}
-.g-gap em{color:var(--gold);font-style:normal;}
-
-/* ── MAIN SCROLL ── */
-main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
-main::-webkit-scrollbar{display:none;}
-.tab-pane{display:none;padding:18px 14px 130px;}
-.tab-pane.active{display:block;}
-
-/* section heading */
-.sec-hd{
-  font-family:var(--mono);font-size:8px;color:var(--muted);
-  letter-spacing:0.25em;text-transform:uppercase;
-  margin-bottom:10px;display:flex;align-items:center;gap:8px;
-}
-.sec-hd::after{content:'';flex:1;height:1px;background:var(--border);}
-
-/* quick btn */
-.quick-btn{
-  width:100%;background:var(--s1);
-  border:1px solid var(--border);border-radius:16px;
-  padding:14px 16px;display:flex;align-items:center;
-  justify-content:space-between;cursor:pointer;
-  transition:all 0.2s;margin-bottom:14px;
-}
-.quick-btn:active{border-color:var(--gold);background:var(--gold-dim);}
-.q-left{display:flex;align-items:center;gap:12px;}
-.q-icon{
-  width:38px;height:38px;background:var(--gold-dim);
-  border:1px solid rgba(16,185,129,0.15);border-radius:12px;
-  display:flex;align-items:center;justify-content:center;font-size:18px;
-}
-.q-title{font-size:13px;font-weight:700;color:var(--text);}
-.q-sub{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.1em;margin-top:3px;}
-.q-arr{color:var(--muted);}
-.q-arr svg{width:14px;height:14px;}
-
-/* form card */
-.form-card{
-  background:var(--s1);border:1px solid var(--border);
-  border-radius:20px;padding:18px;margin-bottom:16px;
-}
-.type-row{
-  display:flex;background:var(--bg);border:1px solid var(--border);
-  border-radius:10px;padding:3px;gap:2px;margin-bottom:16px;
-}
-.type-btn{
-  flex:1;padding:8px 0;
-  font-family:var(--mono);font-size:9px;font-weight:500;
-  letter-spacing:0.1em;border:none;background:transparent;
-  color:var(--muted);border-radius:8px;cursor:pointer;transition:all 0.2s;
-}
-.type-btn.on{background:var(--gold);color:var(--bg);}
-.fld-label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;}
-.txt-in{
-  width:100%;background:var(--bg);border:1px solid var(--border);
-  border-radius:12px;padding:14px 16px;
-  font-family:var(--sans);font-size:14px;font-weight:700;
-  color:var(--text);outline:none;transition:border-color 0.2s;margin-bottom:14px;
-}
-.txt-in:focus{border-color:var(--gold);}
-.txt-in::placeholder{color:var(--muted2);font-weight:300;}
-
-/* slider */
-.sl-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;}
-.sl-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-.sl-lbl{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;}
-.sl-val{font-family:var(--serif);font-size:26px;color:var(--gold);line-height:1;}
-.sl-val span{font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:2px;}
-input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--brt);border-radius:2px;outline:none;}
-input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:20px;height:20px;
-  background:var(--gold);border-radius:50%;
-  border:2px solid var(--bg);
-  box-shadow:0 0 10px var(--gold-glow);cursor:pointer;
-}
-.save-btn{
-  width:100%;background:var(--gold);color:var(--bg);
-  border:none;border-radius:12px;padding:15px;
-  font-family:var(--mono);font-size:10px;font-weight:500;
-  letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;
-  transition:all 0.15s;
-}
-.save-btn:active{transform:scale(0.98);opacity:0.9;}
-
-/* log items */
-.log-item{
-  background:var(--s1);border:1px solid var(--border);
-  border-radius:14px;padding:13px 16px;
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:8px;animation:fadeUp 0.25s ease-out;
-}
-@keyframes fadeUp{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
-.li-left{display:flex;align-items:center;gap:12px;}
-.li-badge{
-  font-family:var(--mono);font-size:8px;font-weight:500;
-  width:30px;height:30px;background:var(--bg);
-  border:1px solid var(--border);border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--muted);flex-shrink:0;letter-spacing:0.05em;
-}
-.li-name{font-size:13px;font-weight:700;color:var(--text);}
-.li-time{font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:2px;}
-.li-p{font-family:var(--serif);font-size:18px;color:var(--gold);flex-shrink:0;}
-.empty-st{text-align:center;padding:36px 20px;color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:0.15em;}
-
-/* ── SUGGEST TAB ── */
-.suggest-hero{
-  background:linear-gradient(135deg,var(--s2) 0%, #0e1020 100%);
-  border:1px solid rgba(16,185,129,0.2);
-  border-radius:20px;padding:20px;margin-bottom:18px;
-  position:relative;overflow:hidden;
-}
-.suggest-hero::before{
-  content:'';position:absolute;top:-40px;right:-40px;
-  width:120px;height:120px;
-  background:radial-gradient(circle,rgba(16,185,129,0.08) 0%,transparent 70%);
-  border-radius:50%;
-}
-.sh-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
-.sh-badge{
-  font-family:var(--mono);font-size:8px;color:var(--gold);
-  letter-spacing:0.2em;text-transform:uppercase;
-  background:var(--gold-dim);border:1px solid rgba(16,185,129,0.2);
-  padding:4px 10px;border-radius:20px;
-}
-.sh-tonight{font-size:22px;margin-top:2px;}
-.sh-title{font-family:var(--serif);font-size:14px;color:var(--muted);margin-bottom:4px;}
-.sh-gap{font-family:var(--serif);font-size:34px;color:var(--text);line-height:1;}
-.sh-gap em{font-family:var(--mono);font-size:12px;color:var(--gold);font-style:normal;margin-left:4px;}
-.sh-reason{
-  font-family:var(--mono);font-size:8px;color:var(--muted);
-  letter-spacing:0.1em;margin-top:4px;
-}
-.sh-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
-.sh-pill{
-  font-family:var(--mono);font-size:7px;letter-spacing:0.1em;
-  padding:4px 10px;border-radius:20px;text-transform:uppercase;
-  background:var(--s1);border:1px solid var(--border);color:var(--muted);
-}
-.sh-pill.active{background:var(--gold-dim);border-color:rgba(16,185,129,0.3);color:var(--gold);}
-
-.sug-card{
-  background:var(--s1);border:1px solid var(--border);
-  border-radius:20px;padding:20px;margin-bottom:10px;
-  position:relative;overflow:hidden;
-  transition:all 0.2s;
-}
-.sug-card:active{transform:scale(0.99);}
-.sug-card.best{border-color:rgba(16,185,129,0.35);}
-.sug-card.best::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--gold),transparent);
-}
-.sug-accent{
-  position:absolute;top:-20px;right:-20px;
-  width:100px;height:100px;border-radius:50%;
-  background:radial-gradient(circle,rgba(16,185,129,0.05) 0%,transparent 70%);
-}
-.sug-rank{
-  font-family:var(--mono);font-size:8px;color:var(--muted);
-  letter-spacing:0.2em;text-transform:uppercase;margin-bottom:12px;
-  display:flex;align-items:center;gap:8px;
-}
-.sug-rank-num{
-  font-family:var(--serif);font-size:13px;
-  color:var(--gold);
-}
-.sug-best-badge{
-  font-family:var(--mono);font-size:7px;
-  background:var(--gold-dim);border:1px solid rgba(16,185,129,0.3);
-  color:var(--gold);padding:2px 8px;border-radius:10px;
-  letter-spacing:0.15em;
-}
-.sug-main-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
-.sug-name{font-family:var(--serif);font-size:20px;color:var(--text);line-height:1.2;flex:1;}
-.sug-p{
-  font-family:var(--serif);font-size:26px;color:var(--gold);
-  line-height:1;flex-shrink:0;margin-left:12px;
-}
-.sug-p span{font-family:var(--mono);font-size:9px;color:var(--muted);}
-.sug-side{font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:300;}
-.sug-reason{
-  font-family:var(--mono);font-size:8px;color:var(--muted);
-  letter-spacing:0.08em;margin-bottom:12px;line-height:1.6;
-}
-.sug-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
-.sug-tag{
-  font-family:var(--mono);font-size:7px;letter-spacing:0.1em;
-  padding:3px 8px;background:var(--bg);border:1px solid var(--border);
-  border-radius:6px;color:var(--muted);
-}
-.sug-tag.hl{border-color:rgba(16,185,129,0.3);color:var(--gold);}
-.sug-cta{
-  width:100%;background:var(--gold-dim);border:1px solid rgba(16,185,129,0.25);
-  border-radius:10px;padding:11px;
-  font-family:var(--mono);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;
-  color:var(--gold);cursor:pointer;transition:all 0.15s;text-align:center;
-}
-.sug-cta:active{background:var(--gold-mid);}
-.sug-cta.full{background:var(--gold);color:var(--bg);}
-
-.goal-wrap{text-align:center;padding:60px 20px;animation:fadeUp 0.4s ease-out;}
-.goal-ring{
-  width:80px;height:80px;border-radius:50%;
-  border:1px solid rgba(16,185,129,0.4);
-  background:var(--gold-dim);
-  display:flex;align-items:center;justify-content:center;
-  margin:0 auto 20px;font-size:30px;
-}
-.goal-title{font-family:var(--serif);font-size:20px;color:var(--gold);margin-bottom:6px;}
-.goal-sub{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.15em;}
-
-/* ── STATS TAB ── */
-.stats-card{
-  background:var(--s1);border:1px solid var(--border);
-  border-radius:18px;padding:20px;margin-bottom:14px;
-}
-.bar-area{display:flex;gap:5px;align-items:flex-end;height:90px;}
-.bar-col-w{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;}
-.bar-space{flex:1;width:100%;display:flex;align-items:flex-end;}
-.bar-fill{
-  width:100%;border-radius:4px 4px 0 0;min-height:3px;
-  background:var(--brt);transition:height 0.7s ease-out;
-}
-.bar-fill.ok{background:linear-gradient(180deg,var(--gold) 0%,#047857 100%);}
-.bar-fill.today{box-shadow:0 0 8px var(--gold-glow);}
-.bar-day{font-family:var(--mono);font-size:8px;color:var(--muted);text-align:center;}
-.bar-today{color:var(--gold);}
-.stats-divider{height:1px;background:var(--border);margin:14px 0;}
-.stats-kv-row{display:flex;justify-content:space-between;align-items:center;}
-.stats-kv-label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;}
-.stats-kv-val{font-family:var(--serif);font-size:18px;color:var(--text);}
-.streak-row{display:flex;gap:5px;margin-top:14px;}
-.streak-dot{
-  flex:1;height:6px;border-radius:3px;
-  background:var(--border);
-}
-.streak-dot.ok{background:var(--gold);}
-
-/* ── NAV ── */
-nav{
-  position:absolute;bottom:0;left:0;right:0;
-  background:rgba(5,6,10,0.96);
-  backdrop-filter:blur(24px);
-  border-top:1px solid var(--border);
-  display:flex;justify-content:space-around;
-  padding:10px 0 max(10px, env(safe-area-inset-bottom));
-  z-index:100;
-}
-.nav-btn{
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-  cursor:pointer;padding:6px 20px;border-radius:12px;
-  transition:all 0.2s;color:var(--muted);
-}
-.nav-btn.on{color:var(--gold);}
-.nav-btn svg{width:20px;height:20px;}
-.nav-lbl{font-family:var(--mono);font-size:7px;letter-spacing:0.2em;text-transform:uppercase;}
-.nav-pip{width:3px;height:3px;background:var(--gold);border-radius:50%;margin-top:-2px;opacity:0;transition:opacity 0.2s;}
-.nav-btn.on .nav-pip{opacity:1;}
-
-/* toast */
-.toast-host{
-  position:fixed;top:16px;left:50%;transform:translateX(-50%);
-  z-index:999;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:6px;
-}
-.toast{
-  background:var(--gold);color:var(--bg);
-  padding:8px 18px;border-radius:20px;
-  font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:0.15em;
-  animation:tin 0.2s ease-out, tout 0.2s 2.6s ease-in forwards;
-}
-@keyframes tin{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
-@keyframes tout{to{opacity:0;transform:translateY(-6px);}}
-</style>
-</head>
-<body>
-<div id="app">
-<div class="glow-orb"></div>
-
-<!-- HEADER -->
-<header>
-  <div class="hdr-top">
-    <div class="logo-block">
-      <div class="logo-main">Meal OS</div>
-      <div class="logo-sub">Strategic Protein Monitor</div>
-    </div>
-    <div class="hdr-right">
-      <div class="date-chip" id="date-chip"></div>
-      <div class="sync-btn" onclick="fetchData()">
-        <svg id="sync-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-        </svg>
-      </div>
-    </div>
-  </div>
-  <div class="gauge-row">
-    <div class="gauge-label">Today / Target 120g</div>
-    <div class="gauge-main">
-      <div class="gauge-val" id="hdr-p">0.0</div>
-      <div class="gauge-unit">g</div>
-    </div>
-  </div>
-  <div class="gauge-track"><div class="gauge-fill" id="g-fill" style="width:0%"></div></div>
-  <div class="gauge-meta">
-    <div class="g-pct" id="g-pct">0%</div>
-    <div class="g-gap">残り <em id="g-gap">120.0g</em></div>
-  </div>
-</header>
-
-<!-- MAIN -->
-<main>
-  <!-- LOG -->
-  <div id="pane-log" class="tab-pane active">
-    <button class="quick-btn" onclick="recordBreakfast()">
-      <div class="q-left">
-        <div class="q-icon">🥚</div>
-        <div>
-          <div class="q-title">朝セットを記録</div>
-          <div class="q-sub">45.0g P｜卵・納豆・ヨーグルト</div>
-        </div>
-      </div>
-      <div class="q-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
-    </button>
-    <div class="form-card">
-      <div class="type-row">
-        <button class="type-btn" onclick="setType('朝',this)">朝</button>
-        <button class="type-btn on" onclick="setType('昼',this)">昼</button>
-        <button class="type-btn" onclick="setType('夜',this)">夜</button>
-        <button class="type-btn" onclick="setType('他',this)">他</button>
-      </div>
-      <div class="fld-label">主菜（タンパク源）</div>
-      <input class="txt-in" id="in-main" type="text" placeholder="例: 鶏むね肉の照り焼き"/>
-      <div class="sl-card">
-        <div class="sl-hd">
-          <div class="sl-lbl">Estimated Protein</div>
-          <div class="sl-val" id="sl-val">25.0<span>g</span></div>
-        </div>
-        <input type="range" id="in-p" min="0" max="110" step="0.5" value="25"
-          oninput="document.getElementById('sl-val').innerHTML=parseFloat(this.value).toFixed(1)+'<span>g</span>'"/>
-      </div>
-      <button class="save-btn" onclick="saveForm()">記録を保存 →</button>
-    </div>
-    <div class="sec-hd">Today's Records</div>
-    <div id="log-list"></div>
-  </div>
-
-  <!-- SUGGEST -->
-  <div id="pane-suggest" class="tab-pane">
-    <div id="sug-inner"></div>
-  </div>
-
-  <!-- STATS -->
-  <div id="pane-stats" class="tab-pane">
-    <div class="sec-hd">7-Day Protein Trend</div>
-    <div class="stats-card">
-      <div id="bar-area" class="bar-area"></div>
-      <div class="stats-divider"></div>
-      <div class="stats-kv-row">
-        <div class="stats-kv-label">7日平均</div>
-        <div class="stats-kv-val" id="weekly-avg">—</div>
-      </div>
-      <div class="streak-row" id="streak-row"></div>
-    </div>
-    <div class="sec-hd">Recent Meals</div>
-    <div id="recent-list"></div>
-  </div>
-</main>
-
-<!-- NAV -->
-<nav>
-  <div class="nav-btn on" id="nav-log" onclick="switchTab('log')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-    <div class="nav-lbl">Log</div>
-    <div class="nav-pip"></div>
-  </div>
-  <div class="nav-btn" id="nav-suggest" onclick="switchTab('suggest')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>
-    <div class="nav-lbl">Dinner</div>
-    <div class="nav-pip"></div>
-  </div>
-  <div class="nav-btn" id="nav-stats" onclick="switchTab('stats')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    <div class="nav-lbl">Stats</div>
-    <div class="nav-pip"></div>
-  </div>
-</nav>
-</div>
-<div class="toast-host" id="toast-host"></div>
-
-<script>
-// ── CONFIG ──────────────────────────────────────────────────────────────────
-const GAS = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec";
-const TARGET = 120;
-
-// ── FULL MENU DB (with seasonal/weekday tags) ────────────────────────────────
-const MENUS = [
-  { main:"牛肉ステーキ",      p:40.0, side:"ブロッコリーサラダ",     tags:["高タンパク","鉄分"],            season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[0,1,2,3,4,5,6] },
-  { main:"チキンステーキ",    p:40.0, side:"野菜・アボカド",          tags:["高タンパク","低脂質"],          season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[0,1,2,3,4,5,6] },
-  { main:"鶏むね肉の低温調理",p:35.0, side:"ブロッコリースプラウト",  tags:["低脂質","アンチエイジング"],    season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[0,1,2,3,4,5,6] },
-  { main:"手巻き寿司",        p:35.0, side:"海苔・酢飯・卵",          tags:["EPA","DHA","家族向け"],         season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[5,6,0] },  // 週末向け
-  { main:"鹿肉ステーキ",      p:34.0, side:"舞茸のソテー",            tags:["高タンパク","低脂質","秋冬"],   season:[9,10,11,0,1,2],              dow:[0,1,2,3,4,5,6] },
-  { main:"ラムチョップ香草焼き",p:32.0,side:"焼きトマト",             tags:["鉄分","亜鉛"],                  season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[0,1,2,3,4,5,6] },
-  { main:"生ラム肉のグリル",  p:32.0, side:"焼き玉ねぎ",              tags:["鉄分"],                         season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[0,1,2,3,4,5,6] },
-  { main:"牛赤身肉のタリアータ",p:31.0,side:"ルッコラ",               tags:["鉄分","低カロリー"],            season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[0,1,2,3,4,5,6] },
-  { main:"刺身盛り合わせ",    p:30.0, side:"ほうれん草お浸し",        tags:["EPA","DHA","低脂質"],           season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[5,6,0] }, // 週末
-  { main:"生カツオのたたき",  p:28.5, side:"玉ねぎ・ポン酢",          tags:["EPA","鉄分","春夏"],            season:[3,4,5,6,7,8],                dow:[0,1,2,3,4,5,6] },
-  { main:"サーモンステーキ",  p:28.0, side:"アスパラ",                 tags:["EPA","DHA","ビタミンD"],        season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[0,1,2,3,4,5,6] },
-  { main:"砂肝のコンフィ",    p:25.0, side:"ブロッコリー",             tags:["低脂質","亜鉛"],                season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[0,1,2,3,4,5,6] },
-  { main:"茹で豚の冷しゃぶ",  p:26.0, side:"叩ききゅうり",             tags:["ビタミンB1","夏向け"],          season:[5,6,7,8],                    dow:[0,1,2,3,4,5,6] },
-  { main:"ブリの照り焼き",    p:26.0, side:"長いも",                   tags:["DHA","ビタミンD","冬向け"],     season:[10,11,0,1,2,3],              dow:[0,1,2,3,4,5,6] },
-  { main:"真鯛のアクアパッツァ",p:26.0,side:"あさり",                  tags:["低脂質","亜鉛","春向け"],       season:[2,3,4,5],                    dow:[5,6,0] },
-  { main:"うなぎの白焼き",    p:25.0, side:"肝吸い",                   tags:["ビタミンA","DHA","疲労回復"],   season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[0,1,2,3,4,5,6] },
-  { main:"サバ味噌煮缶",      p:20.9, side:"雑穀米少量",               tags:["EPA","DHA","手軽"],             season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[1,2,3,4] }, // 平日向け
-  { main:"卵4個スクランブル", p:24.0, side:"サラダ",                   tags:["完全栄養","手軽"],              season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[1,2,3,4] },
-  { main:"ツナアボカド丼",    p:22.0, side:"雑穀米少量",               tags:["EPA","手軽","平日向け"],        season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[1,2,3,4] },
-  { main:"豆腐ステーキ",      p:14.0, side:"きのこあんかけ",           tags:["低カロリー","イソフラボン"],    season:[0,1,2,3,4,5,6,7,8,9,10,11], dow:[0,1,2,3,4,5,6] },
+// --- 57 Strategic Menu Pool ---
+const MENU_POOL = [
+  { main: "牛肉ステーキ", side: "ブロッコリーサラダ", p: 40.0, kw: ["牛", "赤身", "筋トレ", "鉄分"] },
+  { main: "チキンステーキ", side: "野菜スティック・アボカド", p: 40.0, kw: ["鶏", "低脂質", "アボカド"] },
+  { main: "鶏むね肉の低温調理", side: "ブロッコリースプラウト", p: 35.0, kw: ["鶏", "むね肉", "抗酸化"] },
+  { main: "手巻き寿司", side: "海苔・酢飯(少量)・卵", p: 35.0, kw: ["魚", "刺身", "DHA/EPA"] },
+  { main: "鹿肉ステーキ", side: "舞茸のソテー", p: 34.0, kw: ["鹿", "鉄分", "超低脂質"] },
+  { main: "ラムチョップ香草焼き", side: "焼きトマト・ズッキーニ", p: 32.0, kw: ["羊", "亜鉛", "L-カルニチン"] },
+  { main: "生ラム肉のグリル", side: "焼き玉ねぎ・アスパラ", p: 32.0, kw: ["羊", "カルニチン", "燃焼", "亜鉛"] },
+  { main: "厚揚げと鶏肉の煮物", side: "小松菜", p: 32.0, kw: ["鶏", "豆腐", "イソフラボン"] },
+  { main: "豚ヒレ肉のピカタ", side: "粉チーズ・パセリ添え", p: 31.0, kw: ["豚ヒレ", "ビタミンB1", "低脂質"] },
+  { main: "牛赤身肉のタリアータ", side: "ルッコラ・粉チーズ", p: 31.0, kw: ["牛", "アルギニン", "鉄分", "糖質オフ"] },
+  { main: "赤身牛のローストビーフ", side: "クレソン", p: 30.0, kw: ["牛", "赤身", "アルギニン"] },
+  { main: "刺身盛り合わせ", side: "ほうれん草お浸し", p: 30.0, kw: ["魚", "刺身", "血管ケア"] },
+  { main: "豆乳鍋（鶏肉・団子）", side: "春菊・しいたけ", p: 30.0, kw: ["鶏", "鍋", "血糖安定"] },
+  { main: "生カツオのたたき", side: "玉ねぎスライス・ポン酢", p: 28.5, kw: ["カツオ", "血流改善", "セレン"] },
+  { main: "鶏むね肉のガパオ風", side: "目玉焼き・レタス包み", p: 28.0, kw: ["鶏", "バジル", "抗酸化", "高タンパク"] },
+  { main: "サーモンステーキ", side: "アスパラガスのグリル", p: 28.0, kw: ["サーモン", "アスタキサンチン", "Tie2"] },
+  { main: "レバニラ炒め", side: "キクラゲと卵の炒め物", p: 28.0, kw: ["レバー", "造血", "デトックス"] },
+  { main: "茹で鶏のバンバンジー", side: "クラゲと胡瓜の酢の物", p: 28.0, kw: ["鶏", "疲労回復", "低GI"] },
+  { main: "ネギトロ丼", side: "納豆・めかぶ", p: 28.0, kw: ["マグロ", "血管ケア", "水溶性繊維"] },
+  { main: "カジキマグロのソテー", side: "ピーマンのジャコ炒め", p: 27.0, kw: ["魚", "カジキ", "高タンパク"] },
+  { main: "カツオのレアカツ", side: "大根おろし・ポン酢", p: 27.0, kw: ["カツオ", "アンセリン", "尿酸値ケア", "疲労回復"] },
+  { main: "茹で豚の冷しゃぶ", side: "叩ききゅうり（梅肉）", p: 26.0, kw: ["豚", "クエン酸", "脂質カット"] },
+  { main: "真鯛のアクアパッツァ", side: "あさりとドライトマト", p: 26.0, kw: ["真鯛", "タウリン", "リコピン"] },
+  { main: "ブリの照り焼き", side: "叩き長いも", p: 26.0, kw: ["ブリ", "DHA", "血糖抑制"] },
+  { main: "サケのホイル焼き", side: "きのこ類・レモン", p: 26.0, kw: ["サケ", "ビタミンD", "免疫"] },
+  { main: "メカジキのハーブステーキ", side: "ブロッコリーのガーリック炒め", p: 26.0, kw: ["魚", "良質脂質", "アリシン", "毛細血管"] },
+  { main: "ラム肉とキャベツの蒸し煮", side: "生姜ポン酢", p: 26.0, kw: ["羊", "L-カルニチン", "胃腸ケア", "代謝UP"] },
+  { main: "うなぎの白焼き", side: "肝吸い・わさび", p: 25.0, kw: ["うなぎ", "スタミナ", "亜鉛"] },
+  { main: "厚揚げの肉巻き", side: "オクラの胡麻和え", p: 25.0, kw: ["厚揚げ", "食物繊維", "植物性"] },
+  { main: "マグロの山かけ", side: "刻み海苔・わさび", p: 25.0, kw: ["マグロ", "血流改善", "酵素"] },
+  { main: "豚キムチ", side: "アボカドトマトサラダ", p: 25.0, kw: ["豚", "発酵", "血糖安定"] },
+  { main: "砂肝のコンフィ風", side: "ブロッコリー・パプリカ", p: 25.0, kw: ["鶏", "低脂質", "亜鉛", "高タンパク"] },
+  { main: "サケの南蛮漬け(非油)", side: "玉ねぎ・人参・ピーマン", p: 25.0, kw: ["サケ", "アスタキサンチン", "血糖安定", "酢"] },
+  { main: "寒サバの塩焼き", side: "大根おろし・なめこ汁", p: 24.0, kw: ["サバ", "EPA", "血管掃除"] },
+  { main: "イカの刺身", side: "納豆・めかぶ和え", p: 24.0, kw: ["イカ", "タウリン", "コレステロール低下"] },
+  { main: "エビのチリソース", side: "卵とレタスのスープ", p: 24.0, kw: ["海老", "低脂肪", "代謝"] },
+  { main: "サワラの西京焼き", side: "小松菜のお浸し", p: 24.0, kw: ["サワラ", "魚", "良質タンパク"] },
+  { main: "アサリと豆腐のチゲ", side: "春菊・長ネギ", p: 24.0, kw: ["アサリ", "カプサイシン", "亜鉛", "血行促進"] },
+  { main: "鶏レバーの赤ワイン煮", side: "ほうれん草のソテー", p: 24.0, kw: ["鶏", "ポリフェノール", "造血", "血管保護"] },
+  { main: "金目鯛の煮付け", side: "ゴボウのきんぴら", p: 23.0, kw: ["金目鯛", "食物繊維", "美肌"] },
+  { main: "ゴーヤチャンプルー", side: "島豆腐・削り節", p: 23.0, kw: ["豚", "血糖抑制", "ビタミンC"] },
+  { main: "ホッケの開き", side: "具沢山ななめこ汁", p: 23.0, kw: ["魚", "カルシウム", "不飽和脂肪酸"] },
+  { main: "豆乳担々湯豆腐", side: "挽肉(少)・ザーサイ", p: 23.0, kw: ["豆腐", "サポニン", "温活", "血糖防止"] },
+  { main: "蒸し牡蠣（レモン）", side: "ほうれん草のソテー", p: 22.0, kw: ["牡蠣", "亜鉛", "テストステロン"] },
+  { main: "鶏レバーの甘辛煮", side: "ピーマンの素焼き", p: 22.0, kw: ["レバー", "粘膜保護", "ビタミンA"] },
+  { main: "豆腐と海老の蒸し物", side: "チンゲン菜のあんかけ", p: 22.0, kw: ["豆腐", "低カロリー", "タウリン", "消化良好"] },
+  { main: "秋刀魚の塩焼き", side: "きのこたっぷり味噌汁", p: 22.0, kw: ["サンマ", "オメガ3", "血管若返り"] },
+  { main: "穴子の白焼き", side: "叩ききゅうり", p: 22.0, kw: ["穴子", "ビタミンA", "精力増強", "低脂質"] },
+  { main: "茹でタコの刺身", side: "納豆・オクラ和え", p: 22.5, kw: ["タコ", "タウリン", "亜鉛", "血糖抑制"] },
+  { main: "銀だらの西京焼き", side: "具沢山けんちん汁", p: 21.0, kw: ["魚", "不飽和脂肪酸", "発酵"] },
+  { main: "真いわしの生姜煮", side: "きのことワカメの酢の物", p: 21.0, kw: ["いわし", "EPA/DHA", "中性脂肪低下", "酢"] },
+  { main: "厚揚げのニラ玉炒め", side: "トマトサラダ", p: 21.0, kw: ["厚揚げ", "アリシン", "イソフラボン", "テストステロン"] },
+  { main: "納豆オムレツ", side: "しらす・大根おろし", p: 20.5, kw: ["卵", "納豆キナーゼ", "血栓予防", "完全栄養"] },
+  { main: "サバ味噌煮缶", side: "雑穀米(少量)・生姜漬", p: 20.9, kw: ["サバ", "Tie2", "時短"] },
+  { main: "いわし団子汁", side: "根菜たっぷり煮物", p: 20.0, kw: ["いわし", "血管年齢", "EPA"] },
+  { main: "ホタテのカルパッチョ", side: "ベビーリーフ・オリーブ油", p: 20.0, kw: ["ホタテ", "タウリン", "低GI", "血管柔軟性"] },
+  { main: "スモークサーモンとアボカド", side: "くるみ・オニオンサラダ", p: 19.0, kw: ["サケ", "オメガ3", "ビタミンE", "ホルモン"] }
 ];
 
-// ── STATE ────────────────────────────────────────────────────────────────────
-const S = { history:[], today:[], type:'昼' };
+const App = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [meals, setMeals] = useState([]);
+  const [activeTab, setActiveTab] = useState('record');
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-// ── BOOT ─────────────────────────────────────────────────────────────────────
-(function init(){
-  const now = new Date();
-  const dayNames = ['日','月','火','水','木','金','土'];
-  document.getElementById('date-chip').textContent =
-    `${now.getMonth()+1}/${now.getDate()}(${dayNames[now.getDay()]})`;
-  fetchData();
-})();
+  // Form State
+  const [mealType, setMealType] = useState('昼');
+  const [mainMenu, setMainMenu] = useState('');
+  const [protein, setProtein] = useState(25.0);
 
-async function fetchData(){
-  const ico = document.getElementById('sync-ico');
-  ico.classList.add('spin');
-  try {
-    const r = await fetch(GAS);
-    const raw = await r.json();
-    S.history = raw.map(d=>({
-      main:(d.main||d.mainMenu||'').trim(),
-      protein:parseFloat(d.protein||0),
-      timestamp:d.timestamp,
-      type:d.type||d.mealType||'他'
-    })).filter(d=>d.main);
-    const ts = new Date().toDateString();
-    S.today = S.history.filter(m=>new Date(m.timestamp).toDateString()===ts);
-    toast('SYNC COMPLETE');
-  } catch(e){ toast('OFFLINE MODE'); }
-  ico.classList.remove('spin');
-  renderAll();
-}
+  // --- Auth & Initial Load ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) { console.error("Auth failed", error); }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); setLoading(false); });
+    return () => unsubscribe();
+  }, []);
 
-// ── RENDER ────────────────────────────────────────────────────────────────────
-function renderAll(){
-  renderHeader();
-  renderLog();
-  renderSuggest();
-  renderStats();
-}
+  // --- Real-time Data Sync ---
+  useEffect(() => {
+    if (!user) return;
+    const today = new Date().toISOString().split('T')[0];
+    const q = collection(db, 'artifacts', appId, 'users', user.uid, 'meal_logs');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedMeals = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(m => m.timestamp && m.timestamp.startsWith(today))
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      setMeals(fetchedMeals);
+    }, (err) => console.error("Firestore error", err));
+    return () => unsubscribe();
+  }, [user]);
 
-function renderHeader(){
-  const tot = S.today.reduce((s,m)=>s+m.protein,0);
-  const gap = Math.max(0,TARGET-tot);
-  const pct = Math.min(tot/TARGET*100,100);
-  document.getElementById('hdr-p').textContent = tot.toFixed(1);
-  document.getElementById('g-fill').style.width = pct+'%';
-  document.getElementById('g-pct').textContent = pct.toFixed(0)+'% Done';
-  document.getElementById('g-gap').textContent = gap.toFixed(1)+'g';
-}
+  // --- Calculations ---
+  const currentProtein = useMemo(() => meals.reduce((sum, m) => sum + (Number(m.protein) || 0), 0), [meals]);
+  const gap = Math.max(0, TARGET_PROTEIN - currentProtein);
+  const progress = Math.min((currentProtein / TARGET_PROTEIN) * 100, 100);
 
-function renderLog(){
-  const el = document.getElementById('log-list');
-  if(!S.today.length){
-    el.innerHTML='<div class="empty-st">本日の記録はまだありません</div>';return;
-  }
-  el.innerHTML=S.today.map(m=>{
-    const t=new Date(m.timestamp);
-    return `<div class="log-item">
-      <div class="li-left">
-        <div class="li-badge">${m.type}</div>
-        <div>
-          <div class="li-name">${m.main}</div>
-          <div class="li-time">${t.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</div>
+  // --- Actions ---
+  const handleSaveMeal = async (e) => {
+    if (e) e.preventDefault();
+    if (!user || !mainMenu) return;
+    setIsSyncing(true);
+    
+    const existingTimestamp = editingId ? meals.find(m => m.id === editingId)?.timestamp : null;
+    const mealData = {
+      timestamp: existingTimestamp || new Date().toISOString(),
+      mealType, mainMenu, protein: parseFloat(protein),
+    };
+
+    try {
+      if (editingId) {
+        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'meal_logs', editingId), mealData);
+        setEditingId(null);
+      } else {
+        await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'meal_logs'), mealData);
+      }
+      setMainMenu(''); setProtein(25.0);
+      setShowSuccess(true); setTimeout(() => setShowSuccess(false), 3000);
+    } catch (err) { console.error("Save error", err); }
+    setIsSyncing(false);
+  };
+
+  const recordQuickBreakfast = async () => {
+    if (!user) return;
+    setIsSyncing(true);
+    const breakfast = {
+      timestamp: new Date().toISOString(), mealType: '朝',
+      mainMenu: '朝セット', protein: 45.0
+    };
+    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'meal_logs'), breakfast);
+    setIsSyncing(false);
+    setShowSuccess(true); setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const editMeal = (m) => {
+    setEditingId(m.id); setMealType(m.mealType); setMainMenu(m.mainMenu);
+    setProtein(m.protein); setActiveTab('record');
+  };
+
+  const deleteMeal = async (id) => {
+    if (!user || !window.confirm("このレポを削除しますか？")) return;
+    await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'meal_logs', id));
+  };
+
+  const suggestions = useMemo(() => {
+    if (gap <= 0) return [];
+    const recentMains = meals.map(m => m.mainMenu.toLowerCase());
+    let filtered = MENU_POOL.filter(menu => !recentMains.some(recent => menu.main.toLowerCase().includes(recent) || menu.kw.some(k => recent.includes(k.toLowerCase()))));
+    if (filtered.length < 3) filtered = MENU_POOL;
+    return filtered.sort((a, b) => Math.abs(gap - a.p) - Math.abs(gap - b.p)).slice(0, 3);
+  }, [meals, gap]);
+
+  if (loading) return (
+    <div className="h-screen bg-[#05060a] flex flex-col items-center justify-center text-[#10b981] font-black animate-pulse">
+      <RefreshCw size={48} className="mb-4 animate-spin" />
+      <span className="uppercase tracking-[0.2em] text-[10px]">Initializing Meal OS</span>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#05060a] text-[#dde0ea] pb-24 font-sans max-w-[430px] mx-auto relative flex flex-col shadow-2xl overflow-hidden border-x border-[#1a1e2e]">
+      
+      {/* Noise Texture Overlay */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-[999]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }}></div>
+
+      {/* Header */}
+      <header className="bg-gradient-to-b from-[#0b0d14] to-[#05060a] p-6 pb-8 border-b border-[#1a1e2e] sticky top-0 z-[100] shadow-xl">
+        <div className="flex justify-between items-center mb-6">
+          <div className="logo-block">
+            <h1 className="text-xl font-black text-[#10b981] tracking-tighter leading-none" style={{ fontFamily: "'DM Serif Display', serif" }}>Meal OS</h1>
+            <p className="text-[8px] text-[#454a60] uppercase tracking-[0.25em] font-medium mt-1" style={{ fontFamily: "'DM Mono', monospace" }}>Strategic Protein Monitor</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="text-[8px] font-mono text-[#454a60] bg-[#111420] border border-[#1a1e2e] px-3 py-1.5 rounded-full tracking-widest uppercase">
+              {new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' })}
+            </div>
+            <button onClick={() => window.location.reload()} className="p-2 bg-[#111420] border border-[#1a1e2e] rounded-xl text-[#454a60] active:scale-90 transition-all">
+              <RefreshCw size={14} className={isSyncing ? 'animate-spin text-[#10b981]' : ''} />
+            </button>
+          </div>
         </div>
-      </div>
-      <div class="li-p">${m.protein.toFixed(1)}g</div>
-    </div>`;
-  }).join('');
-}
-
-function renderSuggest(){
-  const el = document.getElementById('sug-inner');
-  const tot = S.today.reduce((s,m)=>s+m.protein,0);
-  const gap = Math.max(0,TARGET-tot);
-
-  if(gap<=0){
-    el.innerHTML=`<div class="goal-wrap"><div class="goal-ring">✓</div><div class="goal-title">Goal Achieved</div><div class="goal-sub">Discipline leads to freedom.</div></div>`;
-    return;
-  }
-
-  const now = new Date();
-  const mon = now.getMonth();    // 0-11
-  const dow = now.getDay();      // 0=日
-  const isWeekend = (dow===0||dow===6);
-
-  // 過去7日履歴で重複チェック
-  const ago7 = Date.now() - 7*864e5;
-  const recentNames = S.history
-    .filter(m=>new Date(m.timestamp).getTime()>ago7)
-    .map(m=>m.main.toLowerCase().trim());
-
-  // フィルタリング（季節・曜日・重複）
-  let pool = MENUS.filter(m=>{
-    const nm = m.main.toLowerCase();
-    const notRecent = !recentNames.some(r=>nm.includes(r)||r.includes(nm));
-    const seasonOk = m.season.includes(mon);
-    const dowOk = m.dow.includes(dow);
-    return notRecent && seasonOk && dowOk;
-  });
-  if(pool.length<3) pool = MENUS.filter(m=>!recentNames.some(r=>m.main.toLowerCase().includes(r)));
-  if(pool.length<3) pool = [...MENUS];
-
-  // gap に近い順でソート
-  const sorted = [...pool].sort((a,b)=>Math.abs(gap-a.p)-Math.abs(gap-b.p)).slice(0,3);
-
-  // 今日の朝・昼から摂取状況を読む
-  const morningP = S.today.filter(m=>m.type==='朝').reduce((s,m)=>s+m.protein,0);
-  const lunchP   = S.today.filter(m=>m.type==='昼').reduce((s,m)=>s+m.protein,0);
-  const reasonParts = [];
-  if(morningP>0) reasonParts.push(`朝 ${morningP.toFixed(0)}g`);
-  if(lunchP>0)   reasonParts.push(`昼 ${lunchP.toFixed(0)}g`);
-  const ctxLine = reasonParts.length
-    ? `${reasonParts.join(' + ')} 摂取済み → 夜に ${gap.toFixed(0)}g 必要`
-    : `今日の摂取 ${tot.toFixed(0)}g → 夜に ${gap.toFixed(0)}g 必要`;
-
-  // season label
-  const seasonLabel = ['冬','冬','春','春','春','夏','夏','夏','秋','秋','秋','冬'][mon];
-  const weekdayLabel = isWeekend ? '週末' : '平日';
-
-  const heroHtml = `
-  <div class="suggest-hero">
-    <div class="sh-top">
-      <div>
-        <div class="sh-badge">Tonight's Target</div>
-        <div class="sh-title">夕食で補うべきタンパク質</div>
-        <div class="sh-gap">${gap.toFixed(1)}<em>g 不足</em></div>
-        <div class="sh-reason">${ctxLine}</div>
-      </div>
-      <div class="sh-tonight">🌙</div>
-    </div>
-    <div class="sh-pills">
-      <div class="sh-pill active">${seasonLabel}</div>
-      <div class="sh-pill active">${weekdayLabel}</div>
-      <div class="sh-pill active">過去7日重複回避</div>
-      <div class="sh-pill">Gap: ${gap.toFixed(0)}g</div>
-    </div>
-  </div>`;
-
-  const cardsHtml = sorted.map((opt,i)=>{
-    const diff = Math.abs(gap-opt.p);
-    const isBest = i===0;
-    const matchGap = diff<=5;
-    const tagsHtml = opt.tags.map(t=>`<span class="sug-tag ${matchGap?'hl':''}">${t}</span>`).join('');
-    let reason = '';
-    if(isBest && matchGap) reason = `ギャップ差 ${diff.toFixed(1)}g — 今夜の最適解です。`;
-    else if(isBest) reason = `最もバランスの取れた選択肢です。`;
-    else reason = `代替案。摂取量の調整で目標達成可能です。`;
-    return `
-    <div class="sug-card ${isBest?'best':''}">
-      <div class="sug-accent"></div>
-      <div class="sug-rank">
-        <span class="sug-rank-num">${['I','II','III'][i]}</span>
-        Option ${['A','B','C'][i]}
-        ${isBest?'<span class="sug-best-badge">Best Match</span>':''}
-      </div>
-      <div class="sug-main-row">
-        <div class="sug-name">${opt.main}</div>
-        <div class="sug-p">${opt.p.toFixed(1)}<span>g</span></div>
-      </div>
-      <div class="sug-side">副菜：${opt.side}</div>
-      <div class="sug-reason">${reason}</div>
-      <div class="sug-tags">${tagsHtml}</div>
-      <button class="sug-cta ${isBest?'full':''}" onclick="addFromSuggest('${opt.main.replace(/'/g,"\\'")}',${opt.p})">この夕食を記録 →</button>
-    </div>`;
-  }).join('');
-
-  el.innerHTML = heroHtml + `<div class="sec-hd">Recommended Dinner</div>` + cardsHtml;
-}
-
-function renderStats(){
-  const DAY_LBL = ['日','月','火','水','木','金','土'];
-  const days = [];
-  for(let i=6;i>=0;i--){
-    const d=new Date(); d.setDate(d.getDate()-i);
-    const ds=d.toDateString();
-    const tot=S.history.filter(m=>new Date(m.timestamp).toDateString()===ds).reduce((s,m)=>s+m.protein,0);
-    days.push({lbl:DAY_LBL[d.getDay()],tot,isToday:i===0,ok:tot>=TARGET});
-  }
-  const maxV = Math.max(...days.map(d=>d.tot),TARGET,1);
-  document.getElementById('bar-area').innerHTML = days.map(d=>`
-    <div class="bar-col-w">
-      <div class="bar-space">
-        <div class="bar-fill ${d.ok?'ok':''} ${d.isToday?'today':''}" style="height:${Math.max(d.tot/maxV*100,3)}%"></div>
-      </div>
-      <div class="bar-day ${d.isToday?'bar-today':''}">${d.lbl}</div>
-    </div>`).join('');
-
-  const withData=days.filter(d=>d.tot>0);
-  const avg=withData.length?(withData.reduce((s,d)=>s+d.tot,0)/withData.length).toFixed(1):'—';
-  document.getElementById('weekly-avg').textContent = avg+(avg!=='—'?'g':'');
-  document.getElementById('streak-row').innerHTML = days.map(d=>`<div class="streak-dot ${d.ok?'ok':''}"></div>`).join('');
-
-  const recent=[...S.history].reverse().slice(0,8);
-  document.getElementById('recent-list').innerHTML = recent.length
-    ? recent.map(m=>{
-        const t=new Date(m.timestamp);
-        return `<div class="log-item">
-          <div class="li-left">
-            <div class="li-badge">${m.type}</div>
-            <div>
-              <div class="li-name">${m.main}</div>
-              <div class="li-time">${t.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})} ${t.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</div>
+        
+        <div className="space-y-3">
+          <div className="flex justify-between items-baseline mb-1">
+            <span className="text-[8px] font-mono text-[#454a60] uppercase tracking-[0.2em]">Today / Target 120g</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-black text-[#10b981] leading-none" style={{ fontFamily: "'DM Serif Display', serif" }}>{currentProtein.toFixed(1)}</span>
+              <span className="text-[10px] font-mono text-[#454a60]">g</span>
             </div>
           </div>
-          <div class="li-p">${m.protein.toFixed(1)}g</div>
-        </div>`;
-      }).join('')
-    : '<div class="empty-st">データなし</div>';
-}
+          <div className="h-[2px] w-full bg-[#1a1e2e] relative">
+            <div 
+              className="h-full bg-gradient-to-r from-[#059669] to-[#10b981] transition-all duration-1000 ease-out relative" 
+              style={{ width: `${progress}%` }}
+            >
+              <div className="absolute right-[-1px] top-[-4px] w-[10px] h-[10px] bg-[#10b981] rounded-full shadow-[0_0_12px_rgba(16,185,129,0.5),0_0_4px_#10b981]"></div>
+            </div>
+          </div>
+          <div className="flex justify-between items-center text-[8px] font-mono text-[#454a60] tracking-widest uppercase">
+            <span>{progress.toFixed(0)}% Done</span>
+            <span>残り <em className="text-[#10b981] not-italic">{gap.toFixed(1)}g</em></span>
+          </div>
+        </div>
+      </header>
 
-// ── ACTIONS ──────────────────────────────────────────────────────────────────
-function switchTab(id){
-  ['log','suggest','stats'].forEach(t=>{
-    document.getElementById('pane-'+t).classList.toggle('active',t===id);
-    document.getElementById('nav-'+t).classList.toggle('on',t===id);
-  });
-  if(id==='suggest') renderSuggest();
-  if(id==='stats') renderStats();
-}
+      {/* Main Content */}
+      <main className="flex-1 p-5 space-y-6 overflow-y-auto scrollbar-hide">
+        {showSuccess && (
+          <div className="bg-[#10b981] text-[#05060a] px-4 py-3 rounded-2xl flex items-center text-[10px] font-black uppercase tracking-widest animate-in fade-in slide-in-from-top-2 shadow-lg z-50">
+            <CheckCircle2 size={16} className="mr-2" /> Data Synced Successfully.
+          </div>
+        )}
 
-function setType(t,btn){
-  S.type=t;
-  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-}
+        {/* Record View */}
+        {activeTab === 'record' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <button onClick={recordQuickBreakfast} className="w-full bg-[#0b0d14] border border-[#1a1e2e] p-4 rounded-2xl flex items-center justify-between shadow-xl active:scale-95 transition-all group">
+              <div className="flex items-center space-x-4">
+                <div className="bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.15)] p-3 rounded-xl text-[#10b981] group-hover:bg-[rgba(16,185,129,0.18)] transition-colors text-xl">🥚</div>
+                <div className="text-left">
+                  <p className="text-[13px] font-bold text-[#dde0ea] tracking-tight">朝セットを記録</p>
+                  <p className="text-[8px] font-mono text-[#454a60] uppercase tracking-widest mt-0.5">45.0g P｜卵・納豆・ヨーグルト</p>
+                </div>
+              </div>
+              <ChevronRight className="text-[#454a60] group-hover:text-[#10b981] transition-colors" size={16} />
+            </button>
 
-async function saveForm(){
-  const main=document.getElementById('in-main').value.trim();
-  const p=parseFloat(document.getElementById('in-p').value);
-  if(!main){toast('主菜を入力してください');return;}
-  await save({main,protein:p,type:S.type});
-  document.getElementById('in-main').value='';
-  document.getElementById('in-p').value=25;
-  document.getElementById('sl-val').innerHTML='25.0<span>g</span>';
-}
+            <section className={`bg-[#0b0d14] border ${editingId ? 'border-[#10b981] shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'border-[#1a1e2e]'} rounded-[2.5rem] p-6 shadow-2xl transition-all`}>
+              <div className="flex justify-between items-center mb-6 px-1">
+                <h2 className="text-[8px] font-mono text-[#454a60] uppercase tracking-[0.25em] flex items-center">
+                  <Utensils size={14} className="mr-2 text-[#10b981]" /> {editingId ? "Edit Report" : "Meal Report"}
+                </h2>
+                {editingId && (
+                  <button onClick={() => { setEditingId(null); setMainMenu(''); setProtein(25.0); }} className="text-[8px] font-mono text-[#e05a6a] bg-[rgba(224,90,106,0.1)] px-3 py-1.5 rounded-full uppercase tracking-widest hover:bg-[rgba(224,90,106,0.2)]">Cancel</button>
+                )}
+              </div>
+              <form onSubmit={handleSaveMeal} className="space-y-6">
+                <div className="flex bg-[#05060a] p-1 rounded-xl border border-[#1a1e2e]">
+                  {['朝', '昼', '夜', '他'].map(t => (
+                    <button key={t} type="button" onClick={() => setMealType(t)} className={`flex-1 py-2.5 text-[9px] font-mono font-bold rounded-lg transition-all ${mealType === t ? 'bg-[#10b981] text-[#05060a] shadow-lg' : 'text-[#454a60] hover:text-[#dde0ea]'}`}>{t}</button>
+                  ))}
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[8px] font-mono text-[#454a60] uppercase tracking-[0.2em] mb-2">主菜（タンパク源）</p>
+                  <input type="text" placeholder="例: 鶏むね肉の照り焼き" value={mainMenu} onChange={e => setMainMenu(e.target.value)} className="w-full bg-[#05060a] border border-[#1a1e2e] rounded-xl px-4 py-4 text-sm font-bold text-white focus:border-[#10b981] outline-none transition-all placeholder-[#2a2f45]" />
+                </div>
+                <div className="bg-[#05060a] p-5 rounded-2xl border border-[#1a1e2e] space-y-4">
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[8px] font-mono text-[#454a60] uppercase tracking-[0.2em]">Estimated Protein</span>
+                    <span className="text-3xl font-black text-[#10b981] leading-none" style={{ fontFamily: "'DM Serif Display', serif" }}>{Number(protein).toFixed(1)}<span className="text-[9px] font-mono text-[#454a60] ml-1">g</span></span>
+                  </div>
+                  <input type="range" min="0" max="110" step="0.1" value={protein} onChange={e => setProtein(e.target.value)} className="w-full h-[3px] bg-[#252a3e] rounded-lg appearance-none cursor-pointer accent-[#10b981]" />
+                </div>
+                <button type="submit" disabled={isSyncing} className="w-full bg-[#10b981] text-[#05060a] py-5 rounded-[1.2rem] font-mono text-[10px] font-bold tracking-[0.2em] shadow-xl active:scale-[0.98] transition-all hover:opacity-90 flex justify-center items-center uppercase">
+                  {isSyncing ? <RefreshCw className="animate-spin mr-2" size={14} /> : null}
+                  {editingId ? "記録を修正 →" : "記録を保存 →"}
+                </button>
+              </form>
+            </section>
 
-async function recordBreakfast(){
-  await save({main:'朝セット',protein:45.0,type:'朝'});
-}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 mb-2 px-1">
+                <span className="text-[8px] font-mono text-[#454a60] uppercase tracking-[0.25em]">Today's Records</span>
+                <div className="h-[1px] bg-[#1a1e2e] flex-1" />
+              </div>
+              {meals.length === 0 ? (
+                <div className="text-center py-12 text-[#454a60] font-mono text-[10px] tracking-widest italic uppercase">No records found today.</div>
+              ) : (
+                meals.map(m => (
+                  <div key={m.id} className="bg-[#0b0d14] border border-[#1a1e2e] p-4 rounded-2xl flex items-center justify-between shadow-lg hover:border-[#454a60] transition-all group animate-in">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-[#05060a] rounded-xl flex items-center justify-center text-[8px] font-mono font-bold text-[#454a60] uppercase border border-[#1a1e2e] tracking-tighter">{m.mealType}</div>
+                      <div>
+                        <p className="text-[13px] font-bold text-[#dde0ea] tracking-tight leading-none mb-2">{m.mainMenu}</p>
+                        <p className="text-[8px] font-mono text-[#454a60] uppercase tracking-wider leading-none flex items-center">
+                          <Clock size={10} className="mr-1" /> {new Date(m.timestamp).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <span className="text-xl font-black text-[#10b981] leading-none" style={{ fontFamily: "'DM Serif Display', serif" }}>{Number(m.protein).toFixed(1)}<span className="text-[8px] font-mono ml-0.5 opacity-60">g</span></span>
+                      </div>
+                      <div className="flex flex-col space-y-2 border-l border-[#1a1e2e] pl-4 opacity-40 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => editMeal(m)} className="text-[#454a60] hover:text-[#10b981] transition-colors"><Edit3 size={14} /></button>
+                        <button onClick={() => deleteMeal(m.id)} className="text-[#454a60] hover:text-[#e05a6a] transition-colors"><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </section>
+          </div>
+        )}
 
-async function addFromSuggest(main,p){
-  await save({main,protein:p,type:'夜'});
-  switchTab('log');
-}
+        {/* Suggest View */}
+        {activeTab === 'suggest' && (
+          <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+            {gap <= 0 ? (
+              <div className="py-20 text-center animate-in">
+                <div className="w-20 h-20 rounded-full border border-[rgba(16,185,129,0.4)] bg-[rgba(16,185,129,0.08)] flex items-center justify-center mx-auto mb-6 text-3xl shadow-[0_0_30px_rgba(16,185,129,0.15)]">✓</div>
+                <h3 className="text-xl font-bold text-[#10b981] mb-2" style={{ fontFamily: "'DM Serif Display', serif" }}>Goal Achieved</h3>
+                <p className="text-[8px] font-mono text-[#454a60] uppercase tracking-[0.15em]">Discipline leads to freedom.</p>
+              </div>
+            ) : (
+              <>
+                <div className="suggest-hero">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="inline-block px-3 py-1 bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.2)] rounded-full text-[8px] font-mono text-[#10b981] tracking-[0.2em] uppercase mb-4">Tonight's Target</div>
+                      <p className="text-[12px] font-mono text-[#454a60] mb-1" style={{ fontFamily: "'DM Serif Display', serif" }}>夕食で補うべきタンパク質</p>
+                      <div className="text-4xl font-black text-[#dde0ea] leading-none flex items-baseline gap-2">
+                        {gap.toFixed(1)}<em className="text-[#10b981] text-[12px] font-mono font-bold not-italic tracking-wider uppercase">g 不足</em>
+                      </div>
+                      <p className="text-[8px] font-mono text-[#454a60] uppercase tracking-wider mt-2">今日の摂取 {currentProtein.toFixed(0)}g → 残り {gap.toFixed(0)}g 必要</p>
+                    </div>
+                    <div className="text-3xl opacity-40">🌙</div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <span className="bg-[#0b0d14] border border-[#1a1e2e] text-[#10b981] text-[7px] font-mono tracking-widest px-3 py-1 rounded-full uppercase">過去7日重複回避</span>
+                    <span className="bg-[#0b0d14] border border-[#1a1e2e] text-[#454a60] text-[7px] font-mono tracking-widest px-3 py-1 rounded-full uppercase">Gap: {gap.toFixed(0)}g</span>
+                  </div>
+                </div>
 
-async function save(data){
-  const meal={...data,timestamp:new Date().toISOString()};
-  S.today=[meal,...S.today];
-  S.history=[meal,...S.history];
-  renderAll();
-  try{
-    await fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify(meal)});
-    toast('SAVED');
-  }catch(e){toast('OFFLINE SAVE');}
-}
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <span className="text-[8px] font-mono text-[#454a60] uppercase tracking-[0.25em]">Recommended Dinner</span>
+                  <div className="h-[1px] bg-[#1a1e2e] flex-1" />
+                </div>
 
-function toast(msg){
-  const host=document.getElementById('toast-host');
-  const el=document.createElement('div');
-  el.className='toast';el.textContent=msg;
-  host.appendChild(el);
-  setTimeout(()=>el.remove(),3000);
-}
-</script>
-</body>
-</html>
+                <div className="space-y-3">
+                  {suggestions.map((opt, i) => (
+                    <div key={i} className={`bg-[#0b0d14] border p-6 rounded-[2rem] relative overflow-hidden transition-all active:scale-[0.99] ${i===0 ? 'border-[rgba(16,185,129,0.35)] shadow-lg' : 'border-[#1a1e2e]'}`}>
+                      {i===0 && <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#10b981] to-transparent"></div>}
+                      <div className="flex justify-between items-start mb-4 relative z-10">
+                        <div className="flex items-center gap-3">
+                          <span className="text-[13px] font-serif text-[#10b981]" style={{ fontFamily: "'DM Serif Display', serif" }}>{['I','II','III'][i]}</span>
+                          <span className="text-[8px] font-mono text-[#454a60] uppercase tracking-[0.2em]">Option {['A','B','C'][i]}</span>
+                          {i===0 && <span className="text-[7px] font-mono bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.3)] text-[#10b981] px-2 py-0.5 rounded-full uppercase tracking-widest">Best Match</span>}
+                        </div>
+                        <div className="text-2xl font-black text-[#10b981] leading-none" style={{ fontFamily: "'DM Serif Display', serif" }}>{opt.p.toFixed(1)}<span className="text-[9px] font-mono text-[#454a60] ml-1">g</span></div>
+                      </div>
+                      <h3 className="text-xl font-bold text-[#dde0ea] leading-tight mb-2 pr-12" style={{ fontFamily: "'DM Serif Display', serif" }}>{opt.main}</h3>
+                      <p className="text-[10px] text-[#454a60] font-light leading-relaxed mb-4">副菜：{opt.side}</p>
+                      <div className="flex gap-2 mb-6">
+                        {opt.kw.map((tag, idx) => (
+                          <span key={idx} className={`text-[7px] font-mono px-2 py-1 rounded-md border tracking-widest uppercase ${i===0 ? 'border-[rgba(16,185,129,0.3)] text-[#10b981]' : 'border-[#1a1e2e] text-[#454a60]'}`}>{tag}</span>
+                        ))}
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setMainMenu(opt.main);
+                          setProtein(opt.p);
+                          setMealType('夜');
+                          setActiveTab('record');
+                        }}
+                        className={`w-full py-3 rounded-xl font-mono text-[8px] font-bold tracking-[0.2em] uppercase transition-all ${i===0 ? 'bg-[#10b981] text-[#05060a]' : 'bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.25)] text-[#10b981]'}`}
+                      >
+                        この夕食を選択 →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Stats View */}
+        {activeTab === 'history' && (
+          <div className="space-y-6 animate-in zoom-in-95 duration-300">
+            <div className="flex items-center gap-2 mb-2 px-1">
+              <span className="text-[8px] font-mono text-[#454a60] uppercase tracking-[0.25em]">7-Day Protein Trend</span>
+              <div className="h-[1px] bg-[#1a1e2e] flex-1" />
+            </div>
+            
+            <div className="bg-[#0b0d14] border border-[#1a1e2e] p-6 rounded-[1.5rem] shadow-xl">
+              <div className="h-[100px] flex items-end gap-1.5 px-2 mb-4">
+                {['月', '火', '水', '木', '金', '土', '日'].map((day, i) => {
+                  const val = i === 0 ? progress : 0; // Simple demo for today
+                  return (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full">
+                      <div className="flex-1 w-full flex items-end">
+                        <div className={`w-full rounded-t-md transition-all duration-700 ${val >= 100 ? 'bg-gradient-to-b from-[#10b981] to-[#047857]' : 'bg-[#1a1e2e]'}`} style={{ height: `${Math.max(val, 3)}%` }}></div>
+                      </div>
+                      <span className={`text-[8px] font-mono ${i === 0 ? 'text-[#10b981]' : 'text-[#454a60]'}`}>{day}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="h-[1px] bg-[#1a1e2e] my-4"></div>
+              <div className="flex justify-between items-center">
+                <span className="text-[8px] font-mono text-[#454a60] uppercase tracking-widest">平均摂取量</span>
+                <span className="text-lg font-bold text-[#dde0ea]" style={{ fontFamily: "'DM Serif Display', serif" }}>{currentProtein.toFixed(1)}g</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mb-2 px-1">
+              <span className="text-[8px] font-mono text-[#454a60] uppercase tracking-[0.25em]">Monitor Alert</span>
+              <div className="h-[1px] bg-[#1a1e2e] flex-1" />
+            </div>
+            <div className="bg-[#0b0d14] border border-[#1a1e2e] p-6 rounded-[1.5rem] text-center">
+              <TrendingUp size={32} className="text-[#2a2f45] mx-auto mb-4" />
+              <p className="text-[10px] text-[#454a60] italic leading-relaxed font-medium">週次中間レポート、および月末の推移まとめは、スプレッドシートに基づき自動生成されます。規律の継続が成果への最短経路です。</p>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-[rgba(5,6,10,0.96)] backdrop-blur-[24px] border-t border-[#1a1e2e] flex justify-around p-4 safe-area-bottom shadow-2xl z-[100]">
+        {[
+          { id: 'record', icon: Utensils, label: 'Log' },
+          { id: 'suggest', icon: ChefHat, label: 'Dinner' },
+          { id: 'history', icon: TrendingUp, label: 'Stats' }
+        ].map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex flex-col items-center gap-1.5 transition-all duration-300 relative group px-6 ${activeTab === t.id ? 'text-[#10b981]' : 'text-[#454a60] hover:text-[#dde0ea]'}`}>
+            <t.icon size={20} strokeWidth={activeTab === t.id ? 2.5 : 1.8} />
+            <span className="text-[7px] font-mono font-bold uppercase tracking-widest leading-none">{t.label}</span>
+            <div className={`w-[3px] h-[3px] bg-[#10b981] rounded-full mt-0.5 transition-opacity ${activeTab === t.id ? 'opacity-100' : 'opacity-0'}`}></div>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+};
+
+export default App;
