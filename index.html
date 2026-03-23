@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -231,7 +230,7 @@ input[type=range]::-webkit-slider-thumb{
 .suggest-hero{
   background:linear-gradient(135deg,var(--s2) 0%, #0e1020 100%);
   border:1px solid rgba(16,185,129,0.2);
-  border-radius:20px;padding:20px;margin-bottom:18px;
+  border-radius:16px;padding:14px 16px;margin-bottom:12px;
   position:relative;overflow:hidden;
 }
 .suggest-hero::before{
@@ -240,88 +239,87 @@ input[type=range]::-webkit-slider-thumb{
   background:radial-gradient(circle,rgba(16,185,129,0.08) 0%,transparent 70%);
   border-radius:50%;
 }
-.sh-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.sh-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .sh-badge{
-  font-family:var(--mono);font-size:8px;color:var(--gold);
+  font-family:var(--mono);font-size:7px;color:var(--gold);
   letter-spacing:0.2em;text-transform:uppercase;
   background:var(--gold-dim);border:1px solid rgba(16,185,129,0.2);
-  padding:4px 10px;border-radius:20px;
+  padding:3px 8px;border-radius:20px;
 }
-.sh-tonight{font-size:22px;margin-top:2px;}
-.sh-title{font-family:var(--serif);font-size:14px;color:var(--muted);margin-bottom:4px;}
-.sh-gap{font-family:var(--serif);font-size:34px;color:var(--text);line-height:1;}
-.sh-gap em{font-family:var(--mono);font-size:12px;color:var(--gold);font-style:normal;margin-left:4px;}
+.sh-tonight{font-size:18px;}
+.sh-title{font-family:var(--mono);font-size:8px;color:var(--muted);margin-bottom:2px;letter-spacing:0.08em;}
+.sh-gap{font-family:var(--serif);font-size:26px;color:var(--text);line-height:1;}
+.sh-gap em{font-family:var(--mono);font-size:10px;color:var(--gold);font-style:normal;margin-left:3px;}
 .sh-reason{
-  font-family:var(--mono);font-size:8px;color:var(--muted);
-  letter-spacing:0.1em;margin-top:4px;
+  font-family:var(--mono);font-size:7px;color:var(--muted);
+  letter-spacing:0.08em;margin-top:2px;
 }
-.sh-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+.sh-pills{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
 .sh-pill{
-  font-family:var(--mono);font-size:7px;letter-spacing:0.1em;
-  padding:4px 10px;border-radius:20px;text-transform:uppercase;
+  font-family:var(--mono);font-size:7px;letter-spacing:0.08em;
+  padding:3px 8px;border-radius:20px;text-transform:uppercase;
   background:var(--s1);border:1px solid var(--border);color:var(--muted);
 }
 .sh-pill.active{background:var(--gold-dim);border-color:rgba(16,185,129,0.3);color:var(--gold);}
 
+/* ── COMPACT SUGGEST CARDS (3枚1画面) ── */
 .sug-card{
   background:var(--s1);border:1px solid var(--border);
-  border-radius:20px;padding:20px;margin-bottom:10px;
+  border-radius:14px;padding:12px 14px;margin-bottom:7px;
   position:relative;overflow:hidden;
   transition:all 0.2s;
 }
 .sug-card:active{transform:scale(0.99);}
-.sug-card.best{border-color:rgba(16,185,129,0.35);}
+.sug-card.best{border-color:rgba(16,185,129,0.4);}
 .sug-card.best::before{
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,var(--gold),transparent);
 }
 .sug-accent{
   position:absolute;top:-20px;right:-20px;
-  width:100px;height:100px;border-radius:50%;
+  width:80px;height:80px;border-radius:50%;
   background:radial-gradient(circle,rgba(16,185,129,0.05) 0%,transparent 70%);
 }
+.sug-header-row{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:6px;
+}
 .sug-rank{
-  font-family:var(--mono);font-size:8px;color:var(--muted);
-  letter-spacing:0.2em;text-transform:uppercase;margin-bottom:12px;
-  display:flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:7px;color:var(--muted);
+  letter-spacing:0.2em;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;
 }
-.sug-rank-num{
-  font-family:var(--serif);font-size:13px;
-  color:var(--gold);
-}
+.sug-rank-num{font-family:var(--serif);font-size:11px;color:var(--gold);}
 .sug-best-badge{
-  font-family:var(--mono);font-size:7px;
+  font-family:var(--mono);font-size:6px;
   background:var(--gold-dim);border:1px solid rgba(16,185,129,0.3);
-  color:var(--gold);padding:2px 8px;border-radius:10px;
-  letter-spacing:0.15em;
+  color:var(--gold);padding:2px 6px;border-radius:8px;letter-spacing:0.12em;
 }
-.sug-main-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
-.sug-name{font-family:var(--serif);font-size:20px;color:var(--text);line-height:1.2;flex:1;}
 .sug-p{
-  font-family:var(--serif);font-size:26px;color:var(--gold);
-  line-height:1;flex-shrink:0;margin-left:12px;
+  font-family:var(--serif);font-size:22px;color:var(--gold);
+  line-height:1;flex-shrink:0;
 }
-.sug-p span{font-family:var(--mono);font-size:9px;color:var(--muted);}
-.sug-side{font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:300;}
-.sug-reason{
-  font-family:var(--mono);font-size:8px;color:var(--muted);
-  letter-spacing:0.08em;margin-bottom:12px;line-height:1.6;
-}
-.sug-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
+.sug-p span{font-family:var(--mono);font-size:8px;color:var(--muted);}
+.sug-name{font-family:var(--serif);font-size:16px;color:var(--text);line-height:1.2;margin-bottom:3px;}
+.sug-side{font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:300;}
+.sug-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
 .sug-tag{
-  font-family:var(--mono);font-size:7px;letter-spacing:0.1em;
-  padding:3px 8px;background:var(--bg);border:1px solid var(--border);
-  border-radius:6px;color:var(--muted);
+  font-family:var(--mono);font-size:6px;letter-spacing:0.08em;
+  padding:2px 6px;background:var(--bg);border:1px solid var(--border);
+  border-radius:5px;color:var(--muted);
 }
 .sug-tag.hl{border-color:rgba(16,185,129,0.3);color:var(--gold);}
+/* ── コンパクトCTAボタン ── */
 .sug-cta{
-  width:100%;background:var(--gold-dim);border:1px solid rgba(16,185,129,0.25);
-  border-radius:10px;padding:11px;
-  font-family:var(--mono);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;
-  color:var(--gold);cursor:pointer;transition:all 0.15s;text-align:center;
+  display:inline-flex;align-items:center;gap:4px;
+  background:transparent;border:1px solid var(--border);
+  border-radius:8px;padding:5px 10px;
+  font-family:var(--mono);font-size:7px;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--muted);cursor:pointer;transition:all 0.15s;
 }
-.sug-cta:active{background:var(--gold-mid);}
-.sug-cta.full{background:var(--gold);color:var(--bg);}
+.sug-cta:active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.sug-cta.full{border-color:rgba(16,185,129,0.4);color:var(--gold);}
+.sug-cta svg{width:10px;height:10px;}
 
 .goal-wrap{text-align:center;padding:60px 20px;animation:fadeUp 0.4s ease-out;}
 .goal-ring{
@@ -337,29 +335,40 @@ input[type=range]::-webkit-slider-thumb{
 /* ── STATS TAB ── */
 .stats-card{
   background:var(--s1);border:1px solid var(--border);
-  border-radius:18px;padding:20px;margin-bottom:14px;
+  border-radius:18px;padding:18px;margin-bottom:12px;
 }
-.bar-area{display:flex;gap:5px;align-items:flex-end;height:90px;}
-.bar-col-w{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;}
-.bar-space{flex:1;width:100%;display:flex;align-items:flex-end;}
-.bar-fill{
-  width:100%;border-radius:4px 4px 0 0;min-height:3px;
-  background:var(--brt);transition:height 0.7s ease-out;
+.stats-chart-wrap{position:relative;width:100%;height:140px;margin-bottom:4px;}
+.stats-chart-wrap svg{width:100%;height:100%;overflow:visible;}
+.chart-grid-line{stroke:var(--border);stroke-width:1;}
+.chart-target-line{stroke:rgba(16,185,129,0.25);stroke-width:1;stroke-dasharray:4,3;}
+.chart-area{fill:url(#areaGrad);opacity:0.6;}
+.chart-line{fill:none;stroke:var(--gold);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.chart-dot{fill:var(--bg);stroke:var(--gold);stroke-width:2;}
+.chart-dot.ok{fill:var(--gold);}
+.chart-dot.today{fill:var(--gold);filter:drop-shadow(0 0 4px var(--gold));}
+.chart-label-x{
+  font-family:var(--mono);font-size:8px;
+  fill:var(--muted);text-anchor:middle;
 }
-.bar-fill.ok{background:linear-gradient(180deg,var(--gold) 0%,#047857 100%);}
-.bar-fill.today{box-shadow:0 0 8px var(--gold-glow);}
-.bar-day{font-family:var(--mono);font-size:8px;color:var(--muted);text-align:center;}
-.bar-today{color:var(--gold);}
-.stats-divider{height:1px;background:var(--border);margin:14px 0;}
-.stats-kv-row{display:flex;justify-content:space-between;align-items:center;}
-.stats-kv-label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;}
-.stats-kv-val{font-family:var(--serif);font-size:18px;color:var(--text);}
-.streak-row{display:flex;gap:5px;margin-top:14px;}
-.streak-dot{
-  flex:1;height:6px;border-radius:3px;
-  background:var(--border);
+.chart-label-x.today-lbl{fill:var(--gold);}
+.chart-label-y{
+  font-family:var(--mono);font-size:7px;
+  fill:var(--muted);text-anchor:end;
 }
+.chart-val-label{
+  font-family:var(--mono);font-size:7px;
+  fill:var(--text);text-anchor:middle;
+}
+.stats-kv-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-radius:10px;overflow:hidden;margin-top:14px;}
+.stats-kv{background:var(--s1);padding:10px;text-align:center;}
+.stats-kv-label{font-family:var(--mono);font-size:7px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px;}
+.stats-kv-val{font-family:var(--serif);font-size:17px;color:var(--text);}
+.stats-kv-val.good{color:var(--gold);}
+.streak-row{display:flex;gap:4px;margin-top:12px;}
+.streak-dot{flex:1;height:4px;border-radius:2px;background:var(--border);}
 .streak-dot.ok{background:var(--gold);}
+/* bar area kept for compat but hidden */
+.bar-area{display:none;}
 
 /* ── NAV ── */
 nav{
@@ -593,11 +602,21 @@ nav{
   <div id="pane-stats" class="tab-pane">
     <div class="sec-hd">7-Day Protein Trend</div>
     <div class="stats-card">
-      <div id="bar-area" class="bar-area"></div>
-      <div class="stats-divider"></div>
-      <div class="stats-kv-row">
-        <div class="stats-kv-label">7日平均</div>
-        <div class="stats-kv-val" id="weekly-avg">—</div>
+      <div class="stats-chart-wrap" id="stats-chart"></div>
+      <div class="bar-area" id="bar-area"></div>
+      <div class="stats-kv-grid">
+        <div class="stats-kv">
+          <div class="stats-kv-label">7日平均</div>
+          <div class="stats-kv-val" id="kpi-avg">—</div>
+        </div>
+        <div class="stats-kv">
+          <div class="stats-kv-label">連続達成</div>
+          <div class="stats-kv-val" id="kpi-streak">0日</div>
+        </div>
+        <div class="stats-kv">
+          <div class="stats-kv-label">最高記録</div>
+          <div class="stats-kv-val" id="kpi-best">—</div>
+        </div>
       </div>
       <div class="streak-row" id="streak-row"></div>
     </div>
@@ -911,27 +930,27 @@ function renderSuggest(){
     const diff = Math.abs(gap-opt.p);
     const isBest = i===0;
     const matchGap = diff<=5;
-    const tagsHtml = opt.tags.map(t=>`<span class="sug-tag ${matchGap?'hl':''}">${t}</span>`).join('');
-    let reason = '';
-    if(isBest && matchGap) reason = `ギャップ差 ${diff.toFixed(1)}g — 今夜の最適解です。`;
-    else if(isBest) reason = `最もバランスの取れた選択肢です。`;
-    else reason = `代替案。摂取量の調整で目標達成可能です。`;
+    const tagsHtml = opt.tags.slice(0,3).map(t=>`<span class="sug-tag ${matchGap?'hl':''}">${t}</span>`).join('');
     return `
     <div class="sug-card ${isBest?'best':''}">
       <div class="sug-accent"></div>
-      <div class="sug-rank">
-        <span class="sug-rank-num">${['I','II','III'][i]}</span>
-        Option ${['A','B','C'][i]}
-        ${isBest?'<span class="sug-best-badge">Best Match</span>':''}
-      </div>
-      <div class="sug-main-row">
-        <div class="sug-name">${opt.main}</div>
+      <div class="sug-header-row">
+        <div class="sug-rank">
+          <span class="sug-rank-num">${['I','II','III'][i]}</span>
+          Option ${['A','B','C'][i]}
+          ${isBest?'<span class="sug-best-badge">Best</span>':''}
+        </div>
         <div class="sug-p">${opt.p.toFixed(1)}<span>g</span></div>
       </div>
+      <div class="sug-name">${opt.main}</div>
       <div class="sug-side">副菜：${opt.side}</div>
-      <div class="sug-reason">${reason}</div>
-      <div class="sug-tags">${tagsHtml}</div>
-      <button class="sug-cta ${isBest?'full':''}" onclick="addFromSuggest('${opt.main.replace(/'/g,"\\'")}',${opt.p})">この夕食を記録 →</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="sug-tags">${tagsHtml}</div>
+        <button class="sug-cta ${isBest?'full':''}" onclick="addFromSuggest('${opt.main.replace(/'/g,"\\'")}',${opt.p})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          記録
+        </button>
+      </div>
     </div>`;
   }).join('');
 
@@ -944,23 +963,90 @@ function renderStats(){
   for(let i=6;i>=0;i--){
     const d=new Date(); d.setDate(d.getDate()-i);
     const ds=d.toDateString();
-    const tot=S.history.filter(m=>new Date(m.timestamp).toDateString()===ds).reduce((s,m)=>s+m.protein,0);
-    days.push({lbl:DAY_LBL[d.getDay()],tot,isToday:i===0,ok:tot>=TARGET});
+    const meals=S.history.filter(m=>new Date(m.timestamp).toDateString()===ds);
+    const tot=meals.reduce((s,m)=>s+m.protein,0);
+    days.push({lbl:DAY_LBL[d.getDay()],date:d,tot,isToday:i===0,ok:tot>=TARGET,hasData:meals.length>0});
   }
-  const maxV = Math.max(...days.map(d=>d.tot),TARGET,1);
-  document.getElementById('bar-area').innerHTML = days.map(d=>`
-    <div class="bar-col-w">
-      <div class="bar-space">
-        <div class="bar-fill ${d.ok?'ok':''} ${d.isToday?'today':''}" style="height:${Math.max(d.tot/maxV*100,3)}%"></div>
-      </div>
-      <div class="bar-day ${d.isToday?'bar-today':''}">${d.lbl}</div>
-    </div>`).join('');
 
-  const withData=days.filter(d=>d.tot>0);
-  const avg=withData.length?(withData.reduce((s,d)=>s+d.tot,0)/withData.length).toFixed(1):'—';
-  document.getElementById('weekly-avg').textContent = avg+(avg!=='—'?'g':'');
+  // ── SVG折れ線グラフ ──────────────────────────────────────────
+  const W=320, H=120, PL=32, PR=10, PT=16, PB=28;
+  const cW=W-PL-PR, cH=H-PT-PB;
+  const maxV=Math.max(...days.map(d=>d.tot),TARGET*1.1,10);
+  const xStep=cW/(days.length-1);
+
+  // 目盛り線
+  const gridVals=[0, Math.round(TARGET/2), TARGET, Math.round(TARGET*1.2)].filter(v=>v<=maxV*1.05);
+  const grids=gridVals.map(v=>{
+    const y=PT+cH-(v/maxV)*cH;
+    const isTarget=v===TARGET;
+    return `
+      <line class="${isTarget?'chart-target-line':'chart-grid-line'}" x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}"/>
+      <text class="chart-label-y" x="${PL-4}" y="${(y+3).toFixed(1)}">${v}</text>`;
+  }).join('');
+
+  // 座標計算
+  const pts=days.map((d,i)=>({
+    x: PL+i*xStep,
+    y: PT+cH-(d.tot/maxV)*cH,
+    d, i
+  }));
+
+  // エリア塗り
+  const areaD = pts.map((p,i)=>i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+    + ` L${pts[pts.length-1].x.toFixed(1)},${(PT+cH).toFixed(1)} L${PL},${(PT+cH).toFixed(1)} Z`;
+
+  // ライン
+  const lineD = pts.map((p,i)=>i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  // ドット + 数値ラベル
+  const dots=pts.map(p=>{
+    const showVal=p.d.hasData;
+    const cls=p.d.isToday?'today':p.d.ok?'ok':'';
+    const valY=p.y-8;
+    return `
+      ${showVal?`<text class="chart-val-label" x="${p.x.toFixed(1)}" y="${valY.toFixed(1)}" style="font-size:7px;fill:${p.d.ok?'var(--gold)':'var(--muted)'}">${p.d.tot.toFixed(0)}</text>`:''}
+      <circle class="chart-dot ${cls}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.d.isToday?4:3}"/>
+      <text class="chart-label-x ${p.d.isToday?'today-lbl':''}" x="${p.x.toFixed(1)}" y="${(PT+cH+14).toFixed(1)}">${p.d.lbl}</text>`;
+  }).join('');
+
+  const svg=`
+  <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--gold)" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="var(--gold)" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${grids}
+    <path class="chart-area" d="${areaD}"/>
+    <path class="chart-line" d="${lineD}"/>
+    ${dots}
+  </svg>`;
+
+  document.getElementById('bar-area').innerHTML=''; // compat
+  document.getElementById('stats-chart').innerHTML=svg;
+
+  // ── KPIカード ──────────────────────────────────────────────────
+  const withData=days.filter(d=>d.hasData);
+  const avg=withData.length?(withData.reduce((s,d)=>s+d.tot,0)/withData.length):0;
+  const streak=days.slice().reverse().reduce((s,d)=>{
+    if(s.done) return s;
+    if(d.ok) return {...s,count:s.count+1};
+    return {...s,done:true};
+  },{count:0,done:false}).count;
+  const best=Math.max(...days.map(d=>d.tot),0);
+
+  document.getElementById('kpi-avg').textContent=avg>0?avg.toFixed(0)+'g':'—';
+  document.getElementById('kpi-avg').className='stats-kv-val'+(avg>=TARGET?' good':'');
+  document.getElementById('kpi-streak').textContent=streak+'日';
+  document.getElementById('kpi-streak').className='stats-kv-val'+(streak>=3?' good':'');
+  document.getElementById('kpi-best').textContent=best>0?best.toFixed(0)+'g':'—';
+  document.getElementById('kpi-best').className='stats-kv-val'+(best>=TARGET?' good':'');
+
+  // ── ストリーク dots ──────────────────────────────────────────────
   document.getElementById('streak-row').innerHTML = days.map(d=>`<div class="streak-dot ${d.ok?'ok':''}"></div>`).join('');
 
+  // ── Recent meals ───────────────────────────────────────────────
   const recent=[...S.history].reverse().slice(0,8);
   document.getElementById('recent-list').innerHTML = recent.length
     ? recent.map(m=>{
