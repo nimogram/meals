@@ -263,7 +263,7 @@ function renderLog(){
       </div>
       <div class="li-actions" id="liact-${i}">
         <button class="li-act-edit" onclick="openEdit(${i})">修正</button>
-        <button class="li-act-del" onclick="openConfirm(${i})">削除</button>
+        <button class="li-act-del" onclick="deleteMeal(${i})">削除</button>
       </div>
     </div>`).join('');
 }
@@ -272,18 +272,25 @@ function renderSuggest(refresh = false){
   const el = document.getElementById('sug-inner');
   const tot = S.today.reduce((s,m)=>s+m.protein,0);
   const gap = Math.max(0,TARGET-tot);
-  if(gap<=0){ el.innerHTML = "Goal Achieved!"; return; }
+  if(gap<=0){ el.innerHTML = '<div style="padding:40px; text-align:center; color:var(--gold); font-family:var(--serif); font-size:20px;">Goal Achieved!</div>'; return; }
   
   let pool = [...MENUS];
-  if(refresh) pool.sort(()=>Math.random()-0.5);
-  const sorted = pool.sort((a,b)=>Math.abs(gap-a.p)-Math.abs(gap-b.p)).slice(0,3);
+  let sorted;
+  
+  if(refresh) {
+    // 修正ポイント: refresh時は不足分への近さではなく、ランダム性を優先する
+    sorted = pool.sort(() => Math.random() - 0.5).slice(0, 3);
+  } else {
+    // 初回は目標値(Gap)に近いものをソートして提示
+    sorted = pool.sort((a,b) => Math.abs(gap - a.p) - Math.abs(gap - b.p)).slice(0, 3);
+  }
 
   el.innerHTML = `
     <div class="suggest-hero">
       <div class="sh-gap">${gap.toFixed(1)}<em>g 不足</em></div>
       <div style="margin-top:10px;"><span class="sh-pill active">推奨</span><span class="sh-pill">重複回避済</span></div>
     </div>
-    <div class="sec-hd">Dinner Options <button onclick="renderSuggest(true)" style="margin-left:auto; background:none; border:none; color:var(--gold); font-size:8px;">CHANGE</button></div>
+    <div class="sec-hd">Dinner Options <button onclick="renderSuggest(true)" style="margin-left:auto; background:var(--s2); border:1px solid var(--border); color:var(--gold); font-size:8px; padding:4px 10px; border-radius:8px; cursor:pointer;">CHANGE</button></div>
     ${sorted.map((opt,i)=>`
       <div class="sug-card">
         <div class="sug-name">${opt.main}</div>
@@ -293,13 +300,20 @@ function renderSuggest(refresh = false){
 }
 
 function renderStats(){
-  const days = [50, 70, 130, 90, 110, 80, 120]; // Mock
+  const days = [50, 70, 130, 90, 110, 80, 120]; 
   document.getElementById('bar-area').innerHTML = days.map(v=>`<div class="bar-fill ${v>=TARGET?'ok':''}" style="height:${v/1.5}px; flex:1;"></div>`).join('');
 }
 
 function switchTab(id){
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.getElementById('pane-'+id).classList.add('active');
+  
+  const btns = document.querySelectorAll('.nav-btn');
+  btns.forEach(btn => {
+    const lbl = btn.querySelector('.nav-lbl').innerText.toLowerCase();
+    btn.classList.toggle('on', lbl === (id === 'suggest' ? 'dinner' : id));
+  });
+  
   if(id==='suggest') renderSuggest();
 }
 
@@ -310,10 +324,11 @@ function setType(t,btn){
 }
 
 async function saveForm(){
-  const main=document.getElementById('in-main').value;
+  const main=document.getElementById('in-main').value.trim();
   const p=parseFloat(document.getElementById('in-p').value);
   if(!main) return;
   await save({main,protein:p,type:S.type});
+  document.getElementById('in-main').value = '';
 }
 
 async function addFromSuggest(main,p){ await save({main,protein:p,type:'夜'}); switchTab('log'); }
@@ -342,7 +357,26 @@ function openEdit(i){
   const m=S.today[i];
   document.getElementById('edit-main').value=m.main;
   document.getElementById('edit-p').value=m.protein;
+  document.getElementById('edit-sl-val').innerHTML=m.protein.toFixed(1)+'g';
   document.getElementById('edit-modal').classList.add('open');
+  _editIdx = i;
+}
+
+function commitEdit(){
+  if(_editIdx === null) return;
+  const main = document.getElementById('edit-main').value;
+  const p = parseFloat(document.getElementById('edit-p').value);
+  S.today[_editIdx].main = main;
+  S.today[_editIdx].protein = p;
+  closeEditModal();
+  renderAll();
+  toast("UPDATED");
+}
+
+function deleteMeal(i){
+  S.today.splice(i,1);
+  renderAll();
+  toast("DELETED");
 }
 
 function closeEditModal(){ document.getElementById('edit-modal').classList.remove('open'); }
