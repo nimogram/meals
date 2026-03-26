@@ -31,7 +31,6 @@
 html,body{height:100%;overflow:hidden;background:var(--bg);}
 body{font-family:var(--sans);color:var(--text);}
 
-/* noise texture overlay */
 body::before{
   content:'';position:fixed;inset:0;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
@@ -85,7 +84,7 @@ header{
 
 main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 main::-webkit-scrollbar{display:none;}
-.tab-pane{display:none;padding:18px 14px 130px;}
+.tab-pane{display:none;padding:12px 12px 130px;}
 .tab-pane.active{display:block;}
 
 .sec-hd{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.25em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
@@ -119,19 +118,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .li-act-edit{background:#0d2418;color:var(--gold);}
 .li-act-del{background:#2a1418;color:#e05a6a;}
 
-.suggest-hero{background:linear-gradient(135deg,var(--s2) 0%, #0e1020 100%);border:1px solid rgba(16,185,129,0.2);border-radius:20px;padding:20px;margin-bottom:18px;position:relative;overflow:hidden;}
-.sh-gap{font-family:var(--serif);font-size:34px;color:var(--text);line-height:1;}
-.sh-gap em{font-family:var(--mono);font-size:12px;color:var(--gold);font-style:normal;}
+.suggest-hero{background:linear-gradient(135deg,var(--s2) 0%, #0e1020 100%);border:1px solid rgba(16,185,129,0.2);border-radius:20px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden;}
 .sh-pill{font-family:var(--mono);font-size:7px;padding:4px 10px;border-radius:20px;background:var(--s1);border:1px solid var(--border);color:var(--muted);margin-right:6px;}
 .sh-pill.active{background:var(--gold-dim);border-color:rgba(16,185,129,0.3);color:var(--gold);}
 
-.sug-card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:10px;position:relative;overflow:hidden;}
-.sug-card.best{border-color:rgba(16,185,129,0.35);}
-.sug-name{font-family:var(--serif);font-size:20px;color:var(--text);line-height:1.2;flex:1;}
-.sug-p{font-family:var(--serif);font-size:18px;color:var(--gold);line-height:1;}
-.sug-tag{font-family:var(--mono);font-size:10px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);margin-right:5px;}
-.sug-cta{width:100%;background:var(--gold-dim);border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:11px;font-family:var(--mono);font-size:8px;color:var(--gold);cursor:pointer;text-align:center;text-transform:uppercase;}
-.sug-cta.full{background:var(--gold);color:var(--bg);}
+.sug-card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:8px;position:relative;overflow:hidden;}
+.sug-card.best{border-color:rgba(16,185,129,0.3);}
+.sug-name{font-family:var(--serif);font-size:18px;color:var(--text);line-height:1.2;flex:1;}
+.sug-p{font-family:var(--serif);font-size:16px;color:var(--gold);line-height:1;}
+.sug-tag{font-family:var(--mono);font-size:9px;padding:3px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:#10b981;margin-right:4px;}
+.sug-comment-area{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;}
+.sug-comment-row{display:flex;flex-direction:column;}
+.sug-comment-lbl{font-family:var(--mono);font-size:6.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px;}
+.sug-comment-txt{font-size:10px;line-height:1.4;color:var(--text);font-weight:300;}
 
 nav{
   position:absolute;bottom:0;left:0;right:0;
@@ -207,7 +206,10 @@ nav{
     </div>
     <div id="pane-suggest" class="tab-pane"><div id="sug-inner"></div></div>
     <div id="pane-stats" class="tab-pane">
-      <div class="stats-card"><div id="bar-area" class="bar-area"></div></div>
+      <div class="sec-hd">Protein Weekly Trend</div>
+      <div class="stats-card">
+        <div id="bar-area" class="bar-area" style="display:flex; gap:8px; align-items:flex-end; height:140px; padding:10px 0;"></div>
+      </div>
       <div id="recent-list"></div>
     </div>
   </main>
@@ -234,13 +236,13 @@ nav{
 const GAS = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec";
 const TARGET = 120;
 const MENUS = [
-  { main:"牛肉ステーキ", p:40.0, tags:["鉄分(造血)","牛赤身(燃焼)"] },
-  { main:"チキンステーキ", p:35.0, tags:["低脂質(絞り)","鶏肉(回復)"] },
-  { main:"生ラム肉グリル", p:32.0, tags:["L-カルニチン","亜鉛(精力)"] },
-  { main:"刺身盛り合わせ", p:30.0, tags:["DHA/EPA","血管ケア"] },
-  { main:"カツオたたき", p:28.0, tags:["鉄分","セレン(抗酸化)"] },
-  { main:"サバ味噌煮", p:21.0, tags:["良質脂質","脳機能"] },
-  { main:"納豆オムレツ", p:20.0, tags:["発酵食品","完全栄養"] }
+  { main:"牛肉ステーキ", p:40.0, tags:["鉄分(造血)","牛赤身(燃焼)"], reason:"タンパク質不足を解消し、鉄分で午後の営業活力を担保。", effect:"ヘモグロビン生成による集中力維持とL-カルニチン効果。" },
+  { main:"チキンステーキ", p:35.0, tags:["低脂質(絞り)","鶏肉(回復)"], reason:"目標達成を確実にする高タンパクかつ低カロリーな選択。", effect:"筋肉合成の効率化とアンセリンによる身体的疲労回復。" },
+  { main:"生ラム肉グリル", p:32.0, tags:["L-カルニチン","亜鉛(精力)"], reason:"高い脂肪燃焼効果を持つラム肉で、体の燃焼効率を最大化。", effect:"テストステロン値維持とミトコンドリア活性による代謝UP。" },
+  { main:"刺身盛り合わせ", p:30.0, tags:["DHA/EPA","血管ケア"], reason:"脳機能を司るDHAを補給し、明日の戦略立案へ備える。", effect:"血液の流動性向上と抗炎症作用による血管の若返り。" },
+  { main:"カツオたたき", p:28.0, tags:["鉄分","セレン(抗酸化)"], reason:"高タンパク・低脂質の理想的なバランス。強力な老化防止。", effect:"活性酸素除去による細胞保護と血流改善による美肌効果。" },
+  { main:"サバ味噌煮", p:21.0, tags:["良質脂質","脳機能"], reason:"必須脂肪酸を効率よく摂取。手軽さと栄養価を両立。", effect:"記憶力・判断力の維持と中性脂肪の抑制効果。" },
+  { main:"納豆オムレツ", p:20.0, tags:["発酵食品","完全栄養"], reason:"腸内環境を整えつつアミノ酸スコア100を達成。", effect:"タンパク質吸収効率の最大化と血栓予防効果。" }
 ];
 let S = { history:[], today:[], type:'昼' };
 let _editIdx = null;
@@ -308,28 +310,43 @@ function renderSuggest(refresh = false){
 
   el.innerHTML = `
     <div class="suggest-hero">
-      <div class="sh-gap">${gap.toFixed(1)}<em>g 不足</em></div>
-      <div style="margin-top:10px;"><span class="sh-pill active">推奨</span><span class="sh-pill">重複回避済</span></div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="logo-main" style="font-size:16px;">Tonight's Strategy</span>
+        <div><span class="sh-pill active">推奨</span><span class="sh-pill">重複回避</span></div>
+      </div>
     </div>
     <div class="sec-hd">Dinner Options <button onclick="renderSuggest(true)" style="margin-left:auto; background:var(--s2); border:1px solid var(--border); color:var(--gold); font-size:8px; padding:4px 10px; border-radius:8px; cursor:pointer;">CHANGE</button></div>
+    <div style="display:flex; flex-direction:column; gap:4px;">
     ${sorted.map((opt,i)=>`
       <div class="sug-card">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div class="sug-name">${opt.main}</div>
           <div style="text-align:right;">
             <div class="sug-p">${opt.p.toFixed(1)}g</div>
-            <div style="display:flex; gap:4px; justify-content:flex-end; margin-top:8px; flex-wrap:wrap;">
+            <div style="display:flex; gap:3px; justify-content:flex-end; margin-top:4px;">
               ${opt.tags.map(t=>`<span class="sug-tag" style="margin:0;">${t}</span>`).join('')}
             </div>
           </div>
         </div>
-        <button class="sug-cta ${i===0?'full':''}" onclick="addFromSuggest('${opt.main}',${opt.p})">記録する</button>
-      </div>`).join('')}`;
+        <div class="sug-comment-area">
+          <div class="sug-comment-row">
+            <div class="sug-comment-lbl">推奨理由 / 期待効果</div>
+            <div class="sug-comment-txt">${opt.reason} ${opt.effect}</div>
+          </div>
+        </div>
+      </div>`).join('')}
+    </div>`;
 }
 
 function renderStats(){
-  const days = [50, 70, 130, 90, 110, 80, 120]; 
-  document.getElementById('bar-area').innerHTML = days.map(v=>`<div class="bar-fill ${v>=TARGET?'ok':''}" style="height:${v/1.5}px; flex:1;"></div>`).join('');
+  const mockDays = [50, 70, 130, 90, 110, 80, 120]; 
+  const maxVal = Math.max(...mockDays, TARGET, 1);
+  const barArea = document.getElementById('bar-area');
+  if(!barArea) return;
+  barArea.innerHTML = mockDays.map(v=>`
+    <div class="bar-fill ${v>=TARGET?'ok':''}" 
+         style="height:${(v/maxVal)*100}%; flex:1; min-height:4px;">
+    </div>`).join('');
 }
 
 function switchTab(id){
@@ -344,7 +361,10 @@ function switchTab(id){
       document.getElementById('nav-btn-suggest').classList.add('on');
       renderSuggest();
   }
-  if(id==='stats') document.getElementById('nav-btn-stats').classList.add('on');
+  if(id==='stats') {
+      document.getElementById('nav-btn-stats').classList.add('on');
+      renderStats();
+  }
 }
 
 function setType(t,btn){
