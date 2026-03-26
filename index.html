@@ -97,7 +97,7 @@ main::-webkit-scrollbar{display:none;}
 .q-sub{font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:3px;}
 
 .form-card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:18px;margin-bottom:16px;}
-.type-row{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;margin-bottom:16px;}
+.type-row{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px;margin-bottom:12px;}
 .type-btn{flex:1;padding:8px 0;font-family:var(--mono);font-size:9px;border:none;background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;}
 .type-btn.on{background:var(--gold);color:var(--bg);}
 .txt-in{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:14px;font-weight:700;color:var(--text);outline:none;margin-bottom:14px;}
@@ -163,6 +163,18 @@ nav{
 .modal-back.open .modal-sheet{transform:translateY(0);}
 .toast-host{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:6px;}
 .toast{background:var(--gold);color:var(--bg);padding:8px 18px;border-radius:20px;font-family:var(--mono);font-size:9px;}
+
+/* Stats Bar */
+.bar-fill {
+  background: var(--brt);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+.bar-fill.ok {
+  background: linear-gradient(180deg, var(--gold) 0%, #064e3b 100%);
+  box-shadow: 0 0 15px var(--gold-glow);
+}
 </style>
 </head>
 <body>
@@ -193,13 +205,17 @@ nav{
         </div>
       </button>
       <div class="form-card">
+        <div class="type-row" style="margin-bottom:8px;">
+            <button id="date-today" class="type-btn on" style="flex:1.5" onclick="setTargetDate('today')">今日</button>
+            <button id="date-yesterday" class="type-btn" style="flex:1" onclick="setTargetDate('yesterday')">昨日</button>
+        </div>
         <div class="type-row"><button class="type-btn" onclick="setType('朝',this)">朝</button><button class="type-btn on" onclick="setType('昼',this)">昼</button><button class="type-btn" onclick="setType('夜',this)">夜</button></div>
         <input class="txt-in" id="in-main" type="text" placeholder="主菜"/>
         <div class="sl-card">
           <div class="sl-hd"><div class="sl-val" id="sl-val">25.0<span>g</span></div></div>
           <input type="range" id="in-p" min="0" max="60" step="0.5" value="25" oninput="document.getElementById('sl-val').innerHTML=parseFloat(this.value).toFixed(1)+'<span>g</span>'"/>
         </div>
-        <button class="save-btn" onclick="saveForm()">記録を保存 →</button>
+        <button class="save-btn" id="main-save-btn" onclick="saveForm()">記録を保存 →</button>
       </div>
       <div class="sec-hd">Today's Records</div>
       <div id="log-list"></div>
@@ -208,8 +224,9 @@ nav{
     <div id="pane-stats" class="tab-pane">
       <div class="sec-hd">Protein Weekly Trend</div>
       <div class="stats-card">
-        <div id="bar-area" class="bar-area" style="display:flex; gap:8px; align-items:flex-end; height:140px; padding:10px 0;"></div>
+        <div id="bar-area" style="display:flex; gap:8px; align-items:flex-end; height:160px; padding:10px 0; background:rgba(0,0,0,0.1); border-radius:12px;"></div>
       </div>
+      <div class="sec-hd">History Log</div>
       <div id="recent-list"></div>
     </div>
   </main>
@@ -244,7 +261,7 @@ const MENUS = [
   { main:"サバ味噌煮", p:21.0, tags:["良質脂質","脳機能"], reason:"必須脂肪酸を効率よく摂取。手軽さと栄養価を両立。", effect:"記憶力・判断力の維持と中性脂肪の抑制効果。" },
   { main:"納豆オムレツ", p:20.0, tags:["発酵食品","完全栄養"], reason:"腸内環境を整えつつアミノ酸スコア100を達成。", effect:"タンパク質吸収効率の最大化と血栓予防効果。" }
 ];
-let S = { history:[], today:[], type:'昼' };
+let S = { history:[], today:[], type:'昼', targetDate:'today' };
 let _editIdx = null;
 
 (function init(){
@@ -279,6 +296,7 @@ function renderAll(){
 
 function renderLog(){
   const el = document.getElementById('log-list');
+  if(!el) return;
   el.innerHTML = S.today.map((m,i)=>`
     <div class="li-wrap">
       <div class="log-item" id="liitem-${i}" ontouchstart="swipeStart(event,${i})" ontouchmove="swipeMove(event,${i})">
@@ -295,6 +313,7 @@ function renderLog(){
 
 function renderSuggest(refresh = false){
   const el = document.getElementById('sug-inner');
+  if(!el) return;
   const tot = S.today.reduce((s,m)=>s+m.protein,0);
   const gap = Math.max(0,TARGET-tot);
   if(gap<=0){ el.innerHTML = '<div style="padding:40px; text-align:center; color:var(--gold); font-family:var(--serif); font-size:20px;">Goal Achieved!</div>'; return; }
@@ -339,13 +358,34 @@ function renderSuggest(refresh = false){
 }
 
 function renderStats(){
-  const mockDays = [50, 70, 130, 90, 110, 80, 120]; 
-  const maxVal = Math.max(...mockDays, TARGET, 1);
   const barArea = document.getElementById('bar-area');
   if(!barArea) return;
-  barArea.innerHTML = mockDays.map(v=>`
-    <div class="bar-fill ${v>=TARGET?'ok':''}" 
-         style="height:${(v/maxVal)*100}%; flex:1; min-height:4px;">
+
+  // 週次のデータを取得（過去7日間）
+  const labels = ['月','火','水','木','金','土','日'];
+  const now = new Date();
+  const weekData = [];
+  
+  for(let i=6; i>=0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const ds = d.toDateString();
+      const dayTotal = S.history
+          .filter(m => new Date(m.timestamp).toDateString() === ds)
+          .reduce((sum, m) => sum + m.protein, 0);
+      weekData.push({ val: dayTotal, label: labels[d.getDay() === 0 ? 6 : d.getDay()-1] });
+  }
+
+  const maxVal = Math.max(...weekData.map(d => d.val), TARGET, 1);
+  
+  barArea.innerHTML = weekData.map(d => `
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%;">
+        <div style="flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center;">
+            <div class="bar-fill ${d.val >= TARGET ? 'ok' : ''}" 
+                 style="height:${(d.val / maxVal) * 100}%; width:80%; min-height:4px;">
+            </div>
+        </div>
+        <div style="font-family:var(--mono); font-size:7px; color:var(--muted);">${d.label}</div>
     </div>`).join('');
 }
 
@@ -365,6 +405,12 @@ function switchTab(id){
       document.getElementById('nav-btn-stats').classList.add('on');
       renderStats();
   }
+}
+
+function setTargetDate(d){
+    S.targetDate = d;
+    document.getElementById('date-today').classList.toggle('on', d==='today');
+    document.getElementById('date-yesterday').classList.toggle('on', d==='yesterday');
 }
 
 function setType(t,btn){
@@ -388,10 +434,29 @@ async function saveForm(){
 async function addFromSuggest(main,p){ await save({main,protein:p,type:'夜'}); switchTab('log'); }
 
 async function save(data){
-  const meal={...data,timestamp:new Date().toISOString()};
-  S.today.unshift(meal); renderAll();
-  fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify(meal)});
-  toast("SAVED");
+  let ts = new Date();
+  if(S.targetDate === 'yesterday') {
+      ts.setDate(ts.getDate() - 1);
+  }
+  const meal={...data, timestamp: ts.toISOString()};
+  
+  // UI反映
+  if(S.targetDate === 'today') S.today.unshift(meal);
+  S.history.unshift(meal);
+  renderAll();
+
+  // 同期
+  const btn = document.getElementById('main-save-btn');
+  if(btn) btn.disabled = true;
+  
+  try {
+      await fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify(meal)});
+      toast("SAVED");
+  } catch(e) { toast("OFFLINE SAVE"); }
+  finally {
+      if(btn) btn.disabled = false;
+      setTargetDate('today'); // 入力後は今日に戻す
+  }
 }
 
 let _sw={};
@@ -420,8 +485,17 @@ function commitEdit(){
   if(_editIdx === null) return;
   const main = document.getElementById('edit-main').value;
   const p = parseFloat(document.getElementById('edit-p').value);
+  const ts = S.today[_editIdx].timestamp;
+  
   S.today[_editIdx].main = main;
   S.today[_editIdx].protein = p;
+  
+  const hi = S.history.findIndex(h => h.timestamp === ts);
+  if(hi !== -1) {
+      S.history[hi].main = main;
+      S.history[hi].protein = p;
+  }
+  
   closeEditModal();
   renderAll();
   toast("UPDATED");
@@ -437,9 +511,11 @@ function closeEditModal(){ document.getElementById('edit-modal').classList.remov
 
 function toast(m){
   const h=document.getElementById('toast-host');
+  if(!h) return;
   const d=document.createElement('div'); d.className='toast'; d.textContent=m;
   h.appendChild(d); setTimeout(()=>d.remove(),2000);
 }
 </script>
 </body>
 </html>
+
