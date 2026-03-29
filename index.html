@@ -43,12 +43,8 @@ header{background:linear-gradient(180deg,var(--s1) 0%,var(--bg) 100%);border-bot
 .hdr-right{display:flex;align-items:center;gap:7px;}
 .date-pill{font-family:var(--mono);font-size:8px;color:var(--mu);background:var(--s2);border:1px solid var(--bd);padding:5px 11px;border-radius:20px;letter-spacing:0.08em;}
 .sync-btn{width:30px;height:30px;background:var(--s2);border:1px solid var(--bd);border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mu);transition:all 0.2s;}
-.sync-btn:active{transform:scale(0.88);border-color:var(--em);}
 .sync-btn svg{width:12px;height:12px;}
-.spin{animation:spin 1s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
 
-/* gauge */
 .g-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
 .g-lbl{font-family:var(--mono);font-size:7.5px;color:var(--mu);letter-spacing:0.2em;text-transform:uppercase;}
 .g-val{font-family:var(--serif);font-size:34px;color:var(--em);line-height:1;}
@@ -72,20 +68,15 @@ main::-webkit-scrollbar{display:none;}
 .date-nav{display:flex;align-items:center;background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:4px;gap:2px;margin-bottom:12px;}
 .dn-arrow{width:36px;height:36px;background:transparent;border:none;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mu);transition:all 0.2s;flex-shrink:0;}
 .dn-arrow:active{background:var(--bd);color:var(--tx);}
-.dn-arrow svg{width:14px;height:14px;}
 .dn-center{flex:1;text-align:center;}
 .dn-date{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--em);letter-spacing:0.05em;}
-.dn-sub{font-family:var(--mono);font-size:7px;color:var(--mu);margin-top:2px;letter-spacing:0.1em;}
-.dn-today{background:var(--em);color:var(--bg);border:none;border-radius:8px;font-family:var(--mono);font-size:7px;font-weight:500;padding:3px 8px;letter-spacing:0.1em;cursor:pointer;margin-top:4px;display:inline-block;}
 
 /* quick breakfast */
 .quick{width:100%;background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:10px;transition:all 0.15s;}
-.quick:active{border-color:var(--em);background:var(--em-dim);}
 .q-l{display:flex;align-items:center;gap:10px;}
 .q-ico{width:36px;height:36px;background:var(--em-dim);border:1px solid rgba(16,185,129,0.15);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
-.q-title{font-size:13px;font-weight:700;color:var(--tx);}
-.q-sub{font-family:var(--mono);font-size:7.5px;color:var(--mu);margin-top:2px;}
-.q-arr svg{width:13px;height:13px;color:var(--mu);}
+.q-title{font-size:13px;font-weight:700;color:#ffffff;}
+.q-sub{font-family:var(--mono);font-size:7.5px;color:rgba(255,255,255,0.6);margin-top:2px;}
 
 /* form */
 .form-card{background:var(--s1);border:1px solid var(--bd);border-radius:18px;padding:16px;margin-bottom:12px;}
@@ -94,814 +85,345 @@ main::-webkit-scrollbar{display:none;}
 .seg-btn.on{background:var(--em);color:var(--bg);}
 .txt{width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:11px;padding:13px 14px;font-size:14px;font-weight:700;color:var(--tx);outline:none;margin-bottom:12px;transition:border-color 0.2s;font-family:var(--sans);}
 .txt:focus{border-color:var(--em);}
-.txt::placeholder{color:var(--mu2);font-weight:300;}
 .sl-box{background:var(--bg);border:1px solid var(--bd);border-radius:11px;padding:12px 14px;margin-bottom:12px;}
 .sl-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .sl-lbl{font-family:var(--mono);font-size:7.5px;color:var(--mu);letter-spacing:0.18em;text-transform:uppercase;}
 .sl-val{font-family:var(--serif);font-size:24px;color:var(--em);line-height:1;}
 .sl-val span{font-family:var(--mono);font-size:8px;color:var(--mu);}
 input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--brt);border-radius:2px;outline:none;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;background:var(--em);border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 8px var(--em-glow);cursor:pointer;}
-.save-btn{width:100%;background:var(--em);color:var(--bg);border:none;border-radius:11px;padding:16px;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:opacity 0.15s;}
-.save-btn:active{opacity:0.85;}
-.save-btn:disabled{opacity:0.4;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:var(--em);border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 10px var(--em-glow);cursor:pointer;}
+.save-btn{width:100%;background:var(--em);color:var(--bg);border:none;border-radius:11px;padding:18px;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:opacity 0.15s;}
 
 /* log items */
 .li-wrap{position:relative;overflow:hidden;border-radius:13px;margin-bottom:7px;}
 .log-item{background:var(--s1);border:1px solid var(--bd);border-radius:13px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;transition:transform 0.22s ease;}
-.li-l{display:flex;align-items:center;gap:10px;}
 .li-badge{width:28px;height:28px;background:var(--bg);border:1px solid var(--bd);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7.5px;color:var(--mu);flex-shrink:0;}
 .li-name{font-size:13px;font-weight:700;color:var(--tx);}
-.li-time{font-family:var(--mono);font-size:7px;color:var(--mu);margin-top:2px;}
 .li-p{font-family:var(--serif);font-size:17px;color:var(--em);flex-shrink:0;}
-.li-actions{position:absolute;right:0;top:0;bottom:0;display:flex;z-index:1;transform:translateX(100%);transition:transform 0.22s ease;border-radius:0 13px 13px 0;overflow:hidden;}
-.li-actions.show{transform:translateX(0);}
-.li-edit,.li-del{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;padding:0 14px;min-width:56px;border:none;cursor:pointer;font-family:var(--mono);font-size:7px;letter-spacing:0.05em;}
-.li-edit{background:#0a2216;color:var(--em);}
-.li-del{background:#251018;color:var(--red);}
-.li-edit svg,.li-del svg{width:13px;height:13px;}
-.empty{text-align:center;padding:32px;font-family:var(--mono);font-size:9px;color:var(--mu);letter-spacing:0.15em;}
 
 /* ── SUGGEST TAB ── */
 .sug-hero{background:linear-gradient(135deg,var(--s2),#080a14);border:1px solid rgba(16,185,129,0.18);border-radius:16px;padding:14px 16px;margin-bottom:10px;position:relative;overflow:hidden;}
-.sug-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:radial-gradient(circle,rgba(16,185,129,0.07) 0%,transparent 70%);border-radius:50%;}
-.sh-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;}
 .sh-badge{font-family:var(--mono);font-size:7px;color:var(--em);letter-spacing:0.18em;text-transform:uppercase;background:var(--em-dim);border:1px solid rgba(16,185,129,0.2);padding:3px 9px;border-radius:20px;margin-bottom:6px;display:inline-block;}
-.sh-title{font-family:var(--mono);font-size:8px;color:var(--mu);letter-spacing:0.08em;margin-bottom:2px;}
 .sh-gap{font-family:var(--serif);font-size:30px;color:var(--tx);line-height:1;}
 .sh-gap em{font-family:var(--mono);font-size:10px;color:var(--em);font-style:normal;margin-left:3px;}
-.sh-reason{font-family:var(--mono);font-size:7px;color:var(--mu);margin-top:4px;letter-spacing:0.06em;}
-.sh-pills{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px;}
-.sh-pill{font-family:var(--mono);font-size:6.5px;letter-spacing:0.08em;padding:3px 8px;border-radius:20px;text-transform:uppercase;background:var(--s1);border:1px solid var(--bd);color:var(--mu);}
-.sh-pill.on{background:var(--em-dim);border-color:rgba(16,185,129,0.3);color:var(--em);}
 
 /* effect filter */
 .effect-row{display:flex;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:3px;gap:2px;margin-bottom:10px;}
-.eff-btn{flex:1;padding:9px 4px;font-family:var(--mono);font-size:8px;border:none;background:transparent;color:var(--mu);border-radius:7px;cursor:pointer;transition:all 0.18s;letter-spacing:0.04em;}
-.eff-btn.on{background:var(--em);color:var(--bg);font-weight:500;}
+.eff-btn{flex:1;padding:10px 4px;font-family:var(--mono);font-size:10px;border:none;background:transparent;color:var(--mu);border-radius:7px;cursor:pointer;transition:all 0.18s;}
+.eff-btn.on{background:var(--em);color:var(--bg);font-weight:700;}
 
 /* suggest cards */
-.sug-card{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:13px 14px;margin-bottom:7px;position:relative;overflow:hidden;transition:all 0.18s;}
-.sug-card.best{border-color:rgba(16,185,129,0.38);}
-.sug-card.best::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--em),transparent);}
-.sug-glow{position:absolute;top:-15px;right:-15px;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,0.05) 0%,transparent 70%);}
-.sc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;}
-.sc-left{flex:1;}
-.sc-rank{font-family:var(--mono);font-size:7px;color:var(--mu);letter-spacing:0.18em;text-transform:uppercase;display:flex;align-items:center;gap:6px;margin-bottom:4px;}
-.sc-num{font-family:var(--serif);font-size:11px;color:var(--em);}
-.sc-best{font-family:var(--mono);font-size:6px;background:var(--em-dim);border:1px solid rgba(16,185,129,0.3);color:var(--em);padding:2px 6px;border-radius:8px;letter-spacing:0.1em;}
-.sc-name{font-family:var(--serif);font-size:17px;color:var(--tx);line-height:1.2;}
-.sc-p{font-family:var(--serif);font-size:24px;color:var(--em);line-height:1;flex-shrink:0;margin-left:10px;}
-.sc-p span{font-family:var(--mono);font-size:8px;color:var(--mu);}
-.sc-side{font-size:10px;color:var(--mu);font-weight:300;margin-bottom:6px;}
-.sc-effect{font-family:var(--mono);font-size:7.5px;color:var(--mu);background:var(--bg);border-radius:8px;padding:6px 10px;margin-bottom:8px;line-height:1.6;letter-spacing:0.03em;}
-.sc-effect em{color:var(--em);font-style:normal;}
-.sc-footer{display:flex;justify-content:space-between;align-items:center;gap:8px;}
-.sc-tags{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
-.sc-tag{font-family:var(--mono);font-size:6.5px;padding:2px 7px;background:var(--bg);border:1px solid var(--bd);border-radius:5px;color:var(--mu);}
-.sc-tag.hl{border-color:rgba(16,185,129,0.28);color:var(--em);}
-.sc-rec-btn{flex-shrink:0;display:flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--bd);border-radius:8px;padding:5px 10px;font-family:var(--mono);font-size:7px;color:var(--mu);cursor:pointer;letter-spacing:0.08em;transition:all 0.15s;white-space:nowrap;}
-.sc-rec-btn:active{background:var(--em-dim);border-color:var(--em);color:var(--em);}
-.sc-rec-btn.pri{border-color:rgba(16,185,129,0.4);color:var(--em);}
-.sc-rec-btn svg{width:10px;height:10px;}
-.shuffle-row{display:flex;justify-content:center;padding:8px 0 4px;}
-.shuffle-btn{display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:12px 28px;font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:var(--mu);cursor:pointer;transition:all 0.18s;}
-.shuffle-btn:active{transform:scale(0.97);border-color:var(--em);color:var(--em);}
-.shuffle-btn svg{width:13px;height:13px;}
-.goal-done{text-align:center;padding:50px 20px;animation:fadeUp 0.3s ease-out;}
-.goal-ring{width:72px;height:72px;border-radius:50%;border:1px solid rgba(16,185,129,0.4);background:var(--em-dim);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;}
-.goal-title{font-family:var(--serif);font-size:18px;color:var(--em);margin-bottom:5px;}
-.goal-sub{font-family:var(--mono);font-size:7.5px;color:var(--mu);letter-spacing:0.15em;}
+.sug-card{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:8px;position:relative;overflow:hidden;}
+.sc-name{font-family:var(--serif);font-size:18px;color:var(--tx);line-height:1.2;flex:1;}
+.sc-p{font-family:var(--serif);font-size:16px;color:var(--em);line-height:1;}
+.sc-tag{font-family:var(--mono);font-size:9px;padding:3px 8px;background:var(--bg);border:1px solid var(--bd);border-radius:6px;color:var(--em);margin-right:4px;}
+.sc-comment-area{margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:6px;}
+.sc-comment-lbl{font-family:var(--mono);font-size:6.5px;color:var(--mu);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px;}
+.sc-comment-txt{font-size:10px;line-height:1.4;color:var(--tx);font-weight:300;}
+
+.shuffle-row{display:flex;justify-content:center;padding:10px 0 20px;}
+.shuffle-btn{
+    width:80%;background:var(--s2);border:1px solid var(--bd);
+    color:var(--em);padding:20px;border-radius:16px;
+    font-family:var(--mono);font-size:13px;font-weight:900;
+    letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+.shuffle-btn:active { transform: scale(0.96); background: var(--em-dim); }
 
 /* ── STATS ── */
 .stats-card{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:12px;}
-.chart-wrap{width:100%;height:130px;margin-bottom:2px;}
-.chart-wrap svg{width:100%;height:100%;overflow:visible;}
-.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bd);border-radius:10px;overflow:hidden;margin-top:12px;}
-.kpi{background:var(--s1);padding:9px;text-align:center;}
-.kpi-lbl{font-family:var(--mono);font-size:6.5px;color:var(--mu);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:3px;}
-.kpi-val{font-family:var(--serif);font-size:16px;color:var(--tx);}
-.kpi-val.good{color:var(--em);}
-.streak-dots{display:flex;gap:4px;margin-top:10px;}
-.s-dot{flex:1;height:3px;border-radius:2px;background:var(--bd);}
-.s-dot.ok{background:var(--em);}
-
-/* ── MODALS ── */
-.modal-bg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.22s;}
-.modal-bg.open{opacity:1;pointer-events:all;}
-.modal-sheet{background:var(--s1);border:1px solid var(--bd);border-top:1px solid var(--brt);border-radius:22px 22px 0 0;padding:18px 18px max(22px,env(safe-area-inset-bottom));width:100%;max-width:430px;transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.34,1.2,0.64,1);}
-.modal-bg.open .modal-sheet{transform:translateY(0);}
-.modal-handle{width:34px;height:3px;background:var(--bd);border-radius:2px;margin:0 auto 18px;}
-.modal-title{font-family:var(--serif);font-size:17px;color:var(--tx);margin-bottom:16px;}
-.modal-lbl{font-family:var(--mono);font-size:7.5px;color:var(--mu);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:7px;}
-.modal-acts{display:flex;gap:9px;margin-top:4px;}
-.modal-cancel{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:11px;padding:13px;font-family:var(--mono);font-size:8.5px;letter-spacing:0.12em;color:var(--mu);cursor:pointer;text-transform:uppercase;}
-.modal-save{flex:2;background:var(--em);border:none;border-radius:11px;padding:13px;font-family:var(--mono);font-size:8.5px;letter-spacing:0.18em;color:var(--bg);font-weight:500;cursor:pointer;text-transform:uppercase;}
-.confirm-bg{position:fixed;inset:0;z-index:210;background:rgba(0,0,0,0.76);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;}
-.confirm-bg.open{opacity:1;pointer-events:all;}
-.confirm-box{background:var(--s1);border:1px solid var(--bd);border-radius:18px;padding:24px;width:calc(100% - 36px);max-width:340px;text-align:center;transform:scale(0.93);transition:transform 0.22s cubic-bezier(0.34,1.4,0.64,1);}
-.confirm-bg.open .confirm-box{transform:scale(1);}
-.confirm-ico{font-size:28px;margin-bottom:10px;}
-.confirm-ttl{font-family:var(--serif);font-size:16px;color:var(--tx);margin-bottom:5px;}
-.confirm-sub{font-family:var(--mono);font-size:7.5px;color:var(--mu);letter-spacing:0.08em;line-height:1.7;margin-bottom:14px;}
-.confirm-name{background:var(--bg);border:1px solid var(--bd);border-radius:9px;padding:9px 13px;font-size:12px;font-weight:700;color:var(--tx);margin-bottom:18px;}
-.confirm-acts{display:flex;gap:9px;}
-.conf-cancel{flex:1;background:var(--bg);border:1px solid var(--bd);border-radius:11px;padding:12px;font-family:var(--mono);font-size:8px;letter-spacing:0.1em;color:var(--mu);cursor:pointer;text-transform:uppercase;}
-.conf-del{flex:1;background:#251018;border:1px solid #3a1a22;border-radius:11px;padding:12px;font-family:var(--mono);font-size:8px;letter-spacing:0.1em;color:var(--red);cursor:pointer;text-transform:uppercase;}
+.bar-area{display:flex;gap:8px;align-items:flex-end;height:160px;padding:10px 0;background:rgba(0,0,0,0.1);border-radius:12px;}
+.bar-fill {background: var(--brt);border-radius: 4px 4px 0 0;transition: height 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); width: 100%;}
+.bar-fill.ok {background: linear-gradient(180deg, var(--em) 0%, #064e3b 100%); box-shadow: 0 0 12px var(--em-glow);}
 
 /* ── NAV ── */
 nav{position:absolute;bottom:0;left:0;right:0;background:rgba(4,5,10,0.95);backdrop-filter:blur(24px);border-top:1px solid var(--bd);display:flex;justify-content:space-around;padding:8px 0 max(10px,env(safe-area-inset-bottom));z-index:100;}
-.nav-btn{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:7px 20px;border-radius:12px;transition:all 0.22s;color:var(--mu);}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:10px 16px;border-radius:16px;transition:all 0.3s;color:var(--mu);min-width: 80px;}
 .nav-btn.on{color:var(--em);background:var(--em-dim);}
-.nav-btn svg{width:19px;height:19px;}
-.nav-lbl{font-family:var(--mono);font-size:7px;letter-spacing:0.18em;text-transform:uppercase;}
+.nav-lbl{font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;}
 
 /* toast */
-.toast-host{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;}
-.toast{background:var(--em);color:var(--bg);padding:7px 16px;border-radius:20px;font-family:var(--mono);font-size:8.5px;font-weight:500;letter-spacing:0.14em;animation:tin 0.2s ease-out,tout 0.2s 2.4s ease-in forwards;}
-@keyframes tin{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
-@keyframes tout{to{opacity:0;transform:translateY(-6px);}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.toast-host{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:999;}
+.toast{background:var(--em);color:var(--bg);padding:7px 16px;border-radius:20px;font-family:var(--mono);font-size:9px;font-weight:700;}
 </style>
 </head>
 <body>
 <div id="app">
 <div class="glow"></div>
 
-<!-- HEADER -->
 <header>
   <div class="hdr-row">
-    <div>
-      <div class="logo">Meal OS</div>
-      <div class="logo-sub">Strategic Protein Monitor</div>
-    </div>
-    <div class="hdr-right">
-      <div class="date-pill" id="date-pill"></div>
-      <div class="sync-btn" onclick="fetchData()">
-        <svg id="sync-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
-      </div>
-    </div>
+    <div><div class="logo">Meal OS</div><div class="logo-sub">Strategic Protein Monitor</div></div>
+    <div class="hdr-right"><div class="date-chip" id="date-chip"></div><div class="sync-btn" onclick="fetchData()">🔄</div></div>
   </div>
   <div class="g-row">
-    <div class="g-lbl"><span id="g-date-lbl">Today</span> / 目標 120g</div>
-    <div style="display:flex;align-items:baseline;">
-      <div class="g-val" id="hdr-p">0.0</div><div class="g-unit">g</div>
-    </div>
+    <div class="g-lbl"><span id="g-date-lbl">Today</span> / Target 120g</div>
+    <div style="display:flex;align-items:baseline;"><div class="g-val" id="hdr-p">0.0</div><div class="g-unit">g</div></div>
   </div>
   <div class="g-track"><div class="g-fill" id="g-fill" style="width:0%"></div></div>
-  <div class="g-meta"><div class="g-pct" id="g-pct">0% Done</div><div class="g-gap">残り <em id="g-gap">120.0g</em></div></div>
+  <div class="g-meta"><div class="g-pct" id="g-pct">0%</div><div class="g-gap">残り <em id="g-gap">120.0g</em></div></div>
 </header>
 
 <main>
-  <!-- LOG -->
   <div id="pane-log" class="pane active">
-    <!-- Date Nav -->
-    <div class="date-nav">
-      <button class="dn-arrow" onclick="moveDate(-1)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
-      <div class="dn-center">
-        <div class="dn-date" id="dn-date">—</div>
-        <div id="dn-today-wrap"></div>
-      </div>
-      <button class="dn-arrow" onclick="moveDate(1)" id="dn-next">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
-    </div>
-
-    <!-- Quick Breakfast -->
     <button class="quick" onclick="recordBreakfast()">
       <div class="q-l">
         <div class="q-ico">🥚</div>
-        <div>
-          <div class="q-title">朝セットを記録</div>
-          <div class="q-sub">卵・納豆・ヨーグルト — 45.0g P</div>
-        </div>
+        <div><div class="q-title">朝セットを記録</div><div class="q-sub">45.0g P</div></div>
       </div>
-      <div class="q-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
     </button>
-
-    <!-- Form -->
     <div class="form-card">
+      <div class="date-nav">
+        <button class="dn-arrow" onclick="moveDate(-1)">◀</button>
+        <div class="dn-center"><div class="dn-date" id="view-date-display">—</div></div>
+        <button class="dn-arrow" onclick="moveDate(1)">▶</button>
+      </div>
       <div class="seg" id="type-seg">
         <button class="seg-btn" onclick="setType('朝',this)">朝</button>
         <button class="seg-btn on" onclick="setType('昼',this)">昼</button>
         <button class="seg-btn" onclick="setType('夜',this)">夜</button>
         <button class="seg-btn" onclick="setType('他',this)">他</button>
       </div>
-      <input class="txt" id="in-main" type="text" placeholder="主菜（タンパク源）"/>
+      <input class="txt" id="in-main" type="text" placeholder="主菜"/>
       <div class="sl-box">
-        <div class="sl-hd">
-          <div class="sl-lbl">Protein</div>
-          <div class="sl-val" id="sl-val">25.0<span>g</span></div>
-        </div>
-        <input type="range" id="in-p" min="0" max="80" step="0.5" value="25"
-          oninput="document.getElementById('sl-val').innerHTML=parseFloat(this.value).toFixed(1)+'<span>g</span>'"/>
+        <div class="sl-hd"><div class="sl-lbl">Protein</div><div class="sl-val" id="sl-val">25.0<span>g</span></div></div>
+        <input type="range" id="in-p" min="0" max="60" step="0.5" value="25" oninput="document.getElementById('sl-val').innerHTML=parseFloat(this.value).toFixed(1)+'<span>g</span>'"/>
       </div>
       <button class="save-btn" id="save-btn" onclick="saveForm()">記録を保存 →</button>
     </div>
-
     <div class="sec" id="log-sec-hd">Records</div>
     <div id="log-list"></div>
   </div>
 
-  <!-- SUGGEST -->
   <div id="pane-suggest" class="pane">
     <div class="sug-hero">
-      <div class="sh-top">
-        <div>
-          <div class="sh-badge">Tonight's Strategy</div>
-          <div class="sh-title">夕食で補うタンパク質</div>
-          <div class="sh-gap" id="sh-gap-val">—<em>g 不足</em></div>
-          <div class="sh-reason" id="sh-ctx"></div>
-        </div>
-        <div style="font-size:22px;margin-top:2px;">🌙</div>
-      </div>
-      <div class="sh-pills" id="sh-pills"></div>
+      <div class="sh-badge">Tonight's Strategy</div>
+      <div class="sh-gap" id="sh-gap-val">—<em>g 不足</em></div>
     </div>
-
-    <div class="sec">Focus Effect</div>
-    <div class="effect-row">
+    <div class="sec">Strategy / Focus Effect</div>
+    <div class="effect-row" id="effect-selector">
       <button class="eff-btn on" onclick="setEffect('all',this)">ALL</button>
-      <button class="eff-btn" onclick="setEffect('burn',this)">燃焼</button>
+      <button class="eff-btn" onclick="setEffect('muscle',this)">筋肉増強</button>
       <button class="eff-btn" onclick="setEffect('recovery',this)">回復</button>
       <button class="eff-btn" onclick="setEffect('brain',this)">脳機能</button>
     </div>
-
     <div id="sug-inner"></div>
-
-    <div class="shuffle-row">
-      <button class="shuffle-btn" onclick="renderSuggest(true)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-        Shuffle
-      </button>
-    </div>
+    <div class="shuffle-row"><button class="shuffle-btn" onclick="renderSuggest(true)">SHUFFLE / CHANGE</button></div>
   </div>
 
-  <!-- STATS -->
   <div id="pane-stats" class="pane">
-    <div class="sec">7-Day Protein Trend</div>
-    <div class="stats-card">
-      <div class="chart-wrap" id="stats-chart"></div>
-      <div class="kpi-grid">
-        <div class="kpi"><div class="kpi-lbl">7日平均</div><div class="kpi-val" id="kpi-avg">—</div></div>
-        <div class="kpi"><div class="kpi-lbl">連続達成</div><div class="kpi-val" id="kpi-str">0日</div></div>
-        <div class="kpi"><div class="kpi-lbl">最高記録</div><div class="kpi-val" id="kpi-best">—</div></div>
-      </div>
-      <div class="streak-dots" id="streak-dots"></div>
-    </div>
+    <div class="sec">Protein Weekly Trend</div>
+    <div class="stats-card"><div id="bar-area" class="bar-area"></div></div>
     <div class="sec">History</div>
     <div id="recent-list"></div>
   </div>
 </main>
 
-<!-- NAV -->
 <nav>
-  <div class="nav-btn on" id="nav-log" onclick="switchTab('log')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-    <div class="nav-lbl">Log</div>
-  </div>
-  <div class="nav-btn" id="nav-suggest" onclick="switchTab('suggest')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>
-    <div class="nav-lbl">Dinner</div>
-  </div>
-  <div class="nav-btn" id="nav-stats" onclick="switchTab('stats')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    <div class="nav-lbl">Stats</div>
-  </div>
+  <div class="nav-btn on" id="nav-log" onclick="switchTab('log')"><div class="nav-lbl">Log</div></div>
+  <div class="nav-btn" id="nav-suggest" onclick="switchTab('suggest')"><div class="nav-lbl">Dinner</div></div>
+  <div class="nav-btn" id="nav-stats" onclick="switchTab('stats')"><div class="nav-lbl">Stats</div></div>
 </nav>
-</div>
-
-<!-- EDIT MODAL -->
-<div class="modal-bg" id="edit-modal" onclick="onModalBgClick(event,'edit-modal')">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">記録を修正</div>
-    <div class="modal-lbl">主菜</div>
-    <input class="txt" id="edit-main" type="text" style="margin-bottom:14px;"/>
-    <div class="modal-lbl">食事区分</div>
-    <div class="seg" id="edit-seg" style="margin-bottom:14px;">
-      <button class="seg-btn" onclick="setEditType('朝',this)">朝</button>
-      <button class="seg-btn" onclick="setEditType('昼',this)">昼</button>
-      <button class="seg-btn" onclick="setEditType('夜',this)">夜</button>
-      <button class="seg-btn" onclick="setEditType('他',this)">他</button>
-    </div>
-    <div class="sl-box" style="margin-bottom:14px;">
-      <div class="sl-hd">
-        <div class="sl-lbl">Protein</div>
-        <div class="sl-val" id="edit-sl-val">25.0<span>g</span></div>
-      </div>
-      <input type="range" id="edit-p" min="0" max="80" step="0.5" value="25"
-        oninput="document.getElementById('edit-sl-val').innerHTML=parseFloat(this.value).toFixed(1)+'<span>g</span>'"/>
-    </div>
-    <div class="modal-acts">
-      <button class="modal-cancel" onclick="closeModal('edit-modal')">キャンセル</button>
-      <button class="modal-save" onclick="commitEdit()">保存する →</button>
-    </div>
-  </div>
-</div>
-
-<!-- CONFIRM DELETE -->
-<div class="confirm-bg" id="del-modal" onclick="onModalBgClick(event,'del-modal')">
-  <div class="confirm-box">
-    <div class="confirm-ico">🗑️</div>
-    <div class="confirm-ttl">削除しますか？</div>
-    <div class="confirm-sub">削除後は元に戻せません。<br>スプレッドシートからも同時に削除されます。</div>
-    <div class="confirm-name" id="del-name"></div>
-    <div class="confirm-acts">
-      <button class="conf-cancel" onclick="closeModal('del-modal')">キャンセル</button>
-      <button class="conf-del" onclick="commitDelete()">削除する</button>
-    </div>
-  </div>
 </div>
 
 <div class="toast-host" id="toast-host"></div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────
-const GAS    = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec";
+const GAS = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec";
 const TARGET = 120;
-const DAY_JP = ['日','月','火','水','木','金','土'];
-
-// ── MENU DB 57品 ──────────────────────────────────────────────────────────
-const ALL=[0,1,2,3,4,5,6,7,8,9,10,11],W=[0,1,2,3,4,5,6],WD=[1,2,3,4],WE=[0,5,6];
-const SPR=[2,3,4,5],SUM=[5,6,7,8],AUT=[8,9,10,11],WIN=[10,11,0,1,2];
-const MENUS=[
-  {main:"牛肉ステーキ",p:40,side:"ブロッコリーサラダ",tags:["牛","赤身","鉄分"],effect:"鉄分で午後の活力を担保。L-カルニチンで<em>脂肪燃焼</em>を最大化。",cat:"burn",season:ALL,dow:W},
-  {main:"チキンステーキ",p:40,side:"野菜スティック・アボカド",tags:["鶏","低脂質","アボカド"],effect:"アンセリンによる<em>疲労回復</em>と筋肉合成の効率化。",cat:"recovery",season:ALL,dow:W},
-  {main:"鶏むね肉の低温調理",p:35,side:"ブロッコリースプラウト",tags:["鶏","むね肉","抗酸化"],effect:"インスリン感受性を維持しつつ<em>圧倒的タンパク補給</em>。",cat:"recovery",season:ALL,dow:W},
-  {main:"手巻き寿司",p:35,side:"海苔・酢飯(少量)・卵",tags:["魚","刺身","DHA/EPA"],effect:"DHAで<em>脳機能</em>を活性化。明日の戦略立案に備える。",cat:"brain",season:ALL,dow:WE},
-  {main:"鹿肉ステーキ",p:34,side:"舞茸のソテー",tags:["鹿","鉄分","超低脂質"],effect:"超低脂質・高鉄分。酸素運搬能力を高め<em>体を絞る</em>。",cat:"burn",season:[9,10,11,0,1,2],dow:W},
-  {main:"ラムチョップ香草焼き",p:32,side:"焼きトマト・ズッキーニ",tags:["羊","亜鉛","L-カルニチン"],effect:"テストステロン維持とミトコンドリア活性で<em>代謝UP</em>。",cat:"burn",season:ALL,dow:W},
-  {main:"厚揚げと鶏肉の煮物",p:32,side:"小松菜",tags:["鶏","豆腐","イソフラボン"],effect:"イソフラボンで<em>ホルモンバランス</em>を整えつつ高タンパク。",cat:"recovery",season:ALL,dow:W},
-  {main:"豚ヒレ肉のピカタ",p:31,side:"粉チーズ・パセリ添え",tags:["豚ヒレ","ビタミンB1","低脂質"],effect:"ビタミンB1が糖質を<em>エネルギーに変換</em>。疲労回復に貢献。",cat:"recovery",season:ALL,dow:W},
-  {main:"赤身牛のローストビーフ",p:30,side:"クレソン",tags:["牛","赤身","アルギニン"],effect:"アルギニンで<em>成長ホルモン分泌</em>を促進。血管を若返らせる。",cat:"burn",season:ALL,dow:WE},
-  {main:"刺身盛り合わせ",p:30,side:"ほうれん草お浸し",tags:["魚","刺身","血管ケア"],effect:"DHA/EPAが血液の流動性を向上。<em>血管の若返り</em>に貢献。",cat:"brain",season:ALL,dow:WE},
-  {main:"豆乳鍋（鶏肉・団子）",p:30,side:"春菊・しいたけ",tags:["鶏","鍋","血糖安定"],effect:"サポニンで<em>血糖値スパイクを防止</em>。体の芯から温まる。",cat:"recovery",season:WIN,dow:W},
-  {main:"生ラム肉のグリル",p:32,side:"焼き玉ねぎ・アスパラ",tags:["カルニチン","燃焼","亜鉛"],effect:"L-カルニチンが脂肪をエネルギーへ。<em>燃焼効率を最大化</em>。",cat:"burn",season:ALL,dow:W},
-  {main:"牛赤身肉のタリアータ",p:31,side:"ルッコラ・粉チーズ",tags:["アルギニン","鉄分","糖質オフ"],effect:"鉄分＋アルギニンで<em>疲労回復と代謝UP</em>を同時に狙う。",cat:"burn",season:ALL,dow:W},
-  {main:"生カツオのたたき",p:28.5,side:"玉ねぎスライス・ポン酢",tags:["カツオ","血流改善","セレン"],effect:"セレンが活性酸素を除去。<em>細胞保護と美肌</em>に貢献。",cat:"recovery",season:[3,4,5,6,7,8],dow:W},
-  {main:"サーモンステーキ",p:28,side:"アスパラガスのグリル",tags:["アスタキサンチン","Tie2"],effect:"アスタキサンチンで<em>毛細血管を強化</em>。Tie2活性化。",cat:"brain",season:ALL,dow:W},
-  {main:"レバニラ炒め",p:28,side:"キクラゲと卵の炒め物",tags:["レバー","造血","デトックス"],effect:"鉄分＋ビタミンAで<em>造血とデトックス</em>を促進。",cat:"recovery",season:ALL,dow:WD},
-  {main:"茹で鶏のバンバンジー",p:28,side:"クラゲと胡瓜の酢の物",tags:["鶏","疲労回復","低GI"],effect:"低GI食材で<em>血糖値を安定</em>させながら疲労回復。",cat:"recovery",season:SUM,dow:W},
-  {main:"ネギトロ丼",p:28,side:"納豆・めかぶ",tags:["マグロ","血管ケア","水溶性繊維"],effect:"水溶性食物繊維で<em>腸内環境と血管</em>を同時ケア。",cat:"brain",season:ALL,dow:WE},
-  {main:"鶏むね肉のガパオ風",p:28,side:"目玉焼き・レタス包み",tags:["バジル","抗酸化","高タンパク"],effect:"バジルのポリフェノールで<em>抗酸化力を強化</em>。",cat:"recovery",season:[2,3,4,5,6,7,8],dow:W},
-  {main:"カツオのレアカツ",p:27,side:"大根おろし・ポン酢",tags:["アンセリン","尿酸値ケア","疲労回復"],effect:"アンセリンで<em>尿酸値をケア</em>しながら疲労を即時回復。",cat:"recovery",season:[3,4,5,6,7,8],dow:W},
-  {main:"カジキマグロのソテー",p:27,side:"ピーマンのジャコ炒め",tags:["魚","カジキ","高タンパク"],effect:"良質なタンパクと脂質で<em>持続的なエネルギー</em>を確保。",cat:"brain",season:ALL,dow:W},
-  {main:"ブリの照り焼き",p:26,side:"叩き長いも",tags:["ブリ","DHA","血糖抑制"],effect:"長いもで血糖値を抑制。DHAで<em>記憶力コンディション</em>維持。",cat:"brain",season:WIN,dow:W},
-  {main:"真鯛のアクアパッツァ",p:26,side:"あさりとドライトマト",tags:["真鯛","タウリン","リコピン"],effect:"タウリンで<em>肝機能保護</em>。リコピンで血管老化を防ぐ。",cat:"recovery",season:SPR,dow:WE},
-  {main:"サケのホイル焼き",p:26,side:"きのこ類・レモン",tags:["サケ","ビタミンD","免疫"],effect:"ビタミンDで<em>免疫力を強化</em>。骨と筋肉の健康を維持。",cat:"recovery",season:AUT,dow:W},
-  {main:"茹で豚の冷しゃぶ",p:26,side:"叩ききゅうり（梅肉）",tags:["豚","クエン酸","脂質カット"],effect:"クエン酸で疲労物質を代謝。<em>余分な脂質をカット</em>。",cat:"burn",season:SUM,dow:W},
-  {main:"メカジキのハーブステーキ",p:26,side:"ブロッコリーのガーリック炒め",tags:["良質脂質","アリシン","毛細血管"],effect:"アリシンで<em>毛細血管を拡張</em>。血流促進と免疫強化。",cat:"brain",season:ALL,dow:W},
-  {main:"サケの南蛮漬け",p:25,side:"玉ねぎ・人参・ピーマン",tags:["アスタキサンチン","血糖安定","酢"],effect:"酢の酢酸が<em>血糖値の上昇を抑制</em>。脂肪蓄積を防ぐ。",cat:"burn",season:[2,3,4,5,8,9,10,11],dow:W},
-  {main:"うなぎの白焼き",p:25,side:"肝吸い・わさび",tags:["うなぎ","スタミナ","亜鉛"],effect:"ビタミンA・B群が豊富。<em>スタミナと生殖機能</em>を強化。",cat:"recovery",season:ALL,dow:W},
-  {main:"マグロの山かけ",p:25,side:"刻み海苔・わさび",tags:["マグロ","血流改善","酵素"],effect:"消化酵素で<em>タンパク質の吸収を最大化</em>。血流を改善。",cat:"brain",season:ALL,dow:W},
-  {main:"豚キムチ",p:25,side:"アボカドトマトサラダ",tags:["豚","発酵","血糖安定"],effect:"乳酸菌で<em>腸内環境を整備</em>。血糖スパイクを防止。",cat:"recovery",season:ALL,dow:WD},
-  {main:"厚揚げの肉巻き",p:25,side:"オクラの胡麻和え",tags:["厚揚げ","食物繊維","植物性"],effect:"食物繊維が<em>腸内の善玉菌</em>を増やしタンパク吸収をサポート。",cat:"recovery",season:ALL,dow:W},
-  {main:"砂肝のコンフィ風",p:25,side:"ブロッコリー・パプリカ",tags:["低脂質","亜鉛","高タンパク"],effect:"亜鉛がテストステロンを維持。<em>低脂質で体を絞る</em>。",cat:"burn",season:ALL,dow:W},
-  {main:"ラム肉とキャベツの蒸し煮",p:26,side:"生姜ポン酢",tags:["L-カルニチン","胃腸ケア","代謝UP"],effect:"生姜の辛味成分が<em>体を温め代謝を促進</em>。胃腸を整える。",cat:"burn",season:WIN,dow:W},
-  {main:"ホッケの開き",p:23,side:"具沢山なめこ汁",tags:["カルシウム","不飽和脂肪酸","満足度"],effect:"カルシウムと不飽和脂肪酸で<em>骨と血管の老化を防止</em>。",cat:"brain",season:WIN,dow:WD},
-  {main:"鶏レバーの赤ワイン煮",p:24,side:"ほうれん草のソテー",tags:["ポリフェノール","造血","血管保護"],effect:"ポリフェノールで<em>血管を保護</em>。造血作用で活力を補充。",cat:"recovery",season:ALL,dow:WE},
-  {main:"アサリと豆腐のチゲ",p:24,side:"春菊・長ネギ",tags:["カプサイシン","亜鉛","血行促進"],effect:"カプサイシンで<em>体を温め血行を促進</em>。亜鉛で免疫強化。",cat:"burn",season:WIN,dow:W},
-  {main:"茹でタコの刺身",p:22.5,side:"納豆・オクラ和え",tags:["タウリン","亜鉛","血糖値抑制"],effect:"タウリンが<em>コレステロールを低下</em>。肝機能をサポート。",cat:"recovery",season:SUM,dow:W},
-  {main:"エビのチリソース",p:24,side:"卵とレタスのスープ",tags:["海老","低脂肪","代謝"],effect:"低脂肪・高タンパクで<em>代謝を活性化</em>。疲労回復にも効果的。",cat:"recovery",season:ALL,dow:WE},
-  {main:"サワラの西京焼き",p:24,side:"小松菜のお浸し",tags:["サワラ","魚","良質タンパク"],effect:"発酵味噌が<em>腸内環境を整備</em>。良質な脂質で脳機能をサポート。",cat:"brain",season:[2,3,4,5,8,9,10,11],dow:W},
-  {main:"寒サバの塩焼き",p:24,side:"大根おろし・なめこ汁",tags:["サバ","EPA","血管掃除"],effect:"EPAが<em>血管内の汚れを掃除</em>。中性脂肪を強力に低下。",cat:"brain",season:WIN,dow:W},
-  {main:"イカの刺身",p:24,side:"納豆・めかぶ和え",tags:["イカ","タウリン","コレステロール低下"],effect:"タウリンで<em>コレステロールを低下</em>。肝臓の疲れをリセット。",cat:"recovery",season:[5,6,7,8,9,10,11],dow:W},
-  {main:"鶏レバーの甘辛煮",p:22,side:"ピーマンの素焼き",tags:["レバー","粘膜保護","ビタミンA"],effect:"ビタミンAが<em>粘膜と皮膚を保護</em>。目の疲れにも有効。",cat:"recovery",season:ALL,dow:WD},
-  {main:"豆腐と海老の蒸し物",p:22,side:"チンゲン菜のあんかけ",tags:["低カロリー","タウリン","消化良好"],effect:"消化に優しく<em>タウリンで疲労を回復</em>。低カロリーで体を絞る。",cat:"recovery",season:ALL,dow:W},
-  {main:"穴子の白焼き",p:22,side:"叩ききゅうり",tags:["ビタミンA","精力増強","低脂質"],effect:"ビタミンAとDHAで<em>視力と脳機能</em>を同時にサポート。",cat:"brain",season:[5,6,7,8,9,10,11],dow:W},
-  {main:"蒸し牡蠣（レモン）",p:22,side:"ほうれん草のソテー",tags:["牡蠣","亜鉛","テストステロン"],effect:"亜鉛がテストステロンを補充。<em>活力と免疫力を大幅強化</em>。",cat:"burn",season:WIN,dow:WE},
-  {main:"秋刀魚の塩焼き",p:22,side:"きのこたっぷり味噌汁",tags:["サンマ","オメガ3","血管若返り"],effect:"オメガ3が<em>血管を若返らせる</em>。セロトニン生成もサポート。",cat:"brain",season:AUT,dow:W},
-  {main:"真いわしの生姜煮",p:21,side:"きのことワカメの酢の物",tags:["EPA/DHA","中性脂肪低下","酢"],effect:"EPA/DHAで<em>中性脂肪を強力に低下</em>。酢で血糖値も安定。",cat:"brain",season:ALL,dow:WD},
-  {main:"ゴーヤチャンプルー",p:23,side:"島豆腐・削り節",tags:["豚","血糖抑制","ビタミンC"],effect:"ビタミンCで<em>コラーゲン合成を促進</em>。血糖値スパイクを防ぐ。",cat:"recovery",season:SUM,dow:W},
-  {main:"厚揚げのニラ玉炒め",p:21,side:"トマトサラダ",tags:["アリシン","イソフラボン","テストステロン"],effect:"アリシンがテストステロンを刺激。<em>活力と代謝を底上げ</em>。",cat:"burn",season:ALL,dow:WD},
-  {main:"金目鯛の煮付け",p:23,side:"ゴボウのきんぴら",tags:["金目鯛","食物繊維","美肌"],effect:"コラーゲンと食物繊維で<em>美肌と腸内環境</em>を同時ケア。",cat:"recovery",season:WIN,dow:WE},
-  {main:"銀だらの西京焼き",p:21,side:"具沢山けんちん汁",tags:["魚","不飽和脂肪酸","発酵"],effect:"発酵食品の乳酸菌で<em>腸内フローラを整備</em>。脳腸相関を活性化。",cat:"brain",season:WIN,dow:W},
-  {main:"ホタテのカルパッチョ",p:20,side:"ベビーリーフ・オリーブ油",tags:["タウリン","低GI","血管柔軟性"],effect:"タウリンで<em>血管柔軟性を維持</em>。低GIで血糖値を安定させる。",cat:"brain",season:[2,3,4,5,6,7,8],dow:WE},
-  {main:"スモークサーモンとアボカド",p:19,side:"くるみ・オニオンサラダ",tags:["オメガ3","ビタミンE","ホルモン"],effect:"ビタミンEが<em>ホルモンバランスを調整</em>。抗酸化作用も高い。",cat:"brain",season:ALL,dow:WE},
-  {main:"納豆オムレツ",p:20.5,side:"しらす・大根おろし",tags:["納豆キナーゼ","血栓予防","完全栄養"],effect:"納豆キナーゼで<em>血栓を予防</em>。完全栄養でタンパク吸収を最大化。",cat:"recovery",season:ALL,dow:WD},
-  {main:"いわし団子汁",p:20,side:"根菜たっぷり煮物",tags:["いわし","血管年齢","EPA"],effect:"EPAで<em>血管年齢を若返らせる</em>。根菜の食物繊維で腸を整える。",cat:"brain",season:WIN,dow:W},
-  {main:"サバ味噌煮缶",p:20.9,side:"雑穀米(少量)・生姜漬",tags:["サバ","Tie2","時短"],effect:"Tie2活性化で<em>毛細血管を強化</em>。時短かつ最高コスパのタンパク源。",cat:"brain",season:ALL,dow:WD},
-  {main:"豆乳担々湯豆腐",p:23,side:"挽肉(少)・ザーサイ",tags:["サポニン","温活","血糖スパイク防止"],effect:"サポニンで<em>コレステロールを低下</em>。温活効果で代謝を上げる。",cat:"recovery",season:WIN,dow:W},
+const MENUS = [
+  { main:"牛肉ステーキ", p:40.0, tags:["鉄分(造血)","筋肉(クレアチン)"], reason:"タンパク質不足を解消し、鉄分で活力を担保。", effect:"ヘモグロビン生成とクレアチン効果で筋出力を最大化。", cat:"muscle" },
+  { main:"馬肉ユッケ/刺身", p:24.0, tags:["鉄分","高グリコーゲン"], reason:"グリコーゲンと鉄分による即効性のエネルギーと筋肉サポート。", effect:"疲労回復スピード向上と、筋肉への酸素運搬能力の増強。", cat:"muscle" },
+  { main:"鹿肉ステーキ", p:34.0, tags:["超低脂質","筋肉増強"], reason:"ジビエ特有の低脂質・高タンパク。究極のバルクアップ食。", effect:"酸素運搬能力向上と、無駄な脂肪をつけない筋肉合成。", cat:"muscle" },
+  { main:"生ラム肉グリル", p:32.0, tags:["燃焼(Lカルニチン)","精力(亜鉛)"], reason:"L-カルニチンで燃焼効率を高めつつ、筋肉量を維持。", effect:"テストステロン値維持とミトコンドリア活性による代謝と筋力の両立。", cat:"muscle" },
+  { main:"チキンステーキ", p:35.0, tags:["低脂質","回復(アンセリン)"], reason:"高タンパクかつ低脂質な選択で筋肉合成を確実に。", effect:"アンセリンによる身体的疲労回復と、筋肉への迅速なアミノ酸供給。", cat:"recovery" },
+  { main:"茹で鶏むね低温調理", p:35.0, tags:["筋肥大(効率)","低GI"], reason:"究極のP/F比。筋肉合成を最優先する際の最適解。", effect:"インスリン感受性の維持と圧倒的なタンパク質補給。", cat:"recovery" },
+  { main:"刺身盛り合わせ", p:30.0, tags:["DHA/EPA","脳機能"], reason:"脳機能を司るDHAを補給し、明日の戦略立案へ備える。", effect:"血液流動性向上と抗炎症作用、知的コンディションの維持。", cat:"brain" },
+  { main:"サバ味噌煮/塩焼き", p:21.0, tags:["良質脂質","血管ケア"], reason:"必須脂肪酸を摂取。脳機能と血管の健康を両立。", effect:"記憶力の維持と中性脂肪抑制。血管を若く保ち全身の循環改善。", cat:"brain" },
+  { main:"納豆オムレツ", p:20.0, tags:["発酵食品","完全栄養"], reason:"腸内環境を整え、タンパク質吸収率を最大化。", effect:"ナットウキナーゼによる血栓予防と、アミノ酸スコア100の恩恵。", cat:"recovery" },
+  { main:"生タコ刺身", p:22.5, tags:["タウリン(肝臓)","低GI"], reason:"肝機能をサポートし、蓄積疲労をリセットする。", effect:"コレステロール抑制と中性脂肪の燃焼サポート。", cat:"recovery" }
 ];
 
-// ── STATE ─────────────────────────────────────────────────────────────────
-const S={history:[],viewLogs:[],type:'昼',viewDate:new Date(),effect:'all'};
-let _editIdx=null, _delIdx=null, _editType='昼';
+let S = { history:[], viewLogs:[], type:'昼', viewDate:new Date(), effect:'all' };
 
-// ── INIT ──────────────────────────────────────────────────────────────────
-(function(){
+(function init(){
   updateDateNav();
-  updateDatePill();
   fetchData();
 })();
 
 async function fetchData(){
-  const ico=document.getElementById('sync-ico');
-  ico.classList.add('spin');
-  try{
-    const r=await fetch(GAS);
-    const raw=await r.json();
-    S.history=raw.map(d=>({
-      main:(d.main||'').trim(),protein:parseFloat(d.protein||0),
-      timestamp:d.timestamp,type:d.type||'他'
-    })).filter(d=>d.main);
+  try {
+    const r = await fetch(GAS);
+    const raw = await r.json();
+    S.history = raw.map(d=>({ main:d.main, protein:parseFloat(d.protein||0), timestamp:d.timestamp, type:d.type }));
     filterLogs();
-    toast('SYNC COMPLETE');
-  }catch(e){toast('OFFLINE MODE');}
-  ico.classList.remove('spin');
+  } catch(e){ console.log("offline"); }
   renderAll();
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────────
+function filterLogs(){
+  const ds = S.viewDate.toDateString();
+  S.viewLogs = S.history.filter(m=>new Date(m.timestamp).toDateString()===ds);
+}
+
 function renderAll(){
-  const tot=S.viewLogs.reduce((s,m)=>s+m.protein,0);
-  const gap=Math.max(0,TARGET-tot);
-  const pct=Math.min(tot/TARGET*100,100);
-  const isToday=S.viewDate.toDateString()===new Date().toDateString();
-
-  document.getElementById('hdr-p').textContent=tot.toFixed(1);
-  document.getElementById('g-fill').style.width=pct+'%';
-  document.getElementById('g-pct').textContent=pct.toFixed(0)+'% Done';
-  document.getElementById('g-gap').textContent=gap.toFixed(1)+'g';
-  document.getElementById('g-date-lbl').textContent=isToday?'Today':
-    S.viewDate.toLocaleDateString('ja-JP',{month:'short',day:'numeric'});
-
+  const tot = S.viewLogs.reduce((s,m)=>s+m.protein,0);
+  const gap = Math.max(0,TARGET-tot);
+  const pct = Math.min(tot/TARGET*100,100);
+  document.getElementById('hdr-p').textContent = tot.toFixed(1);
+  document.getElementById('g-fill').style.width = pct+'%';
+  document.getElementById('g-pct').textContent = pct.toFixed(0)+'%';
+  document.getElementById('g-gap').textContent = gap.toFixed(1)+'g';
+  const isToday = S.viewDate.toDateString() === new Date().toDateString();
+  document.getElementById('g-date-lbl').textContent = isToday ? "Today" : S.viewDate.toLocaleDateString('ja-JP', {month:'short', day:'numeric'});
   renderLog();
   renderSuggest();
   renderStats();
 }
 
 function renderLog(){
-  const el=document.getElementById('log-list');
-  // section heading
-  const d=S.viewDate;
-  document.getElementById('log-sec-hd').textContent=
-    `${d.getMonth()+1}/${d.getDate()}(${DAY_JP[d.getDay()]}) Records`;
-
-  if(!S.viewLogs.length){
-    el.innerHTML='<div class="empty">記録はありません</div>';return;
-  }
-  el.innerHTML=S.viewLogs.map((m,i)=>{
-    const t=new Date(m.timestamp);
-    const hm=t.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
-    return `
-    <div class="li-wrap" id="liw-${i}">
-      <div class="log-item" id="lii-${i}"
-        ontouchstart="swipeStart(event,${i})"
-        ontouchmove="swipeMove(event,${i})"
-        ontouchend="swipeEnd(${i})">
-        <div class="li-l">
+  const el = document.getElementById('log-list');
+  if(!el) return;
+  el.innerHTML = S.viewLogs.length ? S.viewLogs.map(m=>`
+    <div class="li-wrap">
+      <div class="log-item">
+        <div style="display:flex;align-items:center;gap:10px;">
           <div class="li-badge">${m.type}</div>
-          <div>
-            <div class="li-name">${m.main}</div>
-            <div class="li-time">${hm}</div>
-          </div>
+          <div class="li-name">${m.main}</div>
         </div>
         <div class="li-p">${m.protein.toFixed(1)}g</div>
       </div>
-      <div class="li-actions" id="lia-${i}">
-        <button class="li-edit" onclick="openEdit(${i})">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          修正
-        </button>
-        <button class="li-del" onclick="openDel(${i})">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-          削除
-        </button>
-      </div>
-    </div>`;
-  }).join('');
+    </div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--mu);font-size:10px;">No records for this day.</div>';
 }
 
-function renderSuggest(shuffle=false){
-  const el=document.getElementById('sug-inner');
-  const tot=S.viewLogs.reduce((s,m)=>s+m.protein,0);
-  const gap=Math.max(0,TARGET-tot);
-
-  // hero update
-  document.getElementById('sh-gap-val').innerHTML=gap>0
-    ?`${gap.toFixed(1)}<em>g 不足</em>`
-    :`<span style="font-size:20px;color:var(--em)">Goal Achieved!</span>`;
-
-  const morP=S.viewLogs.filter(m=>m.type==='朝').reduce((s,m)=>s+m.protein,0);
-  const luP=S.viewLogs.filter(m=>m.type==='昼').reduce((s,m)=>s+m.protein,0);
-  const parts=[];
-  if(morP>0)parts.push(`朝 ${morP.toFixed(0)}g`);
-  if(luP>0)parts.push(`昼 ${luP.toFixed(0)}g`);
-  document.getElementById('sh-ctx').textContent=parts.length
-    ?`${parts.join(' + ')} 摂取済み → 夜に ${gap.toFixed(0)}g 必要`
-    :`本日の摂取 ${tot.toFixed(0)}g`;
-
-  const mon=new Date().getMonth(),dow=new Date().getDay();
-  const sl=['冬','冬','春','春','春','夏','夏','夏','秋','秋','秋','冬'][mon];
-  const wl=dow===0||dow===6?'週末':'平日';
-  document.getElementById('sh-pills').innerHTML=
-    `<span class="sh-pill on">${sl}</span><span class="sh-pill on">${wl}</span><span class="sh-pill on">重複回避</span>`;
-
-  if(gap<=0){
-    el.innerHTML='<div class="goal-done"><div class="goal-ring">✓</div><div class="goal-title">Goal Achieved</div><div class="goal-sub">Discipline leads to freedom.</div></div>';
-    return;
-  }
-
-  // filter
-  const ago7=Date.now()-7*864e5;
-  const recent7=S.history.filter(m=>new Date(m.timestamp).getTime()>ago7).map(m=>m.main.toLowerCase());
-  let pool=MENUS.filter(m=>{
-    const nm=m.main.toLowerCase();
-    const notRecent=!recent7.some(r=>nm.includes(r)||r.includes(nm));
-    const seasOk=m.season.includes(mon);
-    const dowOk=m.dow.includes(dow);
-    const effOk=S.effect==='all'||m.cat===S.effect;
-    return notRecent&&seasOk&&dowOk&&effOk;
-  });
-  if(pool.length<3)pool=MENUS.filter(m=>S.effect==='all'||m.cat===S.effect);
-  if(pool.length<3)pool=[...MENUS];
-
-  if(shuffle) pool.sort(()=>Math.random()-0.5);
-  else pool.sort((a,b)=>Math.abs(gap-a.p)-Math.abs(gap-b.p));
-  const cards=pool.slice(0,3);
-
-  el.innerHTML=cards.map((opt,i)=>{
-    const isBest=i===0;
-    const diff=Math.abs(gap-opt.p);
-    const matchGap=diff<=5;
-    const tagsHtml=opt.tags.slice(0,3).map(t=>`<span class="sc-tag ${matchGap?'hl':''}">${t}</span>`).join('');
-    return `
-    <div class="sug-card ${isBest?'best':''}">
-      <div class="sug-glow"></div>
-      <div class="sc-top">
-        <div class="sc-left">
-          <div class="sc-rank">
-            <span class="sc-num">${['I','II','III'][i]}</span>
-            Option ${['A','B','C'][i]}
-            ${isBest?'<span class="sc-best">Best Match</span>':''}
+function renderSuggest(refresh = false){
+  const el = document.getElementById('sug-inner');
+  if(!el) return;
+  const tot = S.viewLogs.reduce((s,m)=>s+m.protein,0);
+  const gap = Math.max(0,TARGET-tot);
+  document.getElementById('sh-gap-val').innerHTML = gap > 0 ? `${gap.toFixed(1)}<em>g 不足</em>` : "Goal Achieved!";
+  if(gap <= 0) { el.innerHTML = ""; return; }
+  let pool = [...MENUS];
+  if(S.selectedEffect !== 'all') pool = pool.filter(m => m.cat === S.selectedEffect);
+  pool.sort(() => Math.random() - 0.5);
+  let sorted = pool.slice(0, 3);
+  el.innerHTML = sorted.map(opt => `
+    <div class="sug-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div class="sc-name">${opt.main}</div>
+        <div style="text-align:right;">
+          <div class="sc-p">${opt.p.toFixed(1)}g</div>
+          <div style="display:flex;gap:3px;justify-content:flex-end;margin-top:4px;">
+            ${opt.tags.map(t=>`<span class="sc-tag">${t}</span>`).join('')}
           </div>
-          <div class="sc-name">${opt.main}</div>
-          <div class="sc-side">副菜：${opt.side}</div>
         </div>
-        <div class="sc-p">${opt.p.toFixed(1)}<span>g</span></div>
       </div>
-      <div class="sc-effect">${opt.effect}</div>
-      <div class="sc-footer">
-        <div class="sc-tags">${tagsHtml}</div>
-        <button class="sc-rec-btn ${isBest?'pri':''}" onclick="addFromSuggest('${opt.main.replace(/'/g,"\\'")}',${opt.p})">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          記録
-        </button>
+      <div class="sc-comment-area">
+        <div class="sc-comment-lbl">推奨理由 / 期待効果</div>
+        <div class="sc-comment-txt">${opt.reason} ${opt.effect}</div>
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 }
 
 function renderStats(){
-  const DAY_LBL=['日','月','火','水','木','金','土'];
-  const days=[];
-  for(let i=6;i>=0;i--){
-    const d=new Date();d.setDate(d.getDate()-i);
-    const ds=d.toDateString();
-    const meals=S.history.filter(m=>new Date(m.timestamp).toDateString()===ds);
-    const tot=meals.reduce((s,m)=>s+m.protein,0);
-    days.push({lbl:DAY_LBL[d.getDay()],tot,isToday:i===0,ok:tot>=TARGET,has:meals.length>0});
+  const barArea = document.getElementById('bar-area');
+  if(!barArea) return;
+  const labels = ['月','火','水','木','金','土','日'];
+  const now = new Date();
+  const weekData = [];
+  for(let i=6; i>=0; i--) {
+    const d = new Date(); d.setDate(now.getDate() - i);
+    const ds = d.toDateString();
+    const dayTotal = S.history.filter(m => new Date(m.timestamp).toDateString() === ds).reduce((s,m)=>s+m.protein,0);
+    weekData.push({ val:dayTotal, label:labels[d.getDay()===0?6:d.getDay()-1] });
   }
-
-  // SVG line chart
-  const W=320,H=120,PL=30,PR=8,PT=18,PB=26;
-  const cW=W-PL-PR,cH=H-PT-PB;
-  const maxV=Math.max(...days.map(d=>d.tot),TARGET*1.1,10);
-  const xStep=cW/(days.length-1);
-
-  const gridVals=[0,Math.round(TARGET/2),TARGET];
-  const grids=gridVals.map(v=>{
-    const y=PT+cH-(v/maxV)*cH;
-    const isT=v===TARGET;
-    return `<line stroke="${isT?'rgba(16,185,129,0.22)':'#161a28'}" stroke-width="1" ${isT?'stroke-dasharray="4,3"':''} x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}"/>
-    <text font-family="DM Mono,monospace" font-size="7" fill="${isT?'rgba(16,185,129,0.5)':'#404660'}" text-anchor="end" x="${PL-3}" y="${(y+2.5).toFixed(1)}">${v}</text>`;
-  }).join('');
-
-  const pts=days.map((d,i)=>({x:PL+i*xStep,y:PT+cH-(d.tot/maxV)*cH,d}));
-  const areaD=pts.map((p,i)=>i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-    +` L${pts[pts.length-1].x.toFixed(1)},${(PT+cH).toFixed(1)} L${PL},${(PT+cH).toFixed(1)} Z`;
-  const lineD=pts.map((p,i)=>i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const dots=pts.map(p=>{
-    const r=p.d.isToday?4.5:3;
-    const fc=p.d.ok?'var(--em)':p.d.has?'#1f2436':'#0d0f18';
-    const sc='var(--em)';
-    return `
-    ${p.d.has?`<text font-family="DM Mono,monospace" font-size="7" fill="${p.d.ok?'var(--em)':'#404660'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(p.y-8).toFixed(1)}">${p.d.tot.toFixed(0)}</text>`:''}
-    <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${fc}" stroke="${sc}" stroke-width="1.5" ${p.d.isToday?`filter="drop-shadow(0 0 4px var(--em))"`:''} />
-    <text font-family="DM Mono,monospace" font-size="8" fill="${p.d.isToday?'var(--em)':'#404660'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(PT+cH+14).toFixed(1)}">${p.d.lbl}</text>`;
-  }).join('');
-
-  document.getElementById('stats-chart').innerHTML=`
-  <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--em)" stop-opacity="0.2"/>
-        <stop offset="100%" stop-color="var(--em)" stop-opacity="0"/>
-      </linearGradient>
-    </defs>
-    ${grids}
-    <path fill="url(#ag)" d="${areaD}"/>
-    <path fill="none" stroke="var(--em)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="${lineD}"/>
-    ${dots}
-  </svg>`;
-
-  // KPI
-  const wd=days.filter(d=>d.has);
-  const avg=wd.length?(wd.reduce((s,d)=>s+d.tot,0)/wd.length):0;
-  const str=days.slice().reverse().reduce((s,d)=>{if(s.done)return s;if(d.ok)return{...s,c:s.c+1};return{...s,done:true}},{c:0,done:false}).c;
-  const best=Math.max(...days.map(d=>d.tot),0);
-  const kpis=[
-    {id:'kpi-avg',v:avg>0?avg.toFixed(0)+'g':'—',good:avg>=TARGET},
-    {id:'kpi-str',v:str+'日',good:str>=3},
-    {id:'kpi-best',v:best>0?best.toFixed(0)+'g':'—',good:best>=TARGET},
-  ];
-  kpis.forEach(k=>{
-    const el=document.getElementById(k.id);
-    el.textContent=k.v;
-    el.className='kpi-val'+(k.good?' good':'');
-  });
-  document.getElementById('streak-dots').innerHTML=days.map(d=>`<div class="s-dot ${d.ok?'ok':''}"></div>`).join('');
-
-  // Recent
-  const recent=[...S.history].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).slice(0,10);
-  document.getElementById('recent-list').innerHTML=recent.length?recent.map(m=>{
-    const t=new Date(m.timestamp);
-    return `<div class="log-item" style="margin-bottom:7px;">
-      <div class="li-l">
-        <div class="li-badge">${m.type}</div>
-        <div>
-          <div class="li-name">${m.main}</div>
-          <div class="li-time">${t.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})} ${t.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</div>
-        </div>
+  const maxVal = Math.max(...weekData.map(d=>d.val), TARGET, 1);
+  barArea.innerHTML = weekData.map(d => `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;">
+      <div style="flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;">
+        <div class="bar-fill ${d.val>=TARGET?'ok':''}" style="height:${(d.val/maxVal)*100}%;min-height:4px;"></div>
       </div>
-      <div class="li-p">${m.protein.toFixed(1)}g</div>
-    </div>`;
-  }).join(''):'<div class="empty">データなし</div>';
+      <div style="font-family:var(--mono);font-size:7px;color:var(--mu);">${d.label}</div>
+    </div>`).join('');
+
+  const recent = [...S.history].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).slice(0, 10);
+  document.getElementById('recent-list').innerHTML = recent.length ? recent.map(m => `
+    <div class="log-item" style="margin-bottom:7px;padding:10px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="li-badge" style="width:24px;height:24px;font-size:7px;">${m.type}</div>
+        <div style="font-size:12px;">${m.main}</div>
+      </div>
+      <div class="li-p" style="font-size:14px;">${m.protein.toFixed(1)}g</div>
+    </div>`).join('') : '<div class="empty">History unavailable.</div>';
 }
 
-// ── DATE NAV ──────────────────────────────────────────────────────────────
-function updateDateNav(){
-  const d=S.viewDate;
-  const isToday=d.toDateString()===new Date().toDateString();
-  document.getElementById('dn-date').textContent=
-    `${d.getMonth()+1}/${d.getDate()}(${DAY_JP[d.getDay()]})`;
-  const wrap=document.getElementById('dn-today-wrap');
-  wrap.innerHTML=isToday?'':`<button class="dn-today" onclick="goToday()">TODAY</button>`;
-  document.getElementById('dn-next').style.opacity=isToday?'0.3':'1';
-  document.getElementById('dn-next').style.pointerEvents=isToday?'none':'all';
-}
-function updateDatePill(){
-  const d=S.viewDate;
-  document.getElementById('date-pill').textContent=
-    `${d.getMonth()+1}/${d.getDate()}(${DAY_JP[d.getDay()]})`;
-}
 function moveDate(n){
-  const next=new Date(S.viewDate);
-  next.setDate(next.getDate()+n);
-  if(next>new Date())return;
-  S.viewDate=next;
-  filterLogs();
+  S.viewDate.setDate(S.viewDate.getDate() + n);
   updateDateNav();
-  updateDatePill();
-  renderAll();
-}
-function goToday(){
-  S.viewDate=new Date();
   filterLogs();
-  updateDateNav();
-  updateDatePill();
   renderAll();
-}
-function filterLogs(){
-  const ds=S.viewDate.toDateString();
-  S.viewLogs=S.history.filter(m=>new Date(m.timestamp).toDateString()===ds);
 }
 
-// ── ACTIONS ───────────────────────────────────────────────────────────────
-function switchTab(id){
-  ['log','suggest','stats'].forEach(t=>{
-    document.getElementById('pane-'+t).classList.toggle('active',t===id);
-    document.getElementById('nav-'+t).classList.toggle('on',t===id);
-  });
-  if(id==='suggest')renderSuggest();
-  if(id==='stats')renderStats();
+function updateDateNav(){
+  const disp = document.getElementById('view-date-display');
+  const chip = document.getElementById('date-chip');
+  if(disp) disp.textContent = S.viewDate.toLocaleDateString('ja-JP', {year:'numeric', month:'2-digit', day:'2-digit'});
+  if(chip) chip.textContent = S.viewDate.toLocaleDateString('ja-JP', {month:'2-digit', day:'2-digit'});
 }
+
+function switchTab(id){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('on'));
+  document.getElementById('nav-'+id).classList.add('on');
+  if(id==='suggest') renderSuggest();
+  if(id==='stats') renderStats();
+}
+
 function setType(t,btn){
   S.type=t;
   document.querySelectorAll('#type-seg .seg-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
 }
-function setEffect(e,btn){
-  S.effect=e;
-  document.querySelectorAll('.eff-btn').forEach(b=>b.classList.remove('on'));
+
+function setEffect(eff,btn){
+  S.selectedEffect = eff;
+  document.querySelectorAll('#effect-selector .eff-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  renderSuggest();
+  renderSuggest(refresh=true);
 }
+
+async function recordBreakfast(){ await doSave({main:'朝セット',protein:45,type:'朝'}); }
+
 async function saveForm(){
-  const main=document.getElementById('in-main').value.trim();
-  const p=parseFloat(document.getElementById('in-p').value);
-  if(!main){toast('主菜を入力してください');return;}
+  const main = document.getElementById('in-main').value.trim();
+  const p = parseFloat(document.getElementById('in-p').value);
+  if(!main) return;
   await doSave({main,protein:p,type:S.type});
-  document.getElementById('in-main').value='';
-  document.getElementById('in-p').value=25;
-  document.getElementById('sl-val').innerHTML='25.0<span>g</span>';
+  document.getElementById('in-main').value = '';
 }
-async function recordBreakfast(){
-  await doSave({main:'朝セット',protein:45,type:'朝'});
-}
-async function addFromSuggest(main,p){
-  await doSave({main,protein:p,type:'夜'});
-  switchTab('log');
-}
+
 async function doSave(data){
-  const rec=new Date(S.viewDate);
-  const now=new Date();
-  rec.setHours(now.getHours(),now.getMinutes(),now.getSeconds());
-  const meal={...data,timestamp:rec.toISOString()};
+  const rec = new Date(S.viewDate); const now = new Date();
+  rec.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
+  const meal = {...data, timestamp:rec.toISOString()};
   S.history.unshift(meal);
   filterLogs();
   renderAll();
-  const btn=document.getElementById('save-btn');
-  if(btn)btn.disabled=true;
-  try{await fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify(meal)});toast('SAVED');}
-  catch(e){toast('OFFLINE SAVE');}
-  finally{if(btn)btn.disabled=false;}
+  const btn = document.getElementById('save-btn'); if(btn) btn.disabled=true;
+  try { await fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify(meal)}); toast("SAVED"); }
+  catch(e){ toast("OFFLINE SAVE"); }
+  finally { if(btn) btn.disabled=false; }
 }
 
-// ── SWIPE ─────────────────────────────────────────────────────────────────
-const _sw={};
-function swipeStart(e,i){_sw[i]={x:e.touches[0].clientX,y:e.touches[0].clientY,open:false};}
-function swipeMove(e,i){
-  if(!_sw[i])return;
-  const dx=_sw[i].x-e.touches[0].clientX;
-  const dy=Math.abs(_sw[i].y-e.touches[0].clientY);
-  if(dy>dx*0.8)return;
-  if(dx>50){closeAllSwipes(i);document.getElementById('lia-'+i).classList.add('show');document.getElementById('lii-'+i).style.transform='translateX(-124px)';_sw[i].open=true;}
-  else if(dx<-20){document.getElementById('lia-'+i).classList.remove('show');document.getElementById('lii-'+i).style.transform='';}
-}
-function swipeEnd(i){if(_sw[i]&&!_sw[i].open){document.getElementById('lia-'+i)?.classList.remove('show');document.getElementById('lii-'+i).style.transform='';}}
-function closeAllSwipes(except=-1){
-  document.querySelectorAll('.li-actions').forEach((el,j)=>{if(j!==except){el.classList.remove('show');}});
-  document.querySelectorAll('.log-item').forEach((el,j)=>{if(j!==except)el.style.transform='';});
-}
-document.addEventListener('touchstart',e=>{if(!e.target.closest('.li-wrap'))closeAllSwipes();});
-
-// ── EDIT ──────────────────────────────────────────────────────────────────
-function openEdit(i){
-  closeAllSwipes();
-  _editIdx=i;_editType=S.viewLogs[i].type;
-  const m=S.viewLogs[i];
-  document.getElementById('edit-main').value=m.main;
-  document.getElementById('edit-p').value=m.protein;
-  document.getElementById('edit-sl-val').innerHTML=m.protein.toFixed(1)+'<span>g</span>';
-  document.querySelectorAll('#edit-seg .seg-btn').forEach(b=>b.classList.toggle('on',b.textContent===m.type));
-  openModal('edit-modal');
-}
-function setEditType(t,btn){_editType=t;document.querySelectorAll('#edit-seg .seg-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
-function commitEdit(){
-  if(_editIdx===null)return;
-  const main=document.getElementById('edit-main').value.trim();
-  const p=parseFloat(document.getElementById('edit-p').value);
-  if(!main)return;
-  const ts=S.viewLogs[_editIdx].timestamp;
-  S.viewLogs[_editIdx]={...S.viewLogs[_editIdx],main,protein:p,type:_editType};
-  const hi=S.history.findIndex(h=>h.timestamp===ts);
-  if(hi>=0)S.history[hi]={...S.history[hi],main,protein:p,type:_editType};
-  closeModal('edit-modal');renderAll();toast('UPDATED');
-  fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify({_action:'update',timestamp:ts,main,protein:p,type:_editType})}).catch(()=>{});
-}
-
-// ── DELETE ────────────────────────────────────────────────────────────────
-function openDel(i){
-  closeAllSwipes();
-  _delIdx=i;
-  const m=S.viewLogs[i];
-  document.getElementById('del-name').textContent=`${m.type}｜${m.main}｜${m.protein.toFixed(1)}g`;
-  openModal('del-modal');
-}
-function commitDelete(){
-  if(_delIdx===null)return;
-  const ts=S.viewLogs[_delIdx].timestamp;
-  S.viewLogs.splice(_delIdx,1);
-  S.history=S.history.filter(m=>m.timestamp!==ts);
-  closeModal('del-modal');renderAll();toast('DELETED');
-  fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify({_action:'delete',timestamp:ts})}).catch(()=>{});
-}
-
-// ── MODAL HELPERS ─────────────────────────────────────────────────────────
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-function onModalBgClick(e,id){if(e.target===document.getElementById(id))closeModal(id);}
-
-// ── TOAST ─────────────────────────────────────────────────────────────────
-function toast(msg){
+function toast(m){
   const h=document.getElementById('toast-host');
-  const el=document.createElement('div');el.className='toast';el.textContent=msg;
-  h.appendChild(el);setTimeout(()=>el.remove(),3000);
+  const d=document.createElement('div'); d.className='toast'; d.textContent=m;
+  h.appendChild(d); setTimeout(()=>d.remove(),2000);
 }
+
+window.addEventListener('load', () => { setTimeout(renderStats, 500); });
 </script>
 </body>
 </html>
