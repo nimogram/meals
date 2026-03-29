@@ -113,12 +113,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;heigh
 .sh-gap{font-family:var(--serif);font-size:30px;color:var(--tx);line-height:1;}
 .sh-gap em{font-family:var(--mono);font-size:10px;color:var(--em);font-style:normal;margin-left:3px;}
 
-/* effect filter */
 .effect-row{display:flex;background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:3px;gap:2px;margin-bottom:10px;}
 .eff-btn{flex:1;padding:10px 4px;font-family:var(--mono);font-size:10px;border:none;background:transparent;color:var(--mu);border-radius:7px;cursor:pointer;transition:all 0.18s;}
 .eff-btn.on{background:var(--em);color:var(--bg);font-weight:700;}
 
-/* suggest cards */
+.sug-inner-wrap{min-height:300px;}
 .sug-card{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:8px;position:relative;overflow:hidden;}
 .sc-name{font-family:var(--serif);font-size:18px;color:var(--tx);line-height:1.2;flex:1;}
 .sc-p{font-family:var(--serif);font-size:16px;color:var(--em);line-height:1;}
@@ -199,7 +198,6 @@ nav{position:absolute;bottom:0;left:0;right:0;background:rgba(4,5,10,0.95);backd
       <input class="txt" id="in-main" type="text" placeholder="主菜"/>
       <div class="sl-box">
         <div class="sl-hd"><div class="sl-lbl">Protein</div><div class="sl-val" id="sl-val">25.0<span>g</span></div></div>
-        <!-- ニモさん、60g上限に厳格に戻しましたよ -->
         <input type="range" id="in-p" min="0" max="60" step="0.5" value="25" oninput="document.getElementById('sl-val').innerHTML=parseFloat(this.value).toFixed(1)+'<span>g</span>'"/>
       </div>
       <button class="save-btn" id="save-btn" onclick="saveForm()">記録を保存 →</button>
@@ -218,9 +216,9 @@ nav{position:absolute;bottom:0;left:0;right:0;background:rgba(4,5,10,0.95);backd
       <button class="eff-btn on" onclick="setEffect('all',this)">ALL</button>
       <button class="eff-btn" onclick="setEffect('muscle',this)">筋肉増強</button>
       <button class="eff-btn" onclick="setEffect('recovery',this)">回復</button>
-      <button class="eff-btn" onclick="setEffect('brain',this)">脳機能</button>
+      <button class="eff-btn" onclick="setEffect('antiaging',this)">アンチエイジング</button>
     </div>
-    <div id="sug-inner"></div>
+    <div id="sug-inner" class="sug-inner-wrap"></div>
     <div class="shuffle-row"><button class="shuffle-btn" onclick="renderSuggest(true)">SHUFFLE / CHANGE</button></div>
   </div>
 
@@ -246,7 +244,6 @@ nav{position:absolute;bottom:0;left:0;right:0;background:rgba(4,5,10,0.95);backd
     <input class="txt" id="edit-main" type="text" placeholder="主菜"/>
     <div class="sl-box">
       <div class="sl-hd">
-        <!-- 修正画面も60g上限を厳守 -->
         <div class="sl-val" id="edit-sl-val">25.0<span>g</span></div>
       </div>
       <input type="range" id="edit-p" min="0" max="60" step="0.5" value="25" oninput="document.getElementById('edit-sl-val').innerHTML=parseFloat(this.value).toFixed(1)+'<span>g</span>'"/>
@@ -260,17 +257,64 @@ nav{position:absolute;bottom:0;left:0;right:0;background:rgba(4,5,10,0.95);backd
 <script>
 const GAS = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec";
 const TARGET = 120;
+
+// 脳機能をアンチエイジングに置換。馬・鹿・メカジキは完全に排除済み。
 const MENUS = [
-  { main:"牛肉ステーキ", p:40.0, tags:["鉄分(造血)","筋肉(クレアチン)"], reason:"タンパク質不足を解消し、鉄分で活力を担保。", effect:"ヘモグロビン生成とクレアチン効果で筋出力を最大化。", cat:"muscle" },
-  { main:"馬肉ユッケ/刺身", p:24.0, tags:["鉄分","高グリコーゲン"], reason:"グリコーゲンと鉄分による即効性のエネルギーと筋肉サポート。", effect:"疲労回復スピード向上と、筋肉への酸素運搬能力の増強。", cat:"muscle" },
-  { main:"鹿肉ステーキ", p:34.0, tags:["超低脂質","筋肉増強"], reason:"ジビエ特有の低脂質・高タンパク。究極のバルクアップ食。", effect:"酸素運搬能力向上と、無駄な脂肪をつけない筋肉合成。", cat:"muscle" },
-  { main:"生ラム肉グリル", p:32.0, tags:["燃焼(Lカルニチン)","精力(亜鉛)"], reason:"L-カルニチンで燃焼効率を高めつつ、筋肉量を維持。", effect:"テストステロン値維持とミトコンドリア活性による代謝と筋力の両立。", cat:"muscle" },
-  { main:"チキンステーキ", p:35.0, tags:["低脂質","回復(アンセリン)"], reason:"高タンパクかつ低脂質な選択で筋肉合成を確実に。", effect:"アンセリンによる身体的疲労回復と、筋肉への迅速なアミノ酸供給。", cat:"recovery" },
-  { main:"茹で鶏むね低温調理", p:35.0, tags:["筋肥大(効率)","低GI"], reason:"究極のP/F比。筋肉合成を最優先する際の最適解。", effect:"インスリン感受性の維持と圧倒的なタンパク質補給。", cat:"recovery" },
-  { main:"刺身盛り合わせ", p:30.0, tags:["DHA/EPA","脳機能"], reason:"脳機能を司るDHAを補給し、明日の戦略立案へ備える。", effect:"血液流動性向上と抗炎症作用、知的コンディションの維持。", cat:"brain" },
-  { main:"サバ味噌煮/塩焼き", p:21.0, tags:["良質脂質","血管ケア"], reason:"必須脂肪酸を摂取。脳機能と血管の健康を両立。", effect:"記憶力の維持と中性脂肪抑制。血管を若く保ち全身の循環改善。", cat:"brain" },
-  { main:"納豆オムレツ", p:20.0, tags:["発酵食品","完全栄養"], reason:"腸内環境を整え、タンパク質吸収率を最大化。", effect:"ナットウキナーゼによる血栓予防と、アミノ酸スコア100の恩恵。", cat:"recovery" },
-  { main:"生タコ刺身", p:22.5, tags:["タウリン(肝臓)","低GI"], reason:"肝機能をサポートし、蓄積疲労をリセットする。", effect:"コレステロール抑制と中性脂肪の燃焼サポート。", cat:"recovery" }
+  { main:"生ラムのたたき", side:"オニオンスライス", p:28.0, tags:["羊", "カルニチン", "亜鉛"], cat:"muscle" },
+  { main:"金目鯛のアクアパッツァ", side:"ズッキーニ・トマト", p:24.0, tags:["魚", "アスタキサンチン", "Tie2"], cat:"antiaging" },
+  { main:"鶏むね肉のバジルソテー", side:"ナッツサラダ", p:32.0, tags:["鶏", "抗酸化", "ビタミンE"], cat:"recovery" },
+  { main:"茹でダコのカルパッチョ", side:"セロリ・オリーブ油", p:18.0, tags:["タウリン", "血管柔軟性", "低脂質"], cat:"recovery" },
+  { main:"牛赤身肉のタリアータ", side:"ルッコラ・バルサミコ", p:30.0, tags:["牛", "アルギニン", "鉄分"], cat:"muscle" },
+  { main:"豚ヒレのロースト", side:"ローズマリー・温野菜", p:29.0, tags:["豚", "ビタミンB1", "疲労回復"], cat:"recovery" },
+  { main:"サケのムニエル（皮ごと）", side:"ほうれん草のソテー", p:26.0, tags:["サケ", "アスタキサンチン", "DHA"], cat:"antiaging" },
+  { main:"ホタテとアスパラの炒め", side:"舞茸のソテー", p:22.0, tags:["タウリン", "亜鉛", "Tie2"], cat:"antiaging" },
+  { main:"鶏ササミの梅大葉巻き", side:"叩ききゅうり", p:28.0, tags:["鶏", "クエン酸", "超低脂質"], cat:"muscle" },
+  { main:"ブリの塩麹焼き", side:"小松菜の煮浸し", p:25.0, tags:["魚", "発酵", "血管掃除"], cat:"recovery" },
+  { main:"穴子の白焼き", side:"焼きナス・わさび", p:22.0, tags:["精力", "ビタミンA", "スタミナ"], cat:"recovery" },
+  { main:"豆腐と海老のチゲ", side:"春菊・長ネギ", p:24.0, tags:["カプサイシン", "血行促進", "イソフラボン"], cat:"antiaging" },
+  { main:"アサリ의ワイン蒸し", side:"焼き海苔・豆腐サラダ", p:19.0, tags:["鉄分", "ビタミンB12", "肝機能"], cat:"antiaging" },
+  { main:"砂肝のガーリック炒め", side:"ブロッコリー", p:25.0, tags:["低脂質", "亜鉛", "アリシン"], cat:"muscle" },
+  { main:"ニシンの塩焼き", side:"大根おろし・とろろ", p:21.0, tags:["魚", "オメガ3", "胃腸ケア"], cat:"recovery" },
+  { main:"鶏レバーのパテ風", side:"全粒粉クラッカー・野菜", p:23.0, tags:["造血", "葉酸", "デトックス"], cat:"recovery" },
+  { main:"マグロの漬け", side:"納豆・めかぶ", p:26.0, tags:["マグロ", "血管ケア", "ネバネバ"], cat:"recovery" },
+  { main:"イカと里芋の煮物", side:"ほうれん草", p:22.0, tags:["タウリン", "食物繊維", "血流"], cat:"antiaging" },
+  { main:"サバの文化干し", side:"具沢山なめこ汁", p:23.0, tags:["サバ", "EPA", "血管年齢"], cat:"antiaging" },
+  { main:"鶏もも肉の塩麹蒸し", side:"キャベツの千切り", p:28.0, tags:["鶏", "発酵", "消化良好"], cat:"muscle" },
+  { main:"牛レバー炒め", side:"ニラ・もやし", p:26.0, tags:["レバー", "スタミナ", "精力"], cat:"muscle" },
+  { main:"真鯛の昆布締め", side:"焼き椎茸", p:24.0, tags:["魚", "低GI", "アンチエイジング"], cat:"antiaging" },
+  { main:"厚揚げのニラ玉炒め", side:"トマト", p:21.0, tags:["アリシン", "イソフラボン", "テストステロン"], cat:"recovery" },
+  { main:"カツオのレアカツ", side:"おろしポン酢", p:27.0, tags:["アンセリン", "抗疲労", "血行"], cat:"recovery" },
+  { main:"ホッケの開き", side:"豚汁（脂抜き）", p:25.0, tags:["魚", "カルシウム", "満足度"], cat:"recovery" },
+  { main:"鶏砂肝とパプリカ炒め", side:"枝豆", p:24.0, tags:["低カロリー", "亜鉛", "ビタミンC"], cat:"muscle" },
+  { main:"サケのちゃんちゃん焼き", side:"キャベツ・玉ねぎ", p:26.0, tags:["サケ", "アスタキサンチン", "腸活"], cat:"antiaging" },
+  { main:"豆腐ハンバーグ", side:"ひじき・大根おろし", p:19.0, tags:["大豆", "低脂質", "血糖安定"], cat:"recovery" },
+  { main:"イワシの梅煮", side:"ワカメの酢の物", p:20.0, tags:["EPA", "中性脂肪低下", "酢"], cat:"antiaging" },
+  { main:"鶏むね肉の生姜焼き", side:"アボカド", p:30.0, tags:["鶏", "代謝アップ", "良質脂質"], cat:"muscle" },
+  { main:"銀だらの粕汁仕立て", side:"根菜たっぷり", p:22.0, tags:["魚", "発酵", "美肌"], cat:"antiaging" },
+  { main:"ラム肉の串焼き", side:"クミンサラダ", p:26.0, tags:["羊", "燃焼", "スパイス"], cat:"muscle" },
+  { main:"スモークサーモン", side:"くるみ・ケールサラダ", p:18.0, tags:["オメガ3", "ビタミンE", "ホルモン"], cat:"antiaging" },
+  { main:"納豆オムレツ", side:"しらす・海苔", p:21.0, tags:["卵", "納豆キナーゼ", "血栓予防"], cat:"recovery" },
+  { main:"鶏ササミのピザ風", side:"トマト・ピーマン・チーズ", p:32.0, tags:["鶏", "低糖質", "リコピン"], cat:"muscle" },
+  { main:"ブリのしゃぶしゃぶ", side:"水菜・えのき", p:24.0, tags:["ブリ", "DHA", "血管掃除"], cat:"antiaging" },
+  { main:"牛赤身の低温調理", side:"山わさび・クレソン", p:30.0, tags:["牛", "アルギニン", "血糖抑制"], cat:"muscle" },
+  { main:"エビとブロッコリー炒め", side:"ガーリックオイル", p:23.0, tags:["タウリン", "スルフォラファン"], cat:"recovery" },
+  { main:"豆乳担々湯豆腐", side:"挽肉少なめ", p:21.0, tags:["大豆", "温活", "血糖スパイク防止"], cat:"recovery" },
+  { main:"アジの塩焼き", side:"刻み生姜・みょうが", p:20.0, tags:["魚", "EPA", "血流改善"], cat:"antiaging" },
+  { main:"ラム肉とキャベツ蒸し", side:"ポン酢", p:25.0, tags:["羊", "低脂質", "デトックス"], cat:"muscle" },
+  { main:"鶏むね肉の棒々鶏", side:"クラゲの酢の物", p:28.0, tags:["鶏", "疲労回復", "低GI"], cat:"muscle" },
+  { main:"サバ缶のアヒージョ風", side:"きのこ・ブロッコリー", p:22.0, tags:["サバ", "オメガ3", "血管若返り"], cat:"antiaging" },
+  { main:"カツオのカルパッチョ", side:"アーモンドスライス", p:26.0, tags:["セレン", "ビタミンE", "血流"], cat:"antiaging" },
+  { main:"豚ヒレの冷しゃぶ", side:"梅肉・オクラ", p:27.0, tags:["豚", "クエン酸", "血糖抑制"], cat:"recovery" },
+  { main:"刺身（白身魚）", side:"ほうれん草の胡麻和え", p:24.0, tags:["魚", "酵素", "低脂質"], cat:"antiaging" },
+  { main:"鶏もも（皮なし）焼き", side:"焼きトマト", p:26.0, tags:["鶏", "リコピン", "高タンパク"], cat:"muscle" },
+  { main:"ホタテの磯辺焼き", side:"納豆", p:21.0, tags:["タウリン", "亜鉛", "完全栄養"], cat:"recovery" },
+  { main:"厚揚げのキノコあん", side:"チンゲン菜", p:20.0, tags:["大豆", "食物繊維", "血糖安定"], cat:"recovery" },
+  { main:"サケの西京焼き", side:"具沢山味噌汁", p:24.0, tags:["サケ", "発酵", "アスタキサンチン"], cat:"antiaging" },
+  { main:"ラムチョップグリル", side:"焼きパプリカ", p:31.0, tags:["羊", "亜鉛", "テストステロン"], cat:"muscle" },
+  { main:"イカのガリバタ炒め", side:"ほうれん草", p:23.0, tags:["タウリン", "アリシン", "血流改善"], cat:"recovery" },
+  { main:"鶏むね肉のタンドリー", side:"ヨーグルトソース", p:30.0, tags:["鶏", "スパイス", "腸内環境"], cat:"muscle" },
+  { main:"牛赤身肉のしぐれ煮", side:"ごぼう・生姜", p:28.0, tags:["牛", "食物繊維", "血糖抑制"], cat:"muscle" },
+  { main:"ブリのカルパッチョ", side:"柚子胡椒", p:24.0, tags:["ブリ", "DHA", "血管柔軟性"], cat:"antiaging" }
 ];
 
 let S = { history:[], viewLogs:[], type:'昼', viewDate:new Date(), effect:'all' };
@@ -340,10 +384,13 @@ function renderSuggest(refresh = false){
   const gap = Math.max(0,TARGET-tot);
   document.getElementById('sh-gap-val').innerHTML = gap > 0 ? `${gap.toFixed(1)}<em>g 不足</em>` : "Goal Achieved!";
   if(gap <= 0) { el.innerHTML = ""; return; }
+  
   let pool = [...MENUS];
   if(S.selectedEffect !== 'all') pool = pool.filter(m => m.cat === S.selectedEffect);
+  
   pool.sort(() => Math.random() - 0.5);
   let sorted = pool.slice(0, 3);
+  
   el.innerHTML = sorted.map(opt => `
     <div class="sug-card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
@@ -356,8 +403,8 @@ function renderSuggest(refresh = false){
         </div>
       </div>
       <div class="sc-comment-area">
-        <div class="sc-comment-lbl">推奨理由 / 期待効果</div>
-        <div class="sc-comment-txt">${opt.reason} ${opt.effect}</div>
+        <div class="sc-comment-lbl">副菜 / アンチエイジングの狙い</div>
+        <div class="sc-comment-txt">${opt.side}。${opt.tags.join('、')}等の成分により細胞の老化防止と血管ケアを狙います。</div>
       </div>
     </div>`).join('');
 }
@@ -424,23 +471,15 @@ function commitEdit(){
   const p = parseFloat(document.getElementById('edit-p').value);
   const ts = S.viewLogs[_editIdx].timestamp;
   const hi = S.history.findIndex(h => h.timestamp === ts);
-  if(hi>=0) {
-      S.history[hi].main = main;
-      S.history[hi].protein = p;
-  }
-  closeModal('edit-modal');
-  filterLogs();
-  renderAll();
-  toast("UPDATED");
+  if(hi>=0) { S.history[hi].main = main; S.history[hi].protein = p; }
+  closeModal('edit-modal'); filterLogs(); renderAll(); toast("UPDATED");
   fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify({_action:'update',timestamp:ts,main,protein:p})}).catch(()=>{});
 }
 
 function deleteMeal(i){
   const ts = S.viewLogs[i].timestamp;
   S.history = S.history.filter(h => h.timestamp !== ts);
-  filterLogs();
-  renderAll();
-  toast("DELETED");
+  filterLogs(); renderAll(); toast("DELETED");
   fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify({_action:'delete',timestamp:ts})}).catch(()=>{});
 }
 
@@ -448,9 +487,7 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 function moveDate(n){
   S.viewDate.setDate(S.viewDate.getDate() + n);
-  updateDateNav();
-  filterLogs();
-  renderAll();
+  updateDateNav(); filterLogs(); renderAll();
 }
 
 function updateDateNav(){
@@ -496,9 +533,7 @@ async function doSave(data){
   const rec = new Date(S.viewDate); const now = new Date();
   rec.setHours(now.getHours(), now.getMinutes(), now.getSeconds());
   const meal = {...data, timestamp:rec.toISOString()};
-  S.history.unshift(meal);
-  filterLogs();
-  renderAll();
+  S.history.unshift(meal); filterLogs(); renderAll();
   const btn = document.getElementById('save-btn'); if(btn) btn.disabled=true;
   try { await fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify(meal)}); toast("SAVED"); }
   catch(e){ toast("OFFLINE SAVE"); }
@@ -508,7 +543,7 @@ async function doSave(data){
 function toast(m){
   const h=document.getElementById('toast-host');
   const d=document.createElement('div'); d.className='toast'; d.textContent=m;
-  h.appendChild(d); setTimeout(()=>d.remove(),2000);
+  h.appendChild(d); setTimeout(()=>d.remove(),3000);
 }
 
 window.addEventListener('load', () => { setTimeout(renderStats, 500); });
