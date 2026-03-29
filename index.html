@@ -68,6 +68,7 @@ main::-webkit-scrollbar{display:none;}
 .date-nav{display:flex;align-items:center;background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:4px;gap:2px;margin-bottom:12px;}
 .dn-arrow{width:36px;height:36px;background:transparent;border:none;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mu);transition:all 0.2s;flex-shrink:0;}
 .dn-arrow:active{background:var(--bd);color:var(--tx);}
+.dn-arrow svg{width:14px;height:14px;}
 .dn-center{flex:1;text-align:center;}
 .dn-date{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--em);letter-spacing:0.05em;}
 
@@ -92,14 +93,19 @@ main::-webkit-scrollbar{display:none;}
 .sl-val span{font-family:var(--mono);font-size:8px;color:var(--mu);}
 input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--brt);border-radius:2px;outline:none;}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:var(--em);border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 10px var(--em-glow);cursor:pointer;}
-.save-btn{width:100%;background:var(--em);color:var(--bg);border:none;border-radius:11px;padding:18px;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:opacity 0.15s;}
+.save-btn{width:100%;background:var(--em);color:var(--bg);border:none;border-radius:11px;padding:18px;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;}
 
 /* log items */
 .li-wrap{position:relative;overflow:hidden;border-radius:13px;margin-bottom:7px;}
 .log-item{background:var(--s1);border:1px solid var(--bd);border-radius:13px;padding:11px 14px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;transition:transform 0.22s ease;}
 .li-badge{width:28px;height:28px;background:var(--bg);border:1px solid var(--bd);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:7.5px;color:var(--mu);flex-shrink:0;}
-.li-name{font-size:13px;font-weight:700;color:var(--tx);}
+.li-name{font-size:13px;font-weight:700;color:var(--tx);flex:1;margin-left:10px;}
 .li-p{font-family:var(--serif);font-size:17px;color:var(--em);flex-shrink:0;}
+.li-actions{position:absolute;right:0;top:0;bottom:0;display:flex;z-index:1;transform:translateX(100%);transition:transform 0.22s ease;border-radius:0 13px 13px 0;overflow:hidden;}
+.li-actions.show{transform:translateX(0);}
+.li-edit,.li-del{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;padding:0 14px;min-width:62px;border:none;cursor:pointer;font-family:var(--mono);font-size:7px;font-weight:700;}
+.li-edit{background:#0a2216;color:var(--em);}
+.li-del{background:#251018;color:var(--red);}
 
 /* ── SUGGEST TAB ── */
 .sug-hero{background:linear-gradient(135deg,var(--s2),#080a14);border:1px solid rgba(16,185,129,0.18);border-radius:16px;padding:14px 16px;margin-bottom:10px;position:relative;overflow:hidden;}
@@ -143,7 +149,12 @@ nav{position:absolute;bottom:0;left:0;right:0;background:rgba(4,5,10,0.95);backd
 .nav-btn.on{color:var(--em);background:var(--em-dim);}
 .nav-lbl{font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;}
 
-/* toast */
+/* Modals */
+.modal-bg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.22s;}
+.modal-bg.open{opacity:1;pointer-events:all;}
+.modal-sheet{background:var(--s1);border:1px solid var(--bd);border-radius:22px 22px 0 0;padding:20px;width:100%;max-width:430px;transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.34,1.2,0.64,1);}
+.modal-bg.open .modal-sheet{transform:translateY(0);}
+
 .toast-host{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:999;}
 .toast{background:var(--em);color:var(--bg);padding:7px 16px;border-radius:20px;font-family:var(--mono);font-size:9px;font-weight:700;}
 </style>
@@ -162,7 +173,7 @@ nav{position:absolute;bottom:0;left:0;right:0;background:rgba(4,5,10,0.95);backd
     <div style="display:flex;align-items:baseline;"><div class="g-val" id="hdr-p">0.0</div><div class="g-unit">g</div></div>
   </div>
   <div class="g-track"><div class="g-fill" id="g-fill" style="width:0%"></div></div>
-  <div class="g-meta"><div class="g-pct" id="g-pct">0%</div><div class="g-gap">残り <em id="g-gap">120.0g</em></div></div>
+  <div class="g-meta"><div class="g-pct" id="g-pct">0% Done</div><div class="g-gap">残り <em id="g-gap">120.0g</em></div></div>
 </header>
 
 <main>
@@ -188,6 +199,7 @@ nav{position:absolute;bottom:0;left:0;right:0;background:rgba(4,5,10,0.95);backd
       <input class="txt" id="in-main" type="text" placeholder="主菜"/>
       <div class="sl-box">
         <div class="sl-hd"><div class="sl-lbl">Protein</div><div class="sl-val" id="sl-val">25.0<span>g</span></div></div>
+        <!-- ニモさん、60g上限に厳格に戻しましたよ -->
         <input type="range" id="in-p" min="0" max="60" step="0.5" value="25" oninput="document.getElementById('sl-val').innerHTML=parseFloat(this.value).toFixed(1)+'<span>g</span>'"/>
       </div>
       <button class="save-btn" id="save-btn" onclick="saveForm()">記録を保存 →</button>
@@ -227,6 +239,22 @@ nav{position:absolute;bottom:0;left:0;right:0;background:rgba(4,5,10,0.95);backd
 </nav>
 </div>
 
+<!-- Edit Modal -->
+<div class="modal-bg" id="edit-modal" onclick="if(event.target===this)closeModal('edit-modal')">
+  <div class="modal-sheet">
+    <div style="font-family:var(--serif); font-size:18px; margin-bottom:15px; color:var(--tx);">記録を修正</div>
+    <input class="txt" id="edit-main" type="text" placeholder="主菜"/>
+    <div class="sl-box">
+      <div class="sl-hd">
+        <!-- 修正画面も60g上限を厳守 -->
+        <div class="sl-val" id="edit-sl-val">25.0<span>g</span></div>
+      </div>
+      <input type="range" id="edit-p" min="0" max="60" step="0.5" value="25" oninput="document.getElementById('edit-sl-val').innerHTML=parseFloat(this.value).toFixed(1)+'<span>g</span>'"/>
+    </div>
+    <button class="save-btn" onclick="commitEdit()">保存する →</button>
+  </div>
+</div>
+
 <div class="toast-host" id="toast-host"></div>
 
 <script>
@@ -246,6 +274,7 @@ const MENUS = [
 ];
 
 let S = { history:[], viewLogs:[], type:'昼', viewDate:new Date(), effect:'all' };
+let _editIdx = null, _sw = {};
 
 (function init(){
   updateDateNav();
@@ -273,7 +302,7 @@ function renderAll(){
   const pct = Math.min(tot/TARGET*100,100);
   document.getElementById('hdr-p').textContent = tot.toFixed(1);
   document.getElementById('g-fill').style.width = pct+'%';
-  document.getElementById('g-pct').textContent = pct.toFixed(0)+'%';
+  document.getElementById('g-pct').textContent = pct.toFixed(0)+'% Done';
   document.getElementById('g-gap').textContent = gap.toFixed(1)+'g';
   const isToday = S.viewDate.toDateString() === new Date().toDateString();
   document.getElementById('g-date-lbl').textContent = isToday ? "Today" : S.viewDate.toLocaleDateString('ja-JP', {month:'short', day:'numeric'});
@@ -285,16 +314,23 @@ function renderAll(){
 function renderLog(){
   const el = document.getElementById('log-list');
   if(!el) return;
-  el.innerHTML = S.viewLogs.length ? S.viewLogs.map(m=>`
-    <div class="li-wrap">
-      <div class="log-item">
+  el.innerHTML = S.viewLogs.length ? S.viewLogs.map((m,i)=>`
+    <div class="li-wrap" id="liw-${i}">
+      <div class="log-item" id="lii-${i}"
+        ontouchstart="swipeStart(event,${i})"
+        ontouchmove="swipeMove(event,${i})"
+        ontouchend="swipeEnd(${i})">
         <div style="display:flex;align-items:center;gap:10px;">
           <div class="li-badge">${m.type}</div>
           <div class="li-name">${m.main}</div>
         </div>
         <div class="li-p">${m.protein.toFixed(1)}g</div>
       </div>
-    </div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--mu);font-size:10px;">No records for this day.</div>';
+      <div class="li-actions" id="lia-${i}">
+        <button class="li-edit" onclick="openEdit(${i})">修正</button>
+        <button class="li-del" onclick="deleteMeal(${i})">削除</button>
+      </div>
+    </div>`).join('') : '<div style="padding:20px;text-align:center;color:var(--mu);font-size:10px;">No records.</div>';
 }
 
 function renderSuggest(refresh = false){
@@ -358,6 +394,58 @@ function renderStats(){
     </div>`).join('') : '<div class="empty">History unavailable.</div>';
 }
 
+// ── ACTIONS ──
+function swipeStart(e,i){_sw[i]={x:e.touches[0].clientX,y:e.touches[0].clientY};}
+function swipeMove(e,i){
+  if(!_sw[i])return;
+  const dx=_sw[i].x-e.touches[0].clientX;
+  if(dx>40){
+    document.getElementById('lia-'+i).classList.add('show');
+    document.getElementById('lii-'+i).style.transform='translateX(-124px)';
+  } else if(dx<-40){
+    document.getElementById('lia-'+i).classList.remove('show');
+    document.getElementById('lii-'+i).style.transform='';
+  }
+}
+function swipeEnd(i){delete _sw[i];}
+
+function openEdit(i){
+  _editIdx = i;
+  const m = S.viewLogs[i];
+  document.getElementById('edit-main').value = m.main;
+  document.getElementById('edit-p').value = m.protein;
+  document.getElementById('edit-sl-val').innerHTML = m.protein.toFixed(1)+'<span>g</span>';
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function commitEdit(){
+  if(_editIdx===null)return;
+  const main = document.getElementById('edit-main').value.trim();
+  const p = parseFloat(document.getElementById('edit-p').value);
+  const ts = S.viewLogs[_editIdx].timestamp;
+  const hi = S.history.findIndex(h => h.timestamp === ts);
+  if(hi>=0) {
+      S.history[hi].main = main;
+      S.history[hi].protein = p;
+  }
+  closeModal('edit-modal');
+  filterLogs();
+  renderAll();
+  toast("UPDATED");
+  fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify({_action:'update',timestamp:ts,main,protein:p})}).catch(()=>{});
+}
+
+function deleteMeal(i){
+  const ts = S.viewLogs[i].timestamp;
+  S.history = S.history.filter(h => h.timestamp !== ts);
+  filterLogs();
+  renderAll();
+  toast("DELETED");
+  fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify({_action:'delete',timestamp:ts})}).catch(()=>{});
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
 function moveDate(n){
   S.viewDate.setDate(S.viewDate.getDate() + n);
   updateDateNav();
@@ -391,7 +479,7 @@ function setEffect(eff,btn){
   S.selectedEffect = eff;
   document.querySelectorAll('#effect-selector .eff-btn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  renderSuggest(refresh=true);
+  renderSuggest(true);
 }
 
 async function recordBreakfast(){ await doSave({main:'朝セット',protein:45,type:'朝'}); }
