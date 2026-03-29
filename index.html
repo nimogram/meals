@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Meal OS v7.3.4</title>
+    <title>Meal OS v7.4</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -27,10 +27,16 @@
             box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); border: 2px solid #04050a; 
         }
         
-        /* Date input visibility & customization */
+        /* Date Input Dark Mode Force */
         input[type="date"] {
             color-scheme: dark;
-            background: transparent;
+            background: #0e1019;
+            border: 1px solid #161a28;
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-family: 'DM Mono', monospace;
+            font-size: 14px;
+            color: #10b981;
         }
 
         .custom-scroll::-webkit-scrollbar { display: none; }
@@ -71,16 +77,15 @@
             const [mainMenu, setMainMenu] = useState('');
             const [protein, setProtein] = useState(25.0);
             
-            // 札幌の現在日付を取得
-            const getSapporoDate = () => {
-                const now = new Date();
+            // 札幌の現在日付を取得 (yyyy-MM-dd)
+            const getSapporoDateString = (date = new Date()) => {
                 const offset = 9 * 60; // JST
-                const jstNow = new Date(now.getTime() + (now.getTimezoneOffset() + offset) * 60000);
+                const jstNow = new Date(date.getTime() + (date.getTimezoneOffset() + offset) * 60000);
                 return jstNow.toISOString().split('T')[0];
             };
 
-            const today = useMemo(() => getSapporoDate(), []);
-            const [selectedDate, setSelectedDate] = useState(today);
+            const todayStr = useMemo(() => getSapporoDateString(), []);
+            const [selectedDate, setSelectedDate] = useState(todayStr);
 
             useEffect(() => { fetchData(); }, []);
 
@@ -91,36 +96,38 @@
                     const data = await r.json();
                     if (data.history) setMeals(data.history);
                     if (data.menus) setMenus(data.menus);
-                } catch (e) { setShowToast("SYNC ERROR"); }
-                finally { setLoading(false); setIsSyncing(false); }
+                } catch (e) { 
+                    setShowToast("SYNC ERROR"); 
+                    console.error("Fetch failed", e);
+                } finally { 
+                    setLoading(false); 
+                    setIsSyncing(false); 
+                }
             };
 
-            // 日付文字列の正規化（スラッシュ/ハイフンの混在を許容する）
-            const normalizeDate = (dateStr) => {
-                if (!dateStr) return "";
-                // ISO 8601かスラッシュ形式かを問わず YYYY-MM-DD に統一
-                return dateStr.replace(/\//g, '-').split('T')[0].split(' ')[0];
-            };
-
+            // 【最重要】日付の判定ロジックを極限まで強化
             const filteredMeals = useMemo(() => {
                 return meals.filter(m => {
-                    return normalizeDate(m.timestamp) === selectedDate;
+                    if (!m.timestamp) return false;
+                    // スラッシュ、ハイフン、T、空白、すべてを許容して正規化
+                    const mDate = m.timestamp.replace(/\//g, '-').split(/[T ]/)[0];
+                    return mDate === selectedDate;
                 }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             }, [meals, selectedDate]);
 
-            const todayProtein = useMemo(() => 
+            const currentProtein = useMemo(() => 
                 filteredMeals.reduce((sum, m) => sum + (Number(m.protein) || 0), 0)
             , [filteredMeals]);
 
-            const gap = Math.max(0, TARGET_PROTEIN - todayProtein);
-            const progress = Math.min((todayProtein / TARGET_PROTEIN) * 100, 100);
+            const gap = Math.max(0, TARGET_PROTEIN - currentProtein);
+            const progress = Math.min((currentProtein / TARGET_PROTEIN) * 100, 100);
 
             const handleSave = async (e) => {
                 if (e) e.preventDefault();
                 if (!mainMenu) return;
 
-                // 未来日ガード
-                if (selectedDate > today) {
+                // 未来日ガード（念のためロジックでも阻止）
+                if (selectedDate > todayStr) {
                     setShowToast("未来の日付は登録できません");
                     return;
                 }
@@ -128,7 +135,7 @@
                 setIsSyncing(true);
                 const now = new Date();
                 const timeStr = now.toTimeString().split(' ')[0];
-                // 保存時の形式をハイフンに統一
+                // 確実に選択された日付のデータとして送信
                 const targetTimestamp = editingId || `${selectedDate}T${timeStr}`;
 
                 const payload = {
@@ -143,9 +150,14 @@
                     await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
                     setShowToast(editingId ? "UPDATED" : "SAVED");
                     setEditingId(null); setMainMenu(''); setProtein(25.0);
+                    // 完了後に再取得
                     setTimeout(fetchData, 800);
-                } catch (err) { setShowToast("SAVE ERROR"); }
-                finally { setIsSyncing(false); setTimeout(() => setShowToast(""), 3000); }
+                } catch (err) { 
+                    setShowToast("SAVE ERROR"); 
+                } finally { 
+                    setIsSyncing(false); 
+                    setTimeout(() => setShowToast(""), 3000); 
+                }
             };
 
             const executeDelete = async () => {
@@ -156,8 +168,12 @@
                     await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ _action: 'delete', timestamp: m.timestamp }) });
                     setShowToast("DELETED");
                     setTimeout(fetchData, 800);
-                } catch (err) { setShowToast("DELETE ERROR"); }
-                finally { setIsSyncing(false); setTimeout(() => setShowToast(""), 3000); }
+                } catch (err) { 
+                    setShowToast("DELETE ERROR"); 
+                } finally { 
+                    setIsSyncing(false); 
+                    setTimeout(() => setShowToast(""), 3000); 
+                }
             };
 
             const suggestions = useMemo(() => {
@@ -170,51 +186,51 @@
             if (loading) return (
                 <div className="h-screen bg-[#04050a] flex flex-col items-center justify-center text-[#10b981] font-black animate-pulse text-center p-6">
                     <Icons.Refresh className="mb-4 animate-spin h-10 w-10 mx-auto" />
-                    <span className="uppercase tracking-[0.3em] text-[10px] mono">Syncing v7.3.4...</span>
+                    <span className="uppercase tracking-[0.3em] text-[10px] mono">Establishing Reliable Link...</span>
                 </div>
             );
 
             return (
                 <div className="min-h-screen bg-[#04050a] text-[#dce0ec] pb-24 font-sans max-w-[430px] mx-auto relative flex flex-col border-x border-[#161a28] shadow-2xl">
                     
-                    {/* Header: Date Selector Focused */}
+                    {/* Header: Date Selector is the Priority */}
                     <header className="bg-gradient-to-b from-[#090b12] to-[#04050a] p-6 pb-6 border-b border-[#161a28] sticky top-0 z-[100] backdrop-blur-md">
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h1 className="text-xl font-black text-[#10b981] tracking-tighter serif leading-none">Meal OS v7.3.4</h1>
-                                <p className="text-[7px] text-[#404660] uppercase tracking-[0.25em] font-medium mt-1 mono">Data Resilience Active</p>
+                                <h1 className="text-xl font-black text-[#10b981] tracking-tighter serif leading-none">Meal OS v7.4</h1>
+                                <p className="text-[7px] text-[#404660] uppercase tracking-[0.25em] font-medium mt-1 mono">Sapporo Sync Protocol</p>
                             </div>
-                            <button onClick={fetchData} className="p-2 bg-[#0e1019] border border-[#161a28] rounded-xl text-[#404660] active:scale-90 transition-all">
+                            <button onClick={fetchData} className="p-2.5 bg-[#0e1019] border border-[#161a28] rounded-xl text-[#404660] active:scale-90 transition-all hover:text-[#10b981]">
                                 <div className={isSyncing ? 'animate-spin text-[#10b981]' : ''}><Icons.Refresh /></div>
                             </button>
                         </div>
                         
-                        <div className="bg-[#0e1019] border border-[#161a28] rounded-2xl p-4 shadow-inner space-y-4">
+                        <div className="bg-[#0e1019] border border-[#161a28] rounded-2xl p-5 shadow-inner space-y-5">
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3 bg-[#04050a] px-4 py-2 rounded-xl border border-[#1a1f2e] focus-within:border-[#10b981] transition-all">
-                                    <Icons.Calendar />
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[8px] font-mono text-[#404660] uppercase tracking-widest">Selected Date</span>
                                     <input 
                                         type="date" 
                                         value={selectedDate} 
-                                        max={today}
+                                        max={todayStr}
                                         onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="bg-transparent text-[13px] font-black mono text-[#10b981] outline-none"
+                                        className="outline-none focus:border-[#10b981] transition-all"
                                     />
                                 </div>
                                 <div className="text-right">
-                                    <span className="text-3xl font-black text-[#10b981] leading-none serif">{todayProtein.toFixed(1)}<span className="text-[10px] mono text-[#404660] ml-1">g</span></span>
+                                    <span className="text-4xl font-black text-[#10b981] leading-none serif">{currentProtein.toFixed(1)}<span className="text-[10px] mono text-[#404660] ml-1">g</span></span>
                                 </div>
                             </div>
                             
                             <div className="space-y-2">
-                                <div className="h-[3px] w-full bg-[#1a1f2e] relative overflow-hidden rounded-full">
-                                    <div className="h-full bg-[#10b981] transition-all duration-1000 ease-out relative" style={{ width: `${progress}%` }}>
+                                <div className="h-[4px] w-full bg-[#1a1f2e] relative overflow-hidden rounded-full">
+                                    <div className="h-full bg-gradient-to-r from-[#059669] to-[#10b981] transition-all duration-1000 ease-out relative" style={{ width: `${progress}%` }}>
                                         <div className="absolute inset-0 bg-white/20 progress-glow"></div>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center text-[8px] mono text-[#404660] tracking-widest uppercase">
-                                    <span>{progress.toFixed(0)}% Done</span>
-                                    <span>残り <em className="text-[#10b981] not-italic font-bold">{gap.toFixed(1)}g</em></span>
+                                    <span>{progress.toFixed(0)}% Accomplished</span>
+                                    <span>Gap <em className="text-[#10b981] not-italic font-bold">{gap.toFixed(1)}g</em></span>
                                 </div>
                             </div>
                         </div>
@@ -225,64 +241,79 @@
 
                         {activeTab === 'record' && (
                             <div className="space-y-6 animate-in fade-in duration-500">
-                                <button onClick={() => { setMainMenu('朝セット'); setProtein(45.0); setMealType('朝'); setTimeout(() => handleSave(), 100); }} className="w-full bg-[#090b12] border border-[#161a28] p-4 rounded-2xl flex items-center justify-between shadow-xl active:scale-95 transition-all group">
-                                    <div className="flex items-center space-x-4">
-                                        <div className="bg-[#10b98114] border border-[#10b98126] p-3 rounded-xl text-[#10b981] text-xl group-hover:bg-[#10b98126] transition-colors">🥚</div>
-                                        <div className="text-left">
-                                            <p className="text-[13px] font-bold text-[#ffffff] tracking-tight">朝セットを記録</p>
-                                            <p className="text-[8px] mono text-[#404660] uppercase tracking-widest mt-0.5">45.0g P｜固定ルーチン</p>
+                                {/* Routine Button */}
+                                {selectedDate === todayStr && (
+                                    <button onClick={() => { setMainMenu('朝セット'); setProtein(45.0); setMealType('朝'); setTimeout(() => handleSave(), 100); }} className="w-full bg-[#090b12] border border-[#161a28] p-5 rounded-2xl flex items-center justify-between shadow-xl active:scale-95 transition-all group">
+                                        <div className="flex items-center space-x-4">
+                                            <div className="bg-[#10b98114] border border-[#10b98126] p-3 rounded-xl text-[#10b981] text-xl group-hover:bg-[#10b98126] transition-colors">🥚</div>
+                                            <div className="text-left">
+                                                <p className="text-[14px] font-bold text-[#ffffff] tracking-tight">朝セットを記録</p>
+                                                <p className="text-[8px] mono text-[#404660] uppercase tracking-widest mt-0.5">45.0g P｜Sapporo Morning Routine</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <span className="text-[#404660]">→</span>
-                                </button>
+                                        <span className="text-[#404660] group-hover:text-[#10b981] transition-colors">→</span>
+                                    </button>
+                                )}
 
-                                <section className={`bg-[#090b12] border ${editingId ? 'border-[#10b981] shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'border-[#161a28]'} rounded-[2.5rem] p-6 shadow-2xl transition-all`}>
-                                    <form onSubmit={handleSave} className="space-y-6">
-                                        <div className="flex bg-[#04050a] p-1 rounded-xl border border-[#161a28]">
+                                {/* Main Form */}
+                                <section className={`bg-[#090b12] border ${editingId ? 'border-[#10b981] shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'border-[#161a28]'} rounded-[2.5rem] p-7 shadow-2xl transition-all`}>
+                                    <form onSubmit={handleSave} className="space-y-7">
+                                        <div className="flex bg-[#04050a] p-1.5 rounded-xl border border-[#161a28]">
                                             {['朝', '昼', '夜', '他'].map(t => (
-                                                <button key={t} type="button" onClick={() => setMealType(t)} className={`flex-1 py-2.5 text-[9px] mono font-bold rounded-lg transition-all ${mealType === t ? 'bg-[#10b981] text-[#04050a] shadow-lg' : 'text-[#404660] hover:text-[#dce0ec]'}`}>{t}</button>
+                                                <button key={t} type="button" onClick={() => setMealType(t)} className={`flex-1 py-2.5 text-[10px] mono font-bold rounded-lg transition-all ${mealType === t ? 'bg-[#10b981] text-[#04050a] shadow-lg' : 'text-[#454a60] hover:text-[#dce0ec]'}`}>{t}</button>
                                             ))}
                                         </div>
-                                        <input type="text" placeholder="主菜（タンパク源）" value={mainMenu} onChange={e => setMainMenu(e.target.value)} className="w-full bg-[#04050a] border border-[#161a28] rounded-xl px-4 py-4 text-sm font-bold focus:border-[#10b981] outline-none transition-all placeholder-[#272c40]" />
+                                        <div className="space-y-2">
+                                            <span className="text-[8px] mono text-[#454a60] uppercase tracking-widest ml-1">Main Protein Source</span>
+                                            <input type="text" placeholder="主菜（タンパク源）" value={mainMenu} onChange={e => setMainMenu(e.target.value)} className="w-full bg-[#04050a] border border-[#161a28] rounded-xl px-5 py-4 text-[15px] font-bold focus:border-[#10b981] outline-none transition-all placeholder-[#272c40]" />
+                                        </div>
                                         
-                                        <div className="bg-[#04050a] p-5 rounded-2xl border border-[#161a28] space-y-4">
+                                        <div className="bg-[#04050a] p-6 rounded-2xl border border-[#161a28] space-y-4 shadow-inner">
                                             <div className="flex justify-between items-center px-1">
-                                                <span className="text-[8px] mono text-[#404660] uppercase tracking-[0.2em]">Estimate Protein</span>
-                                                <span className="text-2xl font-black text-[#10b981] serif leading-none">{Number(protein).toFixed(1)}<span className="text-[9px] mono text-[#404660] ml-1">g</span></span>
+                                                <span className="text-[8px] mono text-[#454a60] uppercase tracking-[0.2em]">Estimate Protein</span>
+                                                <span className="text-3xl font-black text-[#10b981] serif leading-none">{Number(protein).toFixed(1)}<span className="text-[10px] mono text-[#404660] ml-1">g</span></span>
                                             </div>
                                             <input type="range" min="0" max="80" step="0.5" value={protein} onChange={e => setProtein(e.target.value)} />
                                         </div>
                                         
-                                        <button type="submit" disabled={isSyncing} className="w-full bg-[#10b981] text-[#04050a] py-5 rounded-[1.2rem] mono text-[10px] font-bold tracking-[0.2em] shadow-xl active:scale-[0.98] transition-all flex justify-center items-center uppercase">
-                                            {editingId ? "記録を修正する →" : "記録を保存する →"}
+                                        <button type="submit" disabled={isSyncing} className="w-full bg-[#10b981] text-[#04050a] py-5 rounded-[1.25rem] mono text-[11px] font-black tracking-[0.25em] shadow-xl active:scale-[0.98] transition-all flex justify-center items-center uppercase border border-[#10b981]">
+                                            {editingId ? "記録を修正する →" : "記録を同期保存 →"}
                                         </button>
                                     </form>
                                 </section>
 
+                                {/* List Section */}
                                 <section className="space-y-4 pb-4">
                                     <div className="flex items-center gap-2 mb-2 px-1">
-                                        <span className="text-[8px] mono text-[#404660] uppercase tracking-[0.25em]">{selectedDate} Records</span>
+                                        <span className="text-[8px] mono text-[#454a60] uppercase tracking-[0.25em]">{selectedDate} Data Logs</span>
                                         <div className="h-[1px] bg-[#161a28] flex-1" />
                                     </div>
-                                    {filteredMeals.length === 0 ? <p className="text-center text-[10px] text-[#404660] py-10 italic uppercase tracking-widest">No logs for this date.</p> : filteredMeals.map((m, i) => (
-                                        <div key={m.timestamp} className="bg-[#090b12] border border-[#161a28] p-4 rounded-2xl flex items-center justify-between shadow-lg group hover:border-[#404660] transition-all">
+                                    {filteredMeals.length === 0 ? (
+                                        <div className="text-center py-16 bg-[#090b12] rounded-3xl border border-dashed border-[#161a28]">
+                                            <p className="text-[10px] text-[#454a60] uppercase tracking-[0.2em]">No logs found for this date.</p>
+                                        </div>
+                                    ) : filteredMeals.map((m, i) => (
+                                        <div key={m.timestamp} className="bg-[#090b12] border border-[#161a28] p-5 rounded-3xl flex items-center justify-between shadow-lg group hover:border-[#454a60] transition-all">
                                             <div className="flex items-center space-x-4">
-                                                <div className="w-10 h-10 bg-[#04050a] rounded-xl flex flex-col items-center justify-center border border-[#161a28]">
-                                                    <span className="text-[7px] font-bold text-[#10b981] uppercase">{normalizeDate(m.timestamp) === today ? 'TODAY' : 'PAST'}</span>
-                                                    <span className="text-[9px] font-bold text-[#dce0ec]">{m.type}</span>
+                                                <div className="w-11 h-11 bg-[#04050a] rounded-xl flex flex-col items-center justify-center border border-[#161a28]">
+                                                    <span className="text-[7px] font-bold text-[#10b981] uppercase">{selectedDate === todayStr ? 'TODAY' : 'PAST'}</span>
+                                                    <span className="text-[10px] font-black text-[#dce0ec]">{m.type}</span>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[13px] font-bold text-[#ffffff] leading-none mb-2">{m.main}</p>
-                                                    <p className="text-[8px] mono text-[#404660] uppercase flex items-center gap-1 leading-none">
+                                                    <p className="text-[15px] font-bold text-[#ffffff] leading-none mb-2 tracking-tight">{m.main}</p>
+                                                    <p className="text-[9px] mono text-[#454a60] uppercase flex items-center gap-1.5 leading-none">
                                                         <Icons.Clock /> {m.timestamp.includes('T') ? m.timestamp.split('T')[1].slice(0, 5) : '--:--'}
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center space-x-4">
-                                                <span className="text-xl font-black text-[#10b981] serif leading-none">{Number(m.protein).toFixed(1)}g</span>
-                                                <div className="flex flex-col space-y-2 pl-4 border-l border-[#161a28] opacity-20 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => { setEditingId(m.timestamp); setMealType(m.type); setMainMenu(m.main); setProtein(m.protein); window.scrollTo(0,0); }} className="text-[#404660] hover:text-[#10b981] transition-colors"><Icons.Edit /></button>
-                                                    <button onClick={() => setConfirmModal({ show: true, meal: m })} className="text-[#404660] hover:text-[#e05a6a] transition-colors"><Icons.Trash /></button>
+                                            <div className="flex items-center space-x-5">
+                                                <div className="text-right">
+                                                    <span className="text-2xl font-black text-[#10b981] serif leading-none">{Number(m.protein).toFixed(1)}</span>
+                                                    <span className="text-[9px] mono text-[#454a60] ml-1">g</span>
+                                                </div>
+                                                <div className="flex flex-col space-y-2.5 pl-4 border-l border-[#161a28] opacity-20 group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={() => { setEditingId(m.timestamp); setMealType(m.type); setMainMenu(m.main); setProtein(m.protein); window.scrollTo(0,0); }} className="text-[#454a60] hover:text-[#10b981] transition-colors"><Icons.Edit /></button>
+                                                    <button onClick={() => setConfirmModal({ show: true, meal: m })} className="text-[#454a60] hover:text-[#e05a6a] transition-colors"><Icons.Trash /></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -292,35 +323,35 @@
                         )}
 
                         {activeTab === 'suggest' && (
-                            <div className="space-y-4 animate-in slide-in-from-right-4 duration-500 overflow-hidden">
-                                <div className="bg-gradient-to-br from-[#0e1019] to-[#04050a] border border-[#10b98120] rounded-2xl p-5 relative overflow-hidden shadow-2xl">
-                                    <div className="text-[7px] text-[#10b981] mono tracking-[0.2em] uppercase bg-[#10b9810d] border border-[#10b9811a] px-3 py-1 rounded-full mb-3 inline-block">Tonight's Strategy</div>
-                                    <div className="text-3xl font-black text-[#ffffff] leading-none mb-1 serif">
-                                        {gap.toFixed(1)}<span className="text-[#10b981] text-xs mono ml-2 uppercase">g 不足</span>
+                            <div className="space-y-5 animate-in slide-in-from-right-4 duration-500 overflow-hidden pb-4">
+                                <div className="bg-gradient-to-br from-[#0e1019] to-[#04050a] border border-[#10b98120] rounded-3xl p-7 relative overflow-hidden shadow-2xl">
+                                    <div className="text-[8px] text-[#10b981] mono tracking-[0.2em] uppercase bg-[#10b9810d] border border-[#10b9811a] px-3 py-1.5 rounded-full mb-5 inline-block">Tonight's Strategic Suggestion</div>
+                                    <div className="text-4xl font-black text-[#ffffff] leading-none mb-2 serif">
+                                        {gap.toFixed(1)}<span className="text-[#10b981] text-xs mono ml-2 uppercase tracking-widest">g 不足</span>
                                     </div>
-                                    <p className="text-[9px] text-[#404660] leading-tight">120g目標まであと一歩。アンチエイジングを意識したメニュー案です。</p>
+                                    <p className="text-[10px] text-[#454a60] leading-relaxed italic">規律を守るための3つの選択肢。現在の不足量を最適に補完します。</p>
                                 </div>
 
-                                <div className="flex bg-[#04050a] p-1 rounded-xl border border-[#161a28]">
+                                <div className="flex bg-[#04050a] p-1.5 rounded-xl border border-[#161a28]">
                                     {[['all','ALL'], ['muscle','筋肉'], ['recovery','回復'], ['antiaging','老化防止']].map(([val, label]) => (
-                                        <button key={val} onClick={() => setSelectedEffect(val)} className={`flex-1 py-2 text-[8px] mono font-bold rounded-lg transition-all ${selectedEffect === val ? 'bg-[#10b981] text-[#04050a] shadow-lg' : 'text-[#404660]'}`}>{label}</button>
+                                        <button key={val} onClick={() => setSelectedEffect(val)} className={`flex-1 py-2 text-[9px] mono font-bold rounded-lg transition-all ${selectedEffect === val ? 'bg-[#10b981] text-[#04050a] shadow-lg' : 'text-[#454a60]'}`}>{label}</button>
                                     ))}
                                 </div>
 
-                                <div className="space-y-2.5">
+                                <div className="space-y-3">
                                     {suggestions.map((opt, i) => (
-                                        <div key={i} className={`bg-[#090b12] border p-4 rounded-[1.2rem] relative group shadow-xl ${i === 0 ? 'border-[#10b98144]' : 'border-[#161a28]'}`}>
-                                            <div className="flex justify-between items-start mb-2">
+                                        <div key={i} className={`bg-[#090b12] border p-6 rounded-[2rem] relative group shadow-xl ${i === 0 ? 'border-[#10b98144]' : 'border-[#161a28]'}`}>
+                                            <div className="flex justify-between items-start mb-3">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[7px] mono text-[#10b981] uppercase tracking-[0.2em] mb-1">Option {i+1}</span>
-                                                    <h3 className="text-base font-bold text-[#ffffff] serif leading-none">{opt.main}</h3>
+                                                    <span className="text-[7px] mono text-[#10b981] uppercase tracking-[0.2em] mb-1.5">Strategic Option {i+1}</span>
+                                                    <h3 className="text-[17px] font-bold text-[#ffffff] serif leading-tight">{opt.main}</h3>
                                                 </div>
-                                                <div className="text-xl font-black text-[#10b981] serif leading-none">{opt.p.toFixed(1)}<span className="text-[8px] mono text-[#404660] ml-1">g</span></div>
+                                                <div className="text-2xl font-black text-[#10b981] serif leading-none">{opt.p.toFixed(1)}<span className="text-[10px] mono text-[#404660] ml-1">g</span></div>
                                             </div>
-                                            <p className="text-[9px] text-[#404660] mb-2 font-light italic leading-tight">副菜：{opt.side}</p>
-                                            <div className="flex flex-wrap gap-1.5">
+                                            <p className="text-[10px] text-[#454a60] mb-4 font-light italic leading-relaxed">Side: {opt.side}</p>
+                                            <div className="flex flex-wrap gap-2">
                                                 {(opt.tags || []).slice(0, 3).map((t, idx) => (
-                                                    <span key={idx} className="text-[6px] mono border border-[#161a28] text-[#10b981] px-1.5 py-0.5 rounded-md uppercase tracking-widest leading-none">{t}</span>
+                                                    <span key={idx} className="text-[7px] mono border border-[#1a1f2e] text-[#10b981] px-2 py-0.5 rounded-md uppercase tracking-[0.15em] leading-none">{t}</span>
                                                 ))}
                                             </div>
                                         </div>
@@ -330,38 +361,42 @@
                         )}
                         
                         {activeTab === 'stats' && (
-                            <div className="space-y-6 text-center py-20 animate-in zoom-in-95 duration-500">
-                                <div className="text-[#10b9811a] text-6xl mb-6 flex justify-center opacity-30">📈</div>
-                                <h3 className="text-sm font-bold text-[#404660] uppercase tracking-widest">Weekly Analytics</h3>
-                                <p className="text-[10px] text-[#404660] italic max-w-[200px] mx-auto leading-relaxed uppercase tracking-tighter">規律の継続が成果への最短経路です。</p>
+                            <div className="space-y-8 text-center py-24 animate-in zoom-in-95 duration-500">
+                                <div className="text-[#10b9810d] text-7xl flex justify-center">📈</div>
+                                <div>
+                                    <h3 className="text-[11px] font-black text-[#454a60] uppercase tracking-[0.3em] mb-2">Weekly Analytics Sync</h3>
+                                    <p className="text-[10px] text-[#454a60] italic max-w-[220px] mx-auto leading-relaxed uppercase tracking-tighter">データは蓄積され、週末のレポートに反映されます。現在の規律を維持してください。</p>
+                                </div>
                             </div>
                         )}
                     </main>
 
-                    <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-[#04050af2] backdrop-blur-xl border-t border-[#161a28] flex justify-around p-4 z-[100] safe-area-bottom shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                    {/* Navigation */}
+                    <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-[#04050af2] backdrop-blur-2xl border-t border-[#161a28] flex justify-around p-5 z-[100] safe-area-bottom shadow-[0_-12px_40px_rgba(0,0,0,0.6)]">
                         {[
                             { id: 'record', label: 'Log', icon: '🍴' },
-                            { id: 'suggest', label: 'Dinner', icon: '🍳' },
+                            { id: 'suggest', label: 'Strategy', icon: '🎯' },
                             { id: 'stats', label: 'Stats', icon: '📈' }
                         ].map(t => (
-                            <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex flex-col items-center gap-1.5 transition-all duration-300 px-6 ${activeTab === t.id ? 'text-[#10b981]' : 'text-[#404660]'}`}>
-                                <span className="text-xl leading-none">{t.icon}</span>
-                                <span className="text-[7px] mono font-bold uppercase tracking-widest">{t.label}</span>
+                            <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex flex-col items-center gap-1.5 transition-all duration-300 px-6 ${activeTab === t.id ? 'text-[#10b981]' : 'text-[#454a60]'}`}>
+                                <span className="text-2xl leading-none transition-transform group-active:scale-90">{t.icon}</span>
+                                <span className="text-[8px] mono font-black uppercase tracking-widest">{t.label}</span>
                                 {activeTab === t.id && <div className="w-1 h-1 bg-[#10b981] rounded-full mt-1 animate-pulse"></div>}
                             </button>
                         ))}
                     </nav>
 
+                    {/* Final Confirm Modal */}
                     {confirmModal.show && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] flex items-center justify-center p-6">
-                            <div className="bg-[#0b0d14] border border-[#161a28] w-full max-w-[320px] rounded-[2rem] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-200">
-                                <h3 className="text-lg font-bold text-white mb-2 serif">削除の確認</h3>
-                                <p className="text-[11px] text-[#454a60] leading-relaxed mb-8">
-                                    「<span className="text-[#dce0ec] font-bold">{confirmModal.meal?.main}</span>」の記録を削除します。よろしいですか？
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-center justify-center p-8">
+                            <div className="bg-[#0b0d14] border border-[#161a28] w-full max-w-[340px] rounded-[2.5rem] p-9 shadow-[0_30px_60px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-200">
+                                <h3 className="text-xl font-bold text-white mb-3 serif">記録の抹消</h3>
+                                <p className="text-[12px] text-[#454a60] leading-relaxed mb-9">
+                                    「<span className="text-[#dce0ec] font-bold">{confirmModal.meal?.main}</span>」のログを完全に削除します。よろしいですか？
                                 </p>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setConfirmModal({ show: false, meal: null })} className="flex-1 py-4 rounded-xl bg-[#161a28] text-[9px] font-bold uppercase tracking-widest">戻る</button>
-                                    <button onClick={executeDelete} className="flex-1 py-4 rounded-xl bg-[#e05a6a] text-[#04050a] text-[9px] font-bold uppercase tracking-widest shadow-lg shadow-[#e05a6a]/20">削除</button>
+                                <div className="flex gap-4">
+                                    <button onClick={() => setConfirmModal({ show: false, meal: null })} className="flex-1 py-4 rounded-xl bg-[#161a28] text-[10px] font-bold uppercase tracking-widest text-[#454a60]">戻る</button>
+                                    <button onClick={executeDelete} className="flex-1 py-4 rounded-xl bg-[#e05a6a] text-[#04050a] text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-[#e05a6a]/25">削除</button>
                                 </div>
                             </div>
                         </div>
