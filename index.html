@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Meal OS v7.3.2</title>
+    <title>Meal OS v7.3.3</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -26,6 +26,13 @@
             background: #10b981; cursor: pointer; margin-top: -10px; 
             box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); border: 2px solid #04050a; 
         }
+        
+        /* Date input style override */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.6) sepia(1) saturate(5) hue-rotate(100deg);
+            cursor: pointer;
+        }
+
         .custom-scroll::-webkit-scrollbar { display: none; }
         @keyframes glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
         .progress-glow { animation: glow 2s infinite ease-in-out; }
@@ -64,14 +71,16 @@
             const [mainMenu, setMainMenu] = useState('');
             const [protein, setProtein] = useState(25.0);
             
-            // 札幌の現在日付を取得
+            // 札幌の現在日付を yyyy-MM-dd で取得
             const getSapporoDate = () => {
                 const now = new Date();
                 const offset = 9 * 60; // JST
                 const jstNow = new Date(now.getTime() + (now.getTimezoneOffset() + offset) * 60000);
                 return jstNow.toISOString().split('T')[0];
             };
-            const [selectedDate, setSelectedDate] = useState(getSapporoDate());
+
+            const today = useMemo(() => getSapporoDate(), []);
+            const [selectedDate, setSelectedDate] = useState(today);
 
             useEffect(() => { fetchData(); }, []);
 
@@ -86,7 +95,6 @@
                 finally { setLoading(false); setIsSyncing(false); }
             };
 
-            // フロントエンド側で日付フィルタリングを行う（より確実に表示するため）
             const filteredMeals = useMemo(() => {
                 return meals.filter(m => {
                     if (!m.timestamp) return false;
@@ -104,9 +112,14 @@
             const handleSave = async (e) => {
                 if (e) e.preventDefault();
                 if (!mainMenu) return;
-                setIsSyncing(true);
 
-                // 選択された日付に現在の時刻を付与してタイムスタンプを生成
+                // 未来日ガード
+                if (selectedDate > today) {
+                    setShowToast("未来の日付は登録できません");
+                    return;
+                }
+
+                setIsSyncing(true);
                 const now = new Date();
                 const timeStr = now.toTimeString().split(' ')[0] + '.' + now.getMilliseconds();
                 const targetTimestamp = editingId || `${selectedDate}T${timeStr}`;
@@ -150,7 +163,7 @@
             if (loading) return (
                 <div className="h-screen bg-[#04050a] flex flex-col items-center justify-center text-[#10b981] font-black animate-pulse text-center p-6">
                     <Icons.Refresh className="mb-4 animate-spin h-10 w-10 mx-auto" />
-                    <span className="uppercase tracking-[0.3em] text-[10px] mono">Meal OS v7.3.2 Resilience...</span>
+                    <span className="uppercase tracking-[0.3em] text-[10px] mono">Meal OS v7.3.3 Strategic Sync...</span>
                 </div>
             );
 
@@ -160,25 +173,26 @@
                     <header className="bg-gradient-to-b from-[#090b12] to-[#04050a] p-6 pb-6 border-b border-[#161a28] sticky top-0 z-[100] backdrop-blur-md">
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h1 className="text-xl font-black text-[#10b981] tracking-tighter serif leading-none">Meal OS v7.3.2</h1>
-                                <p className="text-[7px] text-[#404660] uppercase tracking-[0.25em] font-medium mt-1 mono">Focus & Resilience Sync</p>
+                                <h1 className="text-xl font-black text-[#10b981] tracking-tighter serif leading-none">Meal OS v7.3.3</h1>
+                                <p className="text-[7px] text-[#404660] uppercase tracking-[0.25em] font-medium mt-1 mono">Disciplined Analytics</p>
                             </div>
-                            <div className="flex gap-2">
-                                <input 
-                                    type="date" 
-                                    value={selectedDate} 
-                                    onChange={(e) => setSelectedDate(e.target.value)}
-                                    className="bg-[#0e1019] border border-[#161a28] rounded-xl px-2 py-1 text-[10px] mono text-[#10b981] focus:outline-none"
-                                />
-                                <button onClick={fetchData} className="p-2 bg-[#0e1019] border border-[#161a28] rounded-xl text-[#404660] active:scale-90 transition-all hover:text-[#10b981]">
-                                    <div className={isSyncing ? 'animate-spin text-[#10b981]' : ''}><Icons.Refresh /></div>
-                                </button>
-                            </div>
+                            <button onClick={fetchData} className="p-2 bg-[#0e1019] border border-[#161a28] rounded-xl text-[#404660] active:scale-90 transition-all hover:text-[#10b981]">
+                                <div className={isSyncing ? 'animate-spin text-[#10b981]' : ''}><Icons.Refresh /></div>
+                            </button>
                         </div>
                         
                         <div className="space-y-3">
-                            <div className="flex justify-between items-baseline mb-1">
-                                <span className="text-[8px] mono text-[#404660] uppercase tracking-[0.2em]">{selectedDate === getSapporoDate() ? 'Today' : selectedDate} / 120g</span>
+                            <div className="flex justify-between items-center mb-1">
+                                <div className="flex items-center gap-2 bg-[#0e1019] border border-[#161a28] rounded-xl px-3 py-1.5 shadow-inner">
+                                    <Icons.Calendar />
+                                    <input 
+                                        type="date" 
+                                        value={selectedDate} 
+                                        max={today}
+                                        onChange={(e) => setSelectedDate(e.target.value)}
+                                        className="bg-transparent text-[11px] mono text-[#10b981] font-bold focus:outline-none appearance-none"
+                                    />
+                                </div>
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-4xl font-black text-[#10b981] leading-none serif">{todayProtein.toFixed(1)}</span>
                                     <span className="text-[10px] mono text-[#404660]">g</span>
@@ -190,14 +204,14 @@
                                 </div>
                             </div>
                             <div className="flex justify-between items-center text-[8px] mono text-[#404660] tracking-widest uppercase">
-                                <span>{progress.toFixed(0)}% Done</span>
-                                <span>残り <em className="text-[#10b981] not-italic font-bold">{gap.toFixed(1)}g</em></span>
+                                <span>{progress.toFixed(0)}% Progress</span>
+                                <span>Remaining <em className="text-[#10b981] not-italic font-bold">{gap.toFixed(1)}g</em></span>
                             </div>
                         </div>
                     </header>
 
                     <main className="flex-1 p-5 space-y-4 overflow-y-auto custom-scroll">
-                        {showToast && <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-[#10b981] text-[#04050a] px-5 py-2 rounded-full text-[9px] font-black tracking-widest z-[200] shadow-2xl animate-bounce">{showToast}</div>}
+                        {showToast && <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-[#10b981] text-[#04050a] px-5 py-2 rounded-full text-[9px] font-black tracking-widest z-[200] shadow-2xl animate-bounce text-center">{showToast}</div>}
 
                         {activeTab === 'record' && (
                             <div className="space-y-6 animate-in fade-in duration-500">
@@ -230,7 +244,7 @@
                                         </div>
                                         
                                         <button type="submit" disabled={isSyncing} className="w-full bg-[#10b981] text-[#04050a] py-5 rounded-[1.2rem] mono text-[10px] font-bold tracking-[0.2em] shadow-xl active:scale-[0.98] transition-all flex justify-center items-center uppercase">
-                                            {editingId ? "記録を修正する →" : "記録を保存する →"}
+                                            {editingId ? "修正を確定する →" : "記録を保存する →"}
                                         </button>
                                     </form>
                                 </section>
@@ -244,7 +258,7 @@
                                         <div key={m.timestamp} className="bg-[#090b12] border border-[#161a28] p-4 rounded-2xl flex items-center justify-between shadow-lg group hover:border-[#404660] transition-all">
                                             <div className="flex items-center space-x-4">
                                                 <div className="w-10 h-10 bg-[#04050a] rounded-xl flex flex-col items-center justify-center border border-[#161a28]">
-                                                    <span className="text-[7px] font-bold text-[#10b981]">{m.timestamp.split('T')[0] === getSapporoDate() ? 'TODAY' : 'PAST'}</span>
+                                                    <span className="text-[7px] font-bold text-[#10b981]">{m.timestamp.split('T')[0] === today ? 'TODAY' : 'PAST'}</span>
                                                     <span className="text-[9px] font-bold text-[#dce0ec]">{m.type}</span>
                                                 </div>
                                                 <div>
