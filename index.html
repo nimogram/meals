@@ -1,412 +1,746 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Meal OS v7.4</title>
-    
-    <!-- Libraries -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
-    
-    <style>
-        body { font-family: 'Noto Sans JP', sans-serif; background-color: #04050a; color: #dce0ec; overflow-x: hidden; }
-        .serif { font-family: 'DM Serif Display', serif; }
-        .mono { font-family: 'DM Mono', monospace; }
-        
-        input[type=range] { -webkit-appearance: none; background: transparent; width: 100%; cursor: pointer; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #1f2436; border-radius: 2px; }
-        input[type=range]::-webkit-slider-thumb { 
-            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; 
-            background: #10b981; cursor: pointer; margin-top: -10px; 
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); border: 2px solid #04050a; 
-        }
-        
-        /* Date Input Dark Mode Force */
-        input[type="date"] {
-            color-scheme: dark;
-            background: #0e1019;
-            border: 1px solid #161a28;
-            border-radius: 12px;
-            padding: 8px 12px;
-            font-family: 'DM Mono', monospace;
-            font-size: 14px;
-            color: #10b981;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Meal OS</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#04050a;--s1:#090b12;--s2:#0e1019;
+  --bd:#161a28;--brt:#1f2436;
+  --em:#10b981;--em-dim:rgba(16,185,129,0.07);--em-mid:rgba(16,185,129,0.16);--em-glow:rgba(16,185,129,0.3);
+  --tx:#dce0ec;--mu:#404660;--mu2:#1f2436;--red:#e05a6a;
+  --mono:'DM Mono',monospace;--serif:'DM Serif Display',serif;--sans:'Noto Sans JP',sans-serif;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{font-family:var(--sans);color:var(--tx);}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
 
-        .custom-scroll::-webkit-scrollbar { display: none; }
-        @keyframes glow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
-        .progress-glow { animation: glow 2s infinite ease-in-out; }
-    </style>
+/* range input */
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--brt);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:var(--em);border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 12px var(--em-glow);cursor:pointer;}
+
+/* date input */
+input[type=date]{color-scheme:dark;background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;font-family:var(--mono);font-size:13px;color:var(--em);outline:none;transition:border-color 0.2s;}
+input[type=date]:focus{border-color:var(--em);}
+
+/* scrollbar */
+.scroll::-webkit-scrollbar{display:none;}
+.scroll{scrollbar-width:none;}
+
+/* animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes glow{0%,100%{opacity:0.3;}50%{opacity:0.7;}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+@keyframes popIn{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
+.fade-up{animation:fadeUp 0.3s ease-out forwards;}
+.slide-in{animation:slideIn 0.28s ease-out forwards;}
+.pop-in{animation:popIn 0.22s cubic-bezier(0.34,1.4,0.64,1) forwards;}
+.spin{animation:spin 1s linear infinite;}
+.glow-pulse{animation:glow 2s ease-in-out infinite;}
+.pulse{animation:pulse 1.5s ease-in-out infinite;}
+</style>
 </head>
 <body>
-    <div id="root"></div>
+<div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
-        
-        // --- STRATEGIC CONFIG ---
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
-        const TARGET_PROTEIN = 120;
+<script type="text/babel">
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
-        const Icons = {
-            Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>,
-            Trash: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
-            Edit: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>,
-            Clock: () => <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-            Calendar: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        };
+const GAS = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
+const TARGET = 120;
 
-        const App = () => {
-            const [loading, setLoading] = useState(true);
-            const [meals, setMeals] = useState([]);
-            const [menus, setMenus] = useState([]);
-            const [activeTab, setActiveTab] = useState('record');
-            const [isSyncing, setIsSyncing] = useState(false);
-            const [showToast, setShowToast] = useState("");
-            const [selectedEffect, setSelectedEffect] = useState('all');
-            const [confirmModal, setConfirmModal] = useState({ show: false, meal: null });
+// ── MENU DB (ローカル57品) ────────────────────────────────────────────────
+const ALL=[0,1,2,3,4,5,6,7,8,9,10,11],W=[0,1,2,3,4,5,6],WD=[1,2,3,4],WE=[0,5,6];
+const SPR=[2,3,4,5],SUM=[5,6,7,8],AUT=[8,9,10,11],WIN=[10,11,0,1,2];
+const MENUS=[
+  {main:"牛肉ステーキ",p:40,side:"ブロッコリーサラダ",tags:["牛","赤身","鉄分"],effect:"鉄分で午後の活力を担保。L-カルニチンで<em>脂肪燃焼</em>を最大化。",cat:"burn",season:ALL,dow:W},
+  {main:"チキンステーキ",p:40,side:"野菜スティック・アボカド",tags:["鶏","低脂質","アボカド"],effect:"アンセリンによる<em>疲労回復</em>と筋肉合成の効率化。",cat:"recovery",season:ALL,dow:W},
+  {main:"鶏むね肉の低温調理",p:35,side:"ブロッコリースプラウト",tags:["鶏","むね肉","抗酸化"],effect:"インスリン感受性を維持しつつ<em>圧倒的タンパク補給</em>。",cat:"recovery",season:ALL,dow:W},
+  {main:"手巻き寿司",p:35,side:"海苔・酢飯(少量)・卵",tags:["魚","刺身","DHA/EPA"],effect:"DHAで<em>細胞の老化を防止</em>。記憶力と判断力を維持。",cat:"antiaging",season:ALL,dow:WE},
+  {main:"ラムチョップ香草焼き",p:32,side:"焼きトマト・ズッキーニ",tags:["羊","亜鉛","L-カルニチン"],effect:"テストステロン維持とミトコンドリア活性で<em>代謝UP</em>。",cat:"burn",season:ALL,dow:W},
+  {main:"厚揚げと鶏肉の煮物",p:32,side:"小松菜",tags:["鶏","豆腐","イソフラボン"],effect:"イソフラボンで<em>ホルモンバランス</em>を整えつつ高タンパク。",cat:"recovery",season:ALL,dow:W},
+  {main:"豚ヒレ肉のピカタ",p:31,side:"粉チーズ・パセリ添え",tags:["豚ヒレ","ビタミンB1","低脂質"],effect:"ビタミンB1が糖質を<em>エネルギーに変換</em>。疲労回復に貢献。",cat:"recovery",season:ALL,dow:W},
+  {main:"赤身牛のローストビーフ",p:30,side:"クレソン",tags:["牛","赤身","アルギニン"],effect:"アルギニンで<em>成長ホルモン分泌</em>を促進。血管を若返らせる。",cat:"burn",season:ALL,dow:WE},
+  {main:"刺身盛り合わせ",p:30,side:"ほうれん草お浸し",tags:["魚","刺身","血管ケア"],effect:"DHA/EPAが血液の流動性を向上。<em>血管の若返り</em>に貢献。",cat:"antiaging",season:ALL,dow:WE},
+  {main:"豆乳鍋（鶏肉・団子）",p:30,side:"春菊・しいたけ",tags:["鶏","鍋","血糖安定"],effect:"サポニンで<em>血糖値スパイクを防止</em>。体の芯から温まる。",cat:"recovery",season:WIN,dow:W},
+  {main:"生ラム肉のグリル",p:32,side:"焼き玉ねぎ・アスパラ",tags:["カルニチン","燃焼","亜鉛"],effect:"L-カルニチンが脂肪をエネルギーへ。<em>燃焼効率を最大化</em>。",cat:"burn",season:ALL,dow:W},
+  {main:"牛赤身肉のタリアータ",p:31,side:"ルッコラ・粉チーズ",tags:["アルギニン","鉄分","糖質オフ"],effect:"鉄分＋アルギニンで<em>疲労回復と代謝UP</em>を同時に狙う。",cat:"burn",season:ALL,dow:W},
+  {main:"生カツオのたたき",p:28.5,side:"玉ねぎスライス・ポン酢",tags:["カツオ","血流改善","セレン"],effect:"セレンが活性酸素を除去。<em>細胞保護と美肌</em>に貢献。",cat:"recovery",season:[3,4,5,6,7,8],dow:W},
+  {main:"サーモンステーキ",p:28,side:"アスパラガスのグリル",tags:["アスタキサンチン","Tie2"],effect:"アスタキサンチンで<em>毛細血管を強化</em>。Tie2活性化。",cat:"antiaging",season:ALL,dow:W},
+  {main:"レバニラ炒め",p:28,side:"キクラゲと卵の炒め物",tags:["レバー","造血","デトックス"],effect:"鉄分＋ビタミンAで<em>造血とデトックス</em>を促進。",cat:"recovery",season:ALL,dow:WD},
+  {main:"茹で鶏のバンバンジー",p:28,side:"クラゲと胡瓜の酢の物",tags:["鶏","疲労回復","低GI"],effect:"低GI食材で<em>血糖値を安定</em>させながら疲労回復。",cat:"recovery",season:SUM,dow:W},
+  {main:"ネギトロ丼",p:28,side:"納豆・めかぶ",tags:["マグロ","血管ケア","水溶性繊維"],effect:"水溶性食物繊維で<em>腸内環境と血管</em>を同時ケア。",cat:"antiaging",season:ALL,dow:WE},
+  {main:"カジキマグロのソテー",p:27,side:"ピーマンのジャコ炒め",tags:["魚","カジキ","高タンパク"],effect:"良質なタンパクと脂質で<em>持続的なエネルギー</em>を確保。",cat:"antiaging",season:ALL,dow:W},
+  {main:"ブリの照り焼き",p:26,side:"叩き長いも",tags:["ブリ","DHA","血糖抑制"],effect:"長いもで血糖値を抑制。DHAで<em>認知機能</em>を維持。",cat:"antiaging",season:WIN,dow:W},
+  {main:"真鯛のアクアパッツァ",p:26,side:"あさりとドライトマト",tags:["真鯛","タウリン","リコピン"],effect:"タウリンで<em>肝機能保護</em>。リコピンで血管老化を防ぐ。",cat:"recovery",season:SPR,dow:WE},
+  {main:"サケのホイル焼き",p:26,side:"きのこ類・レモン",tags:["サケ","ビタミンD","免疫"],effect:"ビタミンDで<em>免疫力を強化</em>。骨と筋肉の健康を維持。",cat:"recovery",season:AUT,dow:W},
+  {main:"茹で豚の冷しゃぶ",p:26,side:"叩ききゅうり（梅肉）",tags:["豚","クエン酸","脂質カット"],effect:"クエン酸で疲労物質を代謝。<em>余分な脂質をカット</em>。",cat:"burn",season:SUM,dow:W},
+  {main:"メカジキのハーブステーキ",p:26,side:"ブロッコリーのガーリック炒め",tags:["良質脂質","アリシン","毛細血管"],effect:"アリシンで<em>毛細血管を拡張</em>。血流促進と免疫強化。",cat:"antiaging",season:ALL,dow:W},
+  {main:"うなぎの白焼き",p:25,side:"肝吸い・わさび",tags:["うなぎ","スタミナ","亜鉛"],effect:"ビタミンA・B群が豊富。<em>スタミナと生殖機能</em>を強化。",cat:"recovery",season:ALL,dow:W},
+  {main:"マグロの山かけ",p:25,side:"刻み海苔・わさび",tags:["マグロ","血流改善","酵素"],effect:"消化酵素で<em>タンパク質の吸収を最大化</em>。血流を改善。",cat:"antiaging",season:ALL,dow:W},
+  {main:"豚キムチ",p:25,side:"アボカドトマトサラダ",tags:["豚","発酵","血糖安定"],effect:"乳酸菌で<em>腸内環境を整備</em>。血糖スパイクを防止。",cat:"recovery",season:ALL,dow:WD},
+  {main:"砂肝のコンフィ風",p:25,side:"ブロッコリー・パプリカ",tags:["低脂質","亜鉛","高タンパク"],effect:"亜鉛がテストステロンを維持。<em>低脂質で体を絞る</em>。",cat:"burn",season:ALL,dow:W},
+  {main:"ラム肉とキャベツの蒸し煮",p:26,side:"生姜ポン酢",tags:["L-カルニチン","胃腸ケア","代謝UP"],effect:"生姜の辛味成分が<em>体を温め代謝を促進</em>。胃腸を整える。",cat:"burn",season:WIN,dow:W},
+  {main:"ホッケの開き",p:23,side:"具沢山なめこ汁",tags:["カルシウム","不飽和脂肪酸","満足度"],effect:"カルシウムと不飽和脂肪酸で<em>骨と血管の老化を防止</em>。",cat:"antiaging",season:WIN,dow:WD},
+  {main:"アサリと豆腐のチゲ",p:24,side:"春菊・長ネギ",tags:["カプサイシン","亜鉛","血行促進"],effect:"カプサイシンで<em>体を温め血行を促進</em>。亜鉛で免疫強化。",cat:"burn",season:WIN,dow:W},
+  {main:"エビのチリソース",p:24,side:"卵とレタスのスープ",tags:["海老","低脂肪","代謝"],effect:"低脂肪・高タンパクで<em>代謝を活性化</em>。疲労回復にも効果的。",cat:"recovery",season:ALL,dow:WE},
+  {main:"サワラの西京焼き",p:24,side:"小松菜のお浸し",tags:["サワラ","魚","良質タンパク"],effect:"発酵味噌が<em>腸内環境を整備</em>。良質な脂質で細胞膜を若々しく保つ。",cat:"antiaging",season:[2,3,4,5,8,9,10,11],dow:W},
+  {main:"寒サバの塩焼き",p:24,side:"大根おろし・なめこ汁",tags:["サバ","EPA","血管掃除"],effect:"EPAが<em>血管内の汚れを掃除</em>。中性脂肪を強力に低下。",cat:"antiaging",season:WIN,dow:W},
+  {main:"イカの刺身",p:24,side:"納豆・めかぶ和え",tags:["イカ","タウリン","コレステロール低下"],effect:"タウリンで<em>コレステロールを低下</em>。肝臓の疲れをリセット。",cat:"recovery",season:[5,6,7,8,9,10,11],dow:W},
+  {main:"蒸し牡蠣（レモン）",p:22,side:"ほうれん草のソテー",tags:["牡蠣","亜鉛","テストステロン"],effect:"亜鉛がテストステロンを補充。<em>活力と免疫力を大幅強化</em>。",cat:"burn",season:WIN,dow:WE},
+  {main:"秋刀魚の塩焼き",p:22,side:"きのこたっぷり味噌汁",tags:["サンマ","オメガ3","血管若返り"],effect:"オメガ3が<em>血管を若返らせる</em>。セロトニン生成もサポート。",cat:"antiaging",season:AUT,dow:W},
+  {main:"真いわしの生姜煮",p:21,side:"きのことワカメの酢の物",tags:["EPA/DHA","中性脂肪低下","酢"],effect:"EPA/DHAで<em>中性脂肪を強力に低下</em>。酢で血糖値も安定。",cat:"antiaging",season:ALL,dow:WD},
+  {main:"ゴーヤチャンプルー",p:23,side:"島豆腐・削り節",tags:["豚","血糖抑制","ビタミンC"],effect:"ビタミンCで<em>コラーゲン合成を促進</em>。血糖値スパイクを防ぐ。",cat:"recovery",season:SUM,dow:W},
+  {main:"金目鯛の煮付け",p:23,side:"ゴボウのきんぴら",tags:["金目鯛","食物繊維","美肌"],effect:"コラーゲンと食物繊維で<em>美肌と腸内環境</em>を同時ケア。",cat:"antiaging",season:WIN,dow:WE},
+  {main:"銀だらの西京焼き",p:21,side:"具沢山けんちん汁",tags:["魚","不飽和脂肪酸","発酵"],effect:"発酵食品の乳酸菌で<em>腸内フローラを整備</em>。脳腸相関を活性化。",cat:"antiaging",season:WIN,dow:W},
+  {main:"ホタテのカルパッチョ",p:20,side:"ベビーリーフ・オリーブ油",tags:["タウリン","低GI","血管柔軟性"],effect:"タウリンで<em>血管柔軟性を維持</em>。低GIで血糖値を安定させる。",cat:"antiaging",season:[2,3,4,5,6,7,8],dow:WE},
+  {main:"スモークサーモンとアボカド",p:19,side:"くるみ・オニオンサラダ",tags:["オメガ3","ビタミンE","ホルモン"],effect:"ビタミンEが<em>ホルモンバランスを調整</em>。抗酸化作用も高い。",cat:"antiaging",season:ALL,dow:WE},
+  {main:"納豆オムレツ",p:20.5,side:"しらす・大根おろし",tags:["納豆キナーゼ","血栓予防","完全栄養"],effect:"納豆キナーゼで<em>血栓を予防</em>。完全栄養でタンパク吸収を最大化。",cat:"recovery",season:ALL,dow:WD},
+  {main:"サバ味噌煮缶",p:20.9,side:"雑穀米(少量)・生姜漬",tags:["サバ","Tie2","時短"],effect:"Tie2活性化で<em>毛細血管を強化</em>。時短かつ最高コスパのタンパク源。",cat:"antiaging",season:ALL,dow:WD},
+  {main:"豆乳担々湯豆腐",p:23,side:"挽肉(少)・ザーサイ",tags:["サポニン","温活","血糖スパイク防止"],effect:"サポニンで<em>コレステロールを低下</em>。温活効果で代謝を上げる。",cat:"recovery",season:WIN,dow:W},
+];
 
-            const [editingId, setEditingId] = useState(null);
-            const [mealType, setMealType] = useState('昼');
-            const [mainMenu, setMainMenu] = useState('');
-            const [protein, setProtein] = useState(25.0);
-            
-            // 札幌の現在日付を取得 (yyyy-MM-dd)
-            const getSapporoDateString = (date = new Date()) => {
-                const offset = 9 * 60; // JST
-                const jstNow = new Date(date.getTime() + (date.getTimezoneOffset() + offset) * 60000);
-                return jstNow.toISOString().split('T')[0];
-            };
+// ── UTILS ─────────────────────────────────────────────────────────────────
+const toJSTDateStr = (d = new Date()) => {
+  const jst = new Date(d.getTime() + (d.getTimezoneOffset() + 540) * 60000);
+  return jst.toISOString().split('T')[0];
+};
+const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+const DAY_JP = ['日','月','火','水','木','金','土'];
 
-            const todayStr = useMemo(() => getSapporoDateString(), []);
-            const [selectedDate, setSelectedDate] = useState(todayStr);
+// ── SVG ICONS ─────────────────────────────────────────────────────────────
+const RefreshIcon = ({cls=""}) => (
+  <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+    <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+    <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+  </svg>
+);
+const EditIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="13" height="13">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+const TrashIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="13" height="13">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+    <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+  </svg>
+);
+const ShuffleIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="13" height="13">
+    <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+    <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+  </svg>
+);
 
-            useEffect(() => { fetchData(); }, []);
+// ── TOAST ─────────────────────────────────────────────────────────────────
+const Toast = ({msg}) => msg ? (
+  <div style={{position:'fixed',top:14,left:'50%',transform:'translateX(-50%)',
+    background:'var(--em)',color:'var(--bg)',padding:'7px 18px',borderRadius:20,
+    fontFamily:'var(--mono)',fontSize:9,fontWeight:500,letterSpacing:'0.14em',
+    zIndex:999,animation:'fadeUp 0.2s ease-out',whiteSpace:'nowrap',
+    boxShadow:'0 4px 20px var(--em-glow)'}}>
+    {msg}
+  </div>
+) : null;
 
-            const fetchData = async () => {
-                setIsSyncing(true);
-                try {
-                    const r = await fetch(GAS_URL);
-                    const data = await r.json();
-                    if (data.history) setMeals(data.history);
-                    if (data.menus) setMenus(data.menus);
-                } catch (e) { 
-                    setShowToast("SYNC ERROR"); 
-                    console.error("Fetch failed", e);
-                } finally { 
-                    setLoading(false); 
-                    setIsSyncing(false); 
-                }
-            };
+// ── CONFIRM MODAL ─────────────────────────────────────────────────────────
+const ConfirmModal = ({meal, onConfirm, onCancel}) => (
+  <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.78)',backdropFilter:'blur(10px)',
+    zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+    <div className="pop-in" style={{background:'var(--s1)',border:'1px solid var(--bd)',
+      borderRadius:20,padding:28,width:'100%',maxWidth:340,textAlign:'center'}}>
+      <div style={{fontSize:28,marginBottom:12}}>🗑️</div>
+      <div style={{fontFamily:'var(--serif)',fontSize:17,color:'var(--tx)',marginBottom:6}}>削除しますか？</div>
+      <div style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)',letterSpacing:'0.08em',
+        lineHeight:1.7,marginBottom:14}}>削除後は元に戻せません。<br/>スプレッドシートからも同時に削除されます。</div>
+      <div style={{background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:9,
+        padding:'9px 13px',fontSize:12,fontWeight:700,color:'var(--tx)',marginBottom:18}}>
+        {meal?.type}｜{meal?.main}｜{Number(meal?.protein).toFixed(1)}g
+      </div>
+      <div style={{display:'flex',gap:9}}>
+        <button onClick={onCancel} style={{flex:1,background:'var(--bg)',border:'1px solid var(--bd)',
+          borderRadius:11,padding:12,fontFamily:'var(--mono)',fontSize:8,letterSpacing:'0.1em',
+          color:'var(--mu)',cursor:'pointer',textTransform:'uppercase'}}>キャンセル</button>
+        <button onClick={onConfirm} style={{flex:1,background:'#251018',border:'1px solid #3a1a22',
+          borderRadius:11,padding:12,fontFamily:'var(--mono)',fontSize:8,letterSpacing:'0.1em',
+          color:'var(--red)',cursor:'pointer',textTransform:'uppercase'}}>削除する</button>
+      </div>
+    </div>
+  </div>
+);
 
-            // 【最重要】日付の判定ロジックを極限まで強化
-            const filteredMeals = useMemo(() => {
-                return meals.filter(m => {
-                    if (!m.timestamp) return false;
-                    // スラッシュ、ハイフン、T、空白、すべてを許容して正規化
-                    const mDate = m.timestamp.replace(/\//g, '-').split(/[T ]/)[0];
-                    return mDate === selectedDate;
-                }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            }, [meals, selectedDate]);
+// ── EDIT MODAL ────────────────────────────────────────────────────────────
+const EditModal = ({meal, onSave, onCancel}) => {
+  const [main, setMain] = useState(meal.main);
+  const [type, setType] = useState(meal.type);
+  const [p, setP] = useState(Number(meal.protein));
+  return (
+    <div onClick={(e)=>{if(e.target===e.currentTarget)onCancel();}}
+      style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.72)',backdropFilter:'blur(8px)',
+        zIndex:300,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+      <div className="slide-in" style={{background:'var(--s1)',border:'1px solid var(--brt)',
+        borderRadius:'22px 22px 0 0',padding:20,width:'100%',maxWidth:430,
+        paddingBottom:`max(22px, env(safe-area-inset-bottom))`}}>
+        <div style={{width:34,height:3,background:'var(--bd)',borderRadius:2,margin:'0 auto 18px'}}/>
+        <div style={{fontFamily:'var(--serif)',fontSize:17,color:'var(--tx)',marginBottom:16}}>記録を修正</div>
+        {/* type seg */}
+        <div style={{display:'flex',background:'var(--bg)',border:'1px solid var(--bd)',
+          borderRadius:10,padding:3,gap:2,marginBottom:14}}>
+          {['朝','昼','夜','他'].map(t=>(
+            <button key={t} onClick={()=>setType(t)} style={{flex:1,padding:'9px 0',
+              fontFamily:'var(--mono)',fontSize:9,border:'none',cursor:'pointer',borderRadius:7,
+              background:type===t?'var(--em)':'transparent',
+              color:type===t?'var(--bg)':'var(--mu)',transition:'all 0.18s'}}>{t}</button>
+          ))}
+        </div>
+        <input value={main} onChange={e=>setMain(e.target.value)}
+          style={{width:'100%',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,
+            padding:'13px 14px',fontSize:14,fontWeight:700,color:'var(--tx)',outline:'none',
+            marginBottom:14,fontFamily:'var(--sans)'}}/>
+        <div style={{background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,
+          padding:'12px 14px',marginBottom:14}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <span style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)',letterSpacing:'0.18em',textTransform:'uppercase'}}>Protein</span>
+            <span style={{fontFamily:'var(--serif)',fontSize:24,color:'var(--em)'}}>{Number(p).toFixed(1)}<span style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)',marginLeft:3}}>g</span></span>
+          </div>
+          <input type="range" min="0" max="80" step="0.5" value={p} onChange={e=>setP(e.target.value)}/>
+        </div>
+        <div style={{display:'flex',gap:9}}>
+          <button onClick={onCancel} style={{flex:1,background:'var(--bg)',border:'1px solid var(--bd)',
+            borderRadius:11,padding:13,fontFamily:'var(--mono)',fontSize:8.5,letterSpacing:'0.12em',
+            color:'var(--mu)',cursor:'pointer',textTransform:'uppercase'}}>キャンセル</button>
+          <button onClick={()=>onSave({...meal,main,type,protein:parseFloat(p)})}
+            style={{flex:2,background:'var(--em)',border:'none',borderRadius:11,padding:13,
+              fontFamily:'var(--mono)',fontSize:8.5,letterSpacing:'0.18em',color:'var(--bg)',
+              fontWeight:500,cursor:'pointer',textTransform:'uppercase'}}>保存する →</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-            const currentProtein = useMemo(() => 
-                filteredMeals.reduce((sum, m) => sum + (Number(m.protein) || 0), 0)
-            , [filteredMeals]);
+// ── MAIN APP ──────────────────────────────────────────────────────────────
+const App = () => {
+  const todayStr = useMemo(() => toJSTDateStr(), []);
+  const [meals, setMeals] = useState([]);       // 全履歴
+  const [tab, setTab] = useState('log');
+  const [syncing, setSyncing] = useState(false);
+  const [toast, setToast] = useState('');
+  const [selDate, setSelDate] = useState(todayStr);
+  const [mealType, setMealType] = useState('昼');
+  const [mainMenu, setMainMenu] = useState('');
+  const [protein, setProtein] = useState(25);
+  const [editMeal, setEditMeal] = useState(null);
+  const [delMeal, setDelMeal] = useState(null);
+  const [effect, setEffect] = useState('all');
+  const [shuffleSeed, setShuffleSeed] = useState(0);
 
-            const gap = Math.max(0, TARGET_PROTEIN - currentProtein);
-            const progress = Math.min((currentProtein / TARGET_PROTEIN) * 100, 100);
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),2800); };
 
-            const handleSave = async (e) => {
-                if (e) e.preventDefault();
-                if (!mainMenu) return;
+  // ── FETCH (初回 + 手動同期) ──────────────────────────────────────────
+  const fetchData = useCallback(async () => {
+    setSyncing(true);
+    try {
+      const r = await fetch(GAS);
+      const data = await r.json();
+      // GASが {history:[...]} または 配列 どちらでも対応
+      const raw = Array.isArray(data) ? data : (data.history || []);
+      setMeals(raw.map(m => ({
+        ...m,
+        _id: m._id || genId(),
+        protein: Number(m.protein) || 0,
+      })));
+      showToast('SYNC COMPLETE');
+    } catch(e) {
+      showToast('OFFLINE MODE');
+    } finally {
+      setSyncing(false);
+    }
+  }, []);
 
-                // 未来日ガード（念のためロジックでも阻止）
-                if (selectedDate > todayStr) {
-                    setShowToast("未来の日付は登録できません");
-                    return;
-                }
+  useEffect(() => { fetchData(); }, []);
 
-                setIsSyncing(true);
-                const now = new Date();
-                const timeStr = now.toTimeString().split(' ')[0];
-                // 確実に選択された日付のデータとして送信
-                const targetTimestamp = editingId || `${selectedDate}T${timeStr}`;
+  // ── 今日のログ ────────────────────────────────────────────────────────
+  const filteredMeals = useMemo(() => {
+    return meals.filter(m => {
+      if (!m.timestamp) return false;
+      const d = m.timestamp.replace(/\//g,'-').split(/[T ]/)[0];
+      return d === selDate;
+    }).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [meals, selDate]);
 
-                const payload = {
-                    _action: editingId ? 'update' : 'save',
-                    timestamp: targetTimestamp,
-                    type: mealType,
-                    main: mainMenu,
-                    protein: parseFloat(protein)
-                };
+  const totalP = useMemo(() => filteredMeals.reduce((s,m) => s + m.protein, 0), [filteredMeals]);
+  const gap = Math.max(0, TARGET - totalP);
+  const pct = Math.min(totalP / TARGET * 100, 100);
 
-                try {
-                    await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                    setShowToast(editingId ? "UPDATED" : "SAVED");
-                    setEditingId(null); setMainMenu(''); setProtein(25.0);
-                    // 完了後に再取得
-                    setTimeout(fetchData, 800);
-                } catch (err) { 
-                    setShowToast("SAVE ERROR"); 
-                } finally { 
-                    setIsSyncing(false); 
-                    setTimeout(() => setShowToast(""), 3000); 
-                }
-            };
+  // ── SAVE (楽観的更新) ─────────────────────────────────────────────────
+  const handleSave = async () => {
+    if (!mainMenu.trim()) return;
+    if (selDate > todayStr) { showToast('未来の日付は登録できません'); return; }
 
-            const executeDelete = async () => {
-                const m = confirmModal.meal;
-                setIsSyncing(true);
-                setConfirmModal({ show: false, meal: null });
-                try {
-                    await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ _action: 'delete', timestamp: m.timestamp }) });
-                    setShowToast("DELETED");
-                    setTimeout(fetchData, 800);
-                } catch (err) { 
-                    setShowToast("DELETE ERROR"); 
-                } finally { 
-                    setIsSyncing(false); 
-                    setTimeout(() => setShowToast(""), 3000); 
-                }
-            };
+    const now = new Date();
+    const timeStr = now.toTimeString().split(' ')[0];
+    const ts = `${selDate}T${timeStr}`;
+    const newMeal = {
+      _id: genId(),
+      timestamp: ts,
+      type: mealType,
+      main: mainMenu.trim(),
+      protein: parseFloat(protein),
+    };
 
-            const suggestions = useMemo(() => {
-                if (gap <= 0 || menus.length === 0) return [];
-                let pool = [...menus];
-                if (selectedEffect !== 'all') pool = pool.filter(m => m.cat === selectedEffect);
-                return pool.sort(() => Math.random() - 0.5).slice(0, 3);
-            }, [menus, gap, selectedEffect]);
+    // ① 即座にローカルstateに反映 → 画面がすぐ更新される
+    setMeals(prev => [newMeal, ...prev]);
+    setMainMenu('');
+    setProtein(25);
+    showToast('SAVED');
 
-            if (loading) return (
-                <div className="h-screen bg-[#04050a] flex flex-col items-center justify-center text-[#10b981] font-black animate-pulse text-center p-6">
-                    <Icons.Refresh className="mb-4 animate-spin h-10 w-10 mx-auto" />
-                    <span className="uppercase tracking-[0.3em] text-[10px] mono">Establishing Reliable Link...</span>
+    // ② バックグラウンドでGASに送信
+    try {
+      await fetch(GAS, { method:'POST', mode:'no-cors',
+        body: JSON.stringify({ _action:'save', ...newMeal }) });
+    } catch(e) {
+      showToast('GAS SYNC FAILED');
+    }
+  };
+
+  // ── EDIT SAVE ─────────────────────────────────────────────────────────
+  const handleEditSave = async (updated) => {
+    // ① 即座にローカル更新
+    setMeals(prev => prev.map(m => m._id === updated._id ? {...m,...updated} : m));
+    setEditMeal(null);
+    showToast('UPDATED');
+
+    // ② バックグラウンドでGAS
+    try {
+      await fetch(GAS, { method:'POST', mode:'no-cors',
+        body: JSON.stringify({ _action:'update', ...updated }) });
+    } catch(e) {}
+  };
+
+  // ── DELETE ────────────────────────────────────────────────────────────
+  const handleDelete = async () => {
+    const m = delMeal;
+    // ① 即座にローカル削除
+    setMeals(prev => prev.filter(x => x._id !== m._id));
+    setDelMeal(null);
+    showToast('DELETED');
+
+    // ② バックグラウンドでGAS
+    try {
+      await fetch(GAS, { method:'POST', mode:'no-cors',
+        body: JSON.stringify({ _action:'delete', timestamp: m.timestamp }) });
+    } catch(e) {}
+  };
+
+  // ── 朝セット ──────────────────────────────────────────────────────────
+  const recordBreakfast = async () => {
+    if (selDate > todayStr) return;
+    const now = new Date();
+    const ts = `${selDate}T${now.toTimeString().split(' ')[0]}`;
+    const newMeal = { _id:genId(), timestamp:ts, type:'朝', main:'朝セット', protein:45 };
+    setMeals(prev => [newMeal, ...prev]);
+    showToast('朝セット SAVED');
+    try {
+      await fetch(GAS, { method:'POST', mode:'no-cors',
+        body: JSON.stringify({ _action:'save', ...newMeal }) });
+    } catch(e) {}
+  };
+
+  // ── SUGGEST ───────────────────────────────────────────────────────────
+  const suggestions = useMemo(() => {
+    if (gap <= 0) return [];
+    const now = new Date();
+    const mon = now.getMonth(), dow = now.getDay();
+    const ago7 = Date.now() - 7*864e5;
+    const recent = meals.filter(m=>new Date(m.timestamp).getTime()>ago7).map(m=>m.main.toLowerCase());
+    let pool = MENUS.filter(m => {
+      const nm = m.main.toLowerCase();
+      const notRecent = !recent.some(r=>nm.includes(r)||r.includes(nm));
+      const effOk = effect==='all'||m.cat===effect;
+      return notRecent && m.season.includes(mon) && m.dow.includes(dow) && effOk;
+    });
+    if(pool.length<3) pool = MENUS.filter(m=>effect==='all'||m.cat===effect);
+    if(pool.length<3) pool = [...MENUS];
+    // shuffleSeedが変わると並び替え
+    const seeded = [...pool].map((m,i)=>({m,r:Math.sin(shuffleSeed*997+i*31)*10000%1}));
+    seeded.sort((a,b)=>a.r-b.r);
+    return seeded.slice(0,3).map(x=>x.m);
+  }, [meals, gap, effect, shuffleSeed]);
+
+  // ── STATS (7日グラフ) ──────────────────────────────────────────────────
+  const weekDays = useMemo(() => {
+    return Array.from({length:7},(_,i)=>{
+      const d = new Date(); d.setDate(d.getDate()-(6-i));
+      const ds = toJSTDateStr(d);
+      const tot = meals.filter(m=>m.timestamp?.replace(/\//g,'-').split(/[T ]/)[0]===ds)
+        .reduce((s,m)=>s+m.protein,0);
+      return {lbl:DAY_JP[d.getDay()],tot,isToday:ds===todayStr,ok:tot>=TARGET,has:tot>0};
+    });
+  },[meals,todayStr]);
+
+  // SVG line chart
+  const chartSvg = useMemo(()=>{
+    const W=320,H=120,PL=30,PR=8,PT=18,PB=26;
+    const cW=W-PL-PR,cH=H-PT-PB;
+    const maxV=Math.max(...weekDays.map(d=>d.tot),TARGET*1.1,10);
+    const xStep=cW/6;
+    const grids=[0,Math.round(TARGET/2),TARGET].map(v=>{
+      const y=PT+cH-(v/maxV)*cH;
+      const isT=v===TARGET;
+      return `<line stroke="${isT?'rgba(16,185,129,0.22)':'#161a28'}" stroke-width="1" ${isT?'stroke-dasharray="4,3"':''} x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}"/>
+      <text font-family="DM Mono,monospace" font-size="7" fill="${isT?'rgba(16,185,129,0.5)':'#404660'}" text-anchor="end" x="${PL-3}" y="${(y+2.5).toFixed(1)}">${v}</text>`;
+    }).join('');
+    const pts=weekDays.map((d,i)=>({x:PL+i*xStep,y:PT+cH-(d.tot/maxV)*cH,d}));
+    const areaD=pts.map((p,i)=>i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+      +` L${pts[6].x.toFixed(1)},${(PT+cH).toFixed(1)} L${PL},${(PT+cH).toFixed(1)} Z`;
+    const lineD=pts.map((p,i)=>i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const dots=pts.map(p=>`
+      ${p.d.has?`<text font-family="DM Mono,monospace" font-size="7" fill="${p.d.ok?'#10b981':'#404660'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(p.y-8).toFixed(1)}">${p.d.tot.toFixed(0)}</text>`:''}
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.d.isToday?4.5:3}"
+        fill="${p.d.ok?'#10b981':p.d.has?'#1f2436':'#0d0f18'}"
+        stroke="#10b981" stroke-width="1.5"
+        ${p.d.isToday?'filter="drop-shadow(0 0 4px #10b981)"':''}/>
+      <text font-family="DM Mono,monospace" font-size="8" fill="${p.d.isToday?'#10b981':'#404660'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(PT+cH+14).toFixed(1)}">${p.d.lbl}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;overflow:visible">
+      <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/><stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+      </linearGradient></defs>
+      ${grids}<path fill="url(#ag)" d="${areaD}"/>
+      <path fill="none" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="${lineD}"/>
+      ${dots}</svg>`;
+  },[weekDays]);
+
+  const wd=weekDays.filter(d=>d.has);
+  const avg=wd.length?(wd.reduce((s,d)=>s+d.tot,0)/wd.length):0;
+  const streak=weekDays.slice().reverse().reduce((s,d)=>{if(s.done)return s;if(d.ok)return{...s,c:s.c+1};return{...s,done:true}},{c:0,done:false}).c;
+  const best=Math.max(...weekDays.map(d=>d.tot),0);
+
+  // ── DATE NAV ──────────────────────────────────────────────────────────
+  const isToday = selDate === todayStr;
+  const selDateObj = new Date(selDate+'T12:00:00');
+  const selDateLbl = `${selDateObj.getMonth()+1}/${selDateObj.getDate()}(${DAY_JP[selDateObj.getDay()]})`;
+  const moveDate = (n) => {
+    const d = new Date(selDate+'T12:00:00'); d.setDate(d.getDate()+n);
+    if(toJSTDateStr(d)>todayStr) return;
+    setSelDate(toJSTDateStr(d));
+  };
+
+  // ── CSS vars as inline style helpers ─────────────────────────────────
+  const card = (extra={}) => ({background:'var(--s1)',border:'1px solid var(--bd)',borderRadius:16,...extra});
+  const mono = (extra={}) => ({fontFamily:'var(--mono)',...extra});
+  const serif = (sz=20,extra={}) => ({fontFamily:'var(--serif)',fontSize:sz,color:'var(--em)',lineHeight:1,...extra});
+
+  return (
+    <div style={{maxWidth:430,margin:'0 auto',height:'100dvh',display:'flex',flexDirection:'column',
+      background:'var(--bg)',position:'relative',overflow:'hidden',
+      borderLeft:'1px solid var(--bd)',borderRight:'1px solid var(--bd)',zIndex:1}}>
+
+      <Toast msg={toast}/>
+
+      {/* ── HEADER ── */}
+      <header style={{background:'linear-gradient(180deg,var(--s1) 0%,var(--bg) 100%)',
+        borderBottom:'1px solid var(--bd)',padding:'14px 16px 16px',flexShrink:0,position:'relative',zIndex:10}}>
+        {/* logo + sync */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+          <div>
+            <div style={{fontFamily:'var(--serif)',fontSize:18,color:'var(--em)',letterSpacing:'0.03em'}}>Meal OS</div>
+            <div style={mono({fontSize:7,color:'var(--mu)',letterSpacing:'0.28em',textTransform:'uppercase',marginTop:3})}>Strategic Protein Monitor</div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={mono({fontSize:8,color:'var(--mu)',background:'var(--s2)',border:'1px solid var(--bd)',padding:'4px 10px',borderRadius:20})}>{selDateLbl}</div>
+            <button onClick={fetchData} style={{width:30,height:30,background:'var(--s2)',border:'1px solid var(--bd)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'var(--mu)'}}>
+              <RefreshIcon cls={syncing?'spin':''}/>
+            </button>
+          </div>
+        </div>
+        {/* gauge */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:9}}>
+          <div style={mono({fontSize:7.5,color:'var(--mu)',letterSpacing:'0.2em',textTransform:'uppercase'})}>
+            {isToday?'Today':'Past'} / 目標 {TARGET}g
+          </div>
+          <div style={{display:'flex',alignItems:'baseline',gap:3}}>
+            <span style={serif(32,{color:'var(--em)'})}>
+              {totalP.toFixed(1)}
+            </span>
+            <span style={mono({fontSize:9,color:'var(--mu)'})}> g</span>
+          </div>
+        </div>
+        <div style={{height:2,background:'var(--bd)',borderRadius:1,marginBottom:8,position:'relative'}}>
+          <div style={{height:'100%',background:'linear-gradient(90deg,#065f46,var(--em))',borderRadius:1,width:`${pct}%`,transition:'width 0.9s cubic-bezier(0.34,1.56,0.64,1)',position:'relative'}}>
+            <div style={{position:'absolute',right:-1,top:-4,width:9,height:9,background:'var(--em)',borderRadius:'50%',boxShadow:'0 0 10px var(--em-glow)'}}/>
+          </div>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between'}}>
+          <span style={mono({fontSize:7.5,color:'var(--mu)'})}>{pct.toFixed(0)}% Done</span>
+          <span style={mono({fontSize:7.5,color:'var(--mu)'})}> 残り <em style={{color:'var(--em)',fontStyle:'normal'}}>{gap.toFixed(1)}g</em></span>
+        </div>
+      </header>
+
+      {/* ── MAIN ── */}
+      <main style={{flex:1,overflowY:'auto',overflowX:'hidden',WebkitOverflowScrolling:'touch'}} className="scroll">
+
+        {/* ── LOG TAB ── */}
+        {tab==='log' && (
+          <div style={{padding:'14px 14px 120px'}} className="fade-up">
+            {/* Date Nav */}
+            <div style={{...card({borderRadius:14}),display:'flex',alignItems:'center',padding:4,gap:2,marginBottom:10}}>
+              <button onClick={()=>moveDate(-1)} style={{width:38,height:38,background:'transparent',border:'none',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'var(--mu)',flexShrink:0}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <div style={{flex:1,textAlign:'center'}}>
+                <div style={mono({fontSize:13,fontWeight:500,color:'var(--em)',letterSpacing:'0.05em'})}>{selDateLbl}</div>
+                {!isToday && <button onClick={()=>setSelDate(todayStr)} style={{background:'var(--em)',color:'var(--bg)',border:'none',borderRadius:8,fontFamily:'var(--mono)',fontSize:7,fontWeight:500,padding:'3px 8px',letterSpacing:'0.1em',cursor:'pointer',marginTop:4}}>TODAY</button>}
+              </div>
+              <button onClick={()=>moveDate(1)} disabled={isToday} style={{width:38,height:38,background:'transparent',border:'none',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',cursor:isToday?'default':'pointer',color:'var(--mu)',opacity:isToday?0.25:1,flexShrink:0}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+
+            {/* Quick Breakfast */}
+            {isToday && (
+              <button onClick={recordBreakfast} style={{width:'100%',...card(),padding:'12px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer',marginBottom:10,transition:'all 0.15s'}}>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{width:36,height:36,background:'var(--em-dim)',border:'1px solid rgba(16,185,129,0.15)',borderRadius:11,display:'flex',alignItems:'center',justifyContent:'center',fontSize:17}}>🥚</div>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:700,color:'var(--tx)'}}>朝セットを記録</div>
+                    <div style={mono({fontSize:7.5,color:'var(--mu)',marginTop:2})}>卵・納豆・ヨーグルト — 45.0g P</div>
+                  </div>
                 </div>
-            );
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="13" height="13" style={{color:'var(--mu)'}}><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            )}
 
-            return (
-                <div className="min-h-screen bg-[#04050a] text-[#dce0ec] pb-24 font-sans max-w-[430px] mx-auto relative flex flex-col border-x border-[#161a28] shadow-2xl">
-                    
-                    {/* Header: Date Selector is the Priority */}
-                    <header className="bg-gradient-to-b from-[#090b12] to-[#04050a] p-6 pb-6 border-b border-[#161a28] sticky top-0 z-[100] backdrop-blur-md">
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h1 className="text-xl font-black text-[#10b981] tracking-tighter serif leading-none">Meal OS v7.4</h1>
-                                <p className="text-[7px] text-[#404660] uppercase tracking-[0.25em] font-medium mt-1 mono">Sapporo Sync Protocol</p>
-                            </div>
-                            <button onClick={fetchData} className="p-2.5 bg-[#0e1019] border border-[#161a28] rounded-xl text-[#404660] active:scale-90 transition-all hover:text-[#10b981]">
-                                <div className={isSyncing ? 'animate-spin text-[#10b981]' : ''}><Icons.Refresh /></div>
-                            </button>
-                        </div>
-                        
-                        <div className="bg-[#0e1019] border border-[#161a28] rounded-2xl p-5 shadow-inner space-y-5">
-                            <div className="flex items-center justify-between">
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[8px] font-mono text-[#404660] uppercase tracking-widest">Selected Date</span>
-                                    <input 
-                                        type="date" 
-                                        value={selectedDate} 
-                                        max={todayStr}
-                                        onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="outline-none focus:border-[#10b981] transition-all"
-                                    />
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-4xl font-black text-[#10b981] leading-none serif">{currentProtein.toFixed(1)}<span className="text-[10px] mono text-[#404660] ml-1">g</span></span>
-                                </div>
-                            </div>
-                            
-                            <div className="space-y-2">
-                                <div className="h-[4px] w-full bg-[#1a1f2e] relative overflow-hidden rounded-full">
-                                    <div className="h-full bg-gradient-to-r from-[#059669] to-[#10b981] transition-all duration-1000 ease-out relative" style={{ width: `${progress}%` }}>
-                                        <div className="absolute inset-0 bg-white/20 progress-glow"></div>
-                                    </div>
-                                </div>
-                                <div className="flex justify-between items-center text-[8px] mono text-[#404660] tracking-widest uppercase">
-                                    <span>{progress.toFixed(0)}% Accomplished</span>
-                                    <span>Gap <em className="text-[#10b981] not-italic font-bold">{gap.toFixed(1)}g</em></span>
-                                </div>
-                            </div>
-                        </div>
-                    </header>
-
-                    <main className="flex-1 p-5 space-y-6 overflow-y-auto custom-scroll">
-                        {showToast && <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-[#10b981] text-[#04050a] px-5 py-2 rounded-full text-[9px] font-black tracking-widest z-[200] shadow-2xl animate-bounce text-center">{showToast}</div>}
-
-                        {activeTab === 'record' && (
-                            <div className="space-y-6 animate-in fade-in duration-500">
-                                {/* Routine Button */}
-                                {selectedDate === todayStr && (
-                                    <button onClick={() => { setMainMenu('朝セット'); setProtein(45.0); setMealType('朝'); setTimeout(() => handleSave(), 100); }} className="w-full bg-[#090b12] border border-[#161a28] p-5 rounded-2xl flex items-center justify-between shadow-xl active:scale-95 transition-all group">
-                                        <div className="flex items-center space-x-4">
-                                            <div className="bg-[#10b98114] border border-[#10b98126] p-3 rounded-xl text-[#10b981] text-xl group-hover:bg-[#10b98126] transition-colors">🥚</div>
-                                            <div className="text-left">
-                                                <p className="text-[14px] font-bold text-[#ffffff] tracking-tight">朝セットを記録</p>
-                                                <p className="text-[8px] mono text-[#404660] uppercase tracking-widest mt-0.5">45.0g P｜Sapporo Morning Routine</p>
-                                            </div>
-                                        </div>
-                                        <span className="text-[#404660] group-hover:text-[#10b981] transition-colors">→</span>
-                                    </button>
-                                )}
-
-                                {/* Main Form */}
-                                <section className={`bg-[#090b12] border ${editingId ? 'border-[#10b981] shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'border-[#161a28]'} rounded-[2.5rem] p-7 shadow-2xl transition-all`}>
-                                    <form onSubmit={handleSave} className="space-y-7">
-                                        <div className="flex bg-[#04050a] p-1.5 rounded-xl border border-[#161a28]">
-                                            {['朝', '昼', '夜', '他'].map(t => (
-                                                <button key={t} type="button" onClick={() => setMealType(t)} className={`flex-1 py-2.5 text-[10px] mono font-bold rounded-lg transition-all ${mealType === t ? 'bg-[#10b981] text-[#04050a] shadow-lg' : 'text-[#454a60] hover:text-[#dce0ec]'}`}>{t}</button>
-                                            ))}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <span className="text-[8px] mono text-[#454a60] uppercase tracking-widest ml-1">Main Protein Source</span>
-                                            <input type="text" placeholder="主菜（タンパク源）" value={mainMenu} onChange={e => setMainMenu(e.target.value)} className="w-full bg-[#04050a] border border-[#161a28] rounded-xl px-5 py-4 text-[15px] font-bold focus:border-[#10b981] outline-none transition-all placeholder-[#272c40]" />
-                                        </div>
-                                        
-                                        <div className="bg-[#04050a] p-6 rounded-2xl border border-[#161a28] space-y-4 shadow-inner">
-                                            <div className="flex justify-between items-center px-1">
-                                                <span className="text-[8px] mono text-[#454a60] uppercase tracking-[0.2em]">Estimate Protein</span>
-                                                <span className="text-3xl font-black text-[#10b981] serif leading-none">{Number(protein).toFixed(1)}<span className="text-[10px] mono text-[#404660] ml-1">g</span></span>
-                                            </div>
-                                            <input type="range" min="0" max="80" step="0.5" value={protein} onChange={e => setProtein(e.target.value)} />
-                                        </div>
-                                        
-                                        <button type="submit" disabled={isSyncing} className="w-full bg-[#10b981] text-[#04050a] py-5 rounded-[1.25rem] mono text-[11px] font-black tracking-[0.25em] shadow-xl active:scale-[0.98] transition-all flex justify-center items-center uppercase border border-[#10b981]">
-                                            {editingId ? "記録を修正する →" : "記録を同期保存 →"}
-                                        </button>
-                                    </form>
-                                </section>
-
-                                {/* List Section */}
-                                <section className="space-y-4 pb-4">
-                                    <div className="flex items-center gap-2 mb-2 px-1">
-                                        <span className="text-[8px] mono text-[#454a60] uppercase tracking-[0.25em]">{selectedDate} Data Logs</span>
-                                        <div className="h-[1px] bg-[#161a28] flex-1" />
-                                    </div>
-                                    {filteredMeals.length === 0 ? (
-                                        <div className="text-center py-16 bg-[#090b12] rounded-3xl border border-dashed border-[#161a28]">
-                                            <p className="text-[10px] text-[#454a60] uppercase tracking-[0.2em]">No logs found for this date.</p>
-                                        </div>
-                                    ) : filteredMeals.map((m, i) => (
-                                        <div key={m.timestamp} className="bg-[#090b12] border border-[#161a28] p-5 rounded-3xl flex items-center justify-between shadow-lg group hover:border-[#454a60] transition-all">
-                                            <div className="flex items-center space-x-4">
-                                                <div className="w-11 h-11 bg-[#04050a] rounded-xl flex flex-col items-center justify-center border border-[#161a28]">
-                                                    <span className="text-[7px] font-bold text-[#10b981] uppercase">{selectedDate === todayStr ? 'TODAY' : 'PAST'}</span>
-                                                    <span className="text-[10px] font-black text-[#dce0ec]">{m.type}</span>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[15px] font-bold text-[#ffffff] leading-none mb-2 tracking-tight">{m.main}</p>
-                                                    <p className="text-[9px] mono text-[#454a60] uppercase flex items-center gap-1.5 leading-none">
-                                                        <Icons.Clock /> {m.timestamp.includes('T') ? m.timestamp.split('T')[1].slice(0, 5) : '--:--'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center space-x-5">
-                                                <div className="text-right">
-                                                    <span className="text-2xl font-black text-[#10b981] serif leading-none">{Number(m.protein).toFixed(1)}</span>
-                                                    <span className="text-[9px] mono text-[#454a60] ml-1">g</span>
-                                                </div>
-                                                <div className="flex flex-col space-y-2.5 pl-4 border-l border-[#161a28] opacity-20 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => { setEditingId(m.timestamp); setMealType(m.type); setMainMenu(m.main); setProtein(m.protein); window.scrollTo(0,0); }} className="text-[#454a60] hover:text-[#10b981] transition-colors"><Icons.Edit /></button>
-                                                    <button onClick={() => setConfirmModal({ show: true, meal: m })} className="text-[#454a60] hover:text-[#e05a6a] transition-colors"><Icons.Trash /></button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </section>
-                            </div>
-                        )}
-
-                        {activeTab === 'suggest' && (
-                            <div className="space-y-5 animate-in slide-in-from-right-4 duration-500 overflow-hidden pb-4">
-                                <div className="bg-gradient-to-br from-[#0e1019] to-[#04050a] border border-[#10b98120] rounded-3xl p-7 relative overflow-hidden shadow-2xl">
-                                    <div className="text-[8px] text-[#10b981] mono tracking-[0.2em] uppercase bg-[#10b9810d] border border-[#10b9811a] px-3 py-1.5 rounded-full mb-5 inline-block">Tonight's Strategic Suggestion</div>
-                                    <div className="text-4xl font-black text-[#ffffff] leading-none mb-2 serif">
-                                        {gap.toFixed(1)}<span className="text-[#10b981] text-xs mono ml-2 uppercase tracking-widest">g 不足</span>
-                                    </div>
-                                    <p className="text-[10px] text-[#454a60] leading-relaxed italic">規律を守るための3つの選択肢。現在の不足量を最適に補完します。</p>
-                                </div>
-
-                                <div className="flex bg-[#04050a] p-1.5 rounded-xl border border-[#161a28]">
-                                    {[['all','ALL'], ['muscle','筋肉'], ['recovery','回復'], ['antiaging','老化防止']].map(([val, label]) => (
-                                        <button key={val} onClick={() => setSelectedEffect(val)} className={`flex-1 py-2 text-[9px] mono font-bold rounded-lg transition-all ${selectedEffect === val ? 'bg-[#10b981] text-[#04050a] shadow-lg' : 'text-[#454a60]'}`}>{label}</button>
-                                    ))}
-                                </div>
-
-                                <div className="space-y-3">
-                                    {suggestions.map((opt, i) => (
-                                        <div key={i} className={`bg-[#090b12] border p-6 rounded-[2rem] relative group shadow-xl ${i === 0 ? 'border-[#10b98144]' : 'border-[#161a28]'}`}>
-                                            <div className="flex justify-between items-start mb-3">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[7px] mono text-[#10b981] uppercase tracking-[0.2em] mb-1.5">Strategic Option {i+1}</span>
-                                                    <h3 className="text-[17px] font-bold text-[#ffffff] serif leading-tight">{opt.main}</h3>
-                                                </div>
-                                                <div className="text-2xl font-black text-[#10b981] serif leading-none">{opt.p.toFixed(1)}<span className="text-[10px] mono text-[#404660] ml-1">g</span></div>
-                                            </div>
-                                            <p className="text-[10px] text-[#454a60] mb-4 font-light italic leading-relaxed">Side: {opt.side}</p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {(opt.tags || []).slice(0, 3).map((t, idx) => (
-                                                    <span key={idx} className="text-[7px] mono border border-[#1a1f2e] text-[#10b981] px-2 py-0.5 rounded-md uppercase tracking-[0.15em] leading-none">{t}</span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        
-                        {activeTab === 'stats' && (
-                            <div className="space-y-8 text-center py-24 animate-in zoom-in-95 duration-500">
-                                <div className="text-[#10b9810d] text-7xl flex justify-center">📈</div>
-                                <div>
-                                    <h3 className="text-[11px] font-black text-[#454a60] uppercase tracking-[0.3em] mb-2">Weekly Analytics Sync</h3>
-                                    <p className="text-[10px] text-[#454a60] italic max-w-[220px] mx-auto leading-relaxed uppercase tracking-tighter">データは蓄積され、週末のレポートに反映されます。現在の規律を維持してください。</p>
-                                </div>
-                            </div>
-                        )}
-                    </main>
-
-                    {/* Navigation */}
-                    <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-[#04050af2] backdrop-blur-2xl border-t border-[#161a28] flex justify-around p-5 z-[100] safe-area-bottom shadow-[0_-12px_40px_rgba(0,0,0,0.6)]">
-                        {[
-                            { id: 'record', label: 'Log', icon: '🍴' },
-                            { id: 'suggest', label: 'Strategy', icon: '🎯' },
-                            { id: 'stats', label: 'Stats', icon: '📈' }
-                        ].map(t => (
-                            <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex flex-col items-center gap-1.5 transition-all duration-300 px-6 ${activeTab === t.id ? 'text-[#10b981]' : 'text-[#454a60]'}`}>
-                                <span className="text-2xl leading-none transition-transform group-active:scale-90">{t.icon}</span>
-                                <span className="text-[8px] mono font-black uppercase tracking-widest">{t.label}</span>
-                                {activeTab === t.id && <div className="w-1 h-1 bg-[#10b981] rounded-full mt-1 animate-pulse"></div>}
-                            </button>
-                        ))}
-                    </nav>
-
-                    {/* Final Confirm Modal */}
-                    {confirmModal.show && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[300] flex items-center justify-center p-8">
-                            <div className="bg-[#0b0d14] border border-[#161a28] w-full max-w-[340px] rounded-[2.5rem] p-9 shadow-[0_30px_60px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-200">
-                                <h3 className="text-xl font-bold text-white mb-3 serif">記録の抹消</h3>
-                                <p className="text-[12px] text-[#454a60] leading-relaxed mb-9">
-                                    「<span className="text-[#dce0ec] font-bold">{confirmModal.meal?.main}</span>」のログを完全に削除します。よろしいですか？
-                                </p>
-                                <div className="flex gap-4">
-                                    <button onClick={() => setConfirmModal({ show: false, meal: null })} className="flex-1 py-4 rounded-xl bg-[#161a28] text-[10px] font-bold uppercase tracking-widest text-[#454a60]">戻る</button>
-                                    <button onClick={executeDelete} className="flex-1 py-4 rounded-xl bg-[#e05a6a] text-[#04050a] text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-[#e05a6a]/25">削除</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+            {/* Form */}
+            <div style={{...card({borderRadius:18}),padding:16,marginBottom:12}}>
+              {/* type seg */}
+              <div style={{display:'flex',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:10,padding:3,gap:2,marginBottom:12}}>
+                {['朝','昼','夜','他'].map(t=>(
+                  <button key={t} onClick={()=>setMealType(t)} style={{flex:1,padding:'10px 0',fontFamily:'var(--mono)',fontSize:9,fontWeight:500,border:'none',borderRadius:7,cursor:'pointer',transition:'all 0.18s',background:mealType===t?'var(--em)':'transparent',color:mealType===t?'var(--bg)':'var(--mu)'}}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <input value={mainMenu} onChange={e=>setMainMenu(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&handleSave()}
+                placeholder="主菜（タンパク源）"
+                style={{width:'100%',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:'13px 14px',fontSize:14,fontWeight:700,color:'var(--tx)',outline:'none',marginBottom:12,fontFamily:'var(--sans)'}}/>
+              <div style={{background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:'12px 14px',marginBottom:12}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                  <span style={mono({fontSize:7.5,color:'var(--mu)',letterSpacing:'0.18em',textTransform:'uppercase'})}>Protein</span>
+                  <span style={serif(24)}>{Number(protein).toFixed(1)}<span style={mono({fontSize:8,color:'var(--mu)',marginLeft:3})}>g</span></span>
                 </div>
-            );
-        };
+                <input type="range" min="0" max="80" step="0.5" value={protein} onChange={e=>setProtein(e.target.value)}/>
+              </div>
+              <button onClick={handleSave} disabled={!mainMenu.trim()} style={{width:'100%',background:mainMenu.trim()?'var(--em)':'var(--mu2)',color:mainMenu.trim()?'var(--bg)':'var(--mu)',border:'none',borderRadius:11,padding:16,fontFamily:'var(--mono)',fontSize:11,fontWeight:500,letterSpacing:'0.2em',textTransform:'uppercase',cursor:mainMenu.trim()?'pointer':'default',transition:'all 0.18s'}}>
+                記録を保存 →
+              </button>
+            </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+            {/* Log list */}
+            <div style={mono({fontSize:7.5,color:'var(--mu)',letterSpacing:'0.25em',textTransform:'uppercase',marginBottom:9,display:'flex',alignItems:'center',gap:8})}>
+              {selDateLbl} Records
+              <div style={{flex:1,height:1,background:'var(--bd)'}}/>
+            </div>
+            {filteredMeals.length===0
+              ? <div style={{textAlign:'center',padding:32,fontFamily:'var(--mono)',fontSize:9,color:'var(--mu)',letterSpacing:'0.15em'}}>記録はありません</div>
+              : filteredMeals.map((m,i)=>(
+                <div key={m._id||m.timestamp} className="fade-up" style={{...card({borderRadius:13}),padding:'11px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:7}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <div style={{width:28,height:28,background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--mono)',fontSize:7.5,color:'var(--mu)',flexShrink:0}}>
+                      {m.type}
+                    </div>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700,color:'var(--tx)'}}>{m.main}</div>
+                      <div style={mono({fontSize:7,color:'var(--mu)',marginTop:2})}>
+                        {m.timestamp?.includes('T')?m.timestamp.split('T')[1].slice(0,5):'--:--'}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <span style={serif(17)}>{m.protein.toFixed(1)}<span style={mono({fontSize:8,color:'var(--mu)',marginLeft:2})}>g</span></span>
+                    <div style={{display:'flex',flexDirection:'column',gap:6,paddingLeft:10,borderLeft:'1px solid var(--bd)'}}>
+                      <button onClick={()=>setEditMeal(m)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--mu)',display:'flex',alignItems:'center',justifyContent:'center',padding:2}}><EditIcon/></button>
+                      <button onClick={()=>setDelMeal(m)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--mu)',display:'flex',alignItems:'center',justifyContent:'center',padding:2}}><TrashIcon/></button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        )}
+
+        {/* ── SUGGEST TAB ── */}
+        {tab==='suggest' && (
+          <div style={{padding:'14px 14px 120px'}} className="fade-up">
+            {/* Hero */}
+            <div style={{background:'linear-gradient(135deg,var(--s2),#080a14)',border:'1px solid rgba(16,185,129,0.18)',borderRadius:16,padding:'14px 16px',marginBottom:10,position:'relative',overflow:'hidden'}}>
+              <div style={{position:'absolute',top:-30,right:-30,width:100,height:100,borderRadius:'50%',background:'radial-gradient(circle,rgba(16,185,129,0.07) 0%,transparent 70%)'}}/>
+              <div style={mono({fontSize:7,color:'var(--em)',letterSpacing:'0.18em',textTransform:'uppercase',background:'var(--em-dim)',border:'1px solid rgba(16,185,129,0.2)',padding:'3px 9px',borderRadius:20,marginBottom:6,display:'inline-block'})}>Tonight's Strategy</div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+                <div>
+                  <div style={mono({fontSize:8,color:'var(--mu)',letterSpacing:'0.08em',marginBottom:2})}>夕食で補うタンパク質</div>
+                  <div style={serif(28,{color:'var(--tx)'})}>
+                    {gap.toFixed(1)}<span style={mono({fontSize:10,color:'var(--em)',marginLeft:3})}>g 不足</span>
+                  </div>
+                  <div style={mono({fontSize:7,color:'var(--mu)',marginTop:4})}>
+                    {filteredMeals.filter(m=>m.type==='朝').reduce((s,m)=>s+m.protein,0)>0&&`朝 ${filteredMeals.filter(m=>m.type==='朝').reduce((s,m)=>s+m.protein,0).toFixed(0)}g`}
+                    {filteredMeals.filter(m=>m.type==='昼').reduce((s,m)=>s+m.protein,0)>0&&` + 昼 ${filteredMeals.filter(m=>m.type==='昼').reduce((s,m)=>s+m.protein,0).toFixed(0)}g`}
+                    {totalP>0&&` 摂取済み`}
+                  </div>
+                </div>
+                <div style={{fontSize:20}}>🌙</div>
+              </div>
+            </div>
+
+            {/* Effect filter */}
+            <div style={{display:'flex',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:10,padding:3,gap:2,marginBottom:10}}>
+              {[['all','ALL'],['burn','燃焼'],['recovery','回復'],['antiaging','老化防止']].map(([v,l])=>(
+                <button key={v} onClick={()=>setEffect(v)} style={{flex:1,padding:'9px 4px',fontFamily:'var(--mono)',fontSize:8,border:'none',background:effect===v?'var(--em)':'transparent',color:effect===v?'var(--bg)':'var(--mu)',borderRadius:7,cursor:'pointer',transition:'all 0.18s',letterSpacing:'0.04em'}}>{l}</button>
+              ))}
+            </div>
+
+            {/* Cards */}
+            {gap<=0
+              ? <div style={{textAlign:'center',padding:'50px 20px'}}>
+                  <div style={{width:72,height:72,borderRadius:'50%',border:'1px solid rgba(16,185,129,0.4)',background:'var(--em-dim)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',fontSize:28}}>✓</div>
+                  <div style={serif(18,{marginBottom:5})}>Goal Achieved</div>
+                  <div style={mono({fontSize:7.5,color:'var(--mu)',letterSpacing:'0.15em'})}>Discipline leads to freedom.</div>
+                </div>
+              : suggestions.map((opt,i)=>(
+                <div key={i} style={{...card({borderRadius:14,border:i===0?'1px solid rgba(16,185,129,0.38)':'1px solid var(--bd)'}),padding:'13px 14px',marginBottom:7,position:'relative',overflow:'hidden'}}>
+                  {i===0&&<div style={{position:'absolute',top:0,left:0,right:0,height:1,background:'linear-gradient(90deg,transparent,var(--em),transparent)'}}/>}
+                  <div style={{position:'absolute',top:-15,right:-15,width:70,height:70,borderRadius:'50%',background:'radial-gradient(circle,rgba(16,185,129,0.05) 0%,transparent 70%)'}}/>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:5}}>
+                    <div style={{flex:1}}>
+                      <div style={mono({fontSize:7,color:'var(--mu)',letterSpacing:'0.18em',textTransform:'uppercase',marginBottom:4,display:'flex',alignItems:'center',gap:6})}>
+                        <span style={{fontFamily:'var(--serif)',fontSize:11,color:'var(--em)'}}>{['I','II','III'][i]}</span>
+                        Option {['A','B','C'][i]}
+                        {i===0&&<span style={mono({fontSize:6,background:'var(--em-dim)',border:'1px solid rgba(16,185,129,0.3)',color:'var(--em)',padding:'2px 6px',borderRadius:8,letterSpacing:'0.1em'})}>Best</span>}
+                      </div>
+                      <div style={{fontFamily:'var(--serif)',fontSize:17,color:'var(--tx)',lineHeight:1.2,marginBottom:3}}>{opt.main}</div>
+                      <div style={{fontSize:10,color:'var(--mu)',fontWeight:300,marginBottom:6}}>副菜：{opt.side}</div>
+                    </div>
+                    <div style={serif(24,{flexShrink:0,marginLeft:10})}>
+                      {opt.p.toFixed(1)}<span style={mono({fontSize:8,color:'var(--mu)'})}> g</span>
+                    </div>
+                  </div>
+                  {/* effect text */}
+                  <div style={{fontFamily:'var(--mono)',fontSize:7.5,color:'var(--mu)',background:'var(--bg)',borderRadius:8,padding:'6px 10px',marginBottom:8,lineHeight:1.6}}
+                    dangerouslySetInnerHTML={{__html:opt.effect.replace(/<em>/g,'<em style="color:var(--em);font-style:normal">')}}/>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
+                    <div style={{display:'flex',gap:4,flexWrap:'wrap',flex:1}}>
+                      {opt.tags.slice(0,3).map((t,ti)=>(
+                        <span key={ti} style={mono({fontSize:6.5,padding:'2px 7px',background:'var(--bg)',border:'1px solid rgba(16,185,129,0.28)',borderRadius:5,color:'var(--em)'})}>{t}</span>
+                      ))}
+                    </div>
+                    <button onClick={async()=>{
+                      const now=new Date();
+                      const ts=`${toJSTDateStr()}T${now.toTimeString().split(' ')[0]}`;
+                      const newMeal={_id:genId(),timestamp:ts,type:'夜',main:opt.main,protein:opt.p};
+                      setMeals(prev=>[newMeal,...prev]);
+                      setTab('log');
+                      showToast('SAVED');
+                      try{await fetch(GAS,{method:'POST',mode:'no-cors',body:JSON.stringify({_action:'save',...newMeal})});}catch(e){}
+                    }} style={{display:'flex',alignItems:'center',gap:4,background:'transparent',border:'1px solid rgba(16,185,129,0.4)',borderRadius:8,padding:'5px 10px',fontFamily:'var(--mono)',fontSize:7,color:'var(--em)',cursor:'pointer',flexShrink:0,whiteSpace:'nowrap'}}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="10" height="10"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      記録
+                    </button>
+                  </div>
+                </div>
+              ))
+            }
+            <div style={{display:'flex',justifyContent:'center',paddingTop:8,paddingBottom:4}}>
+              <button onClick={()=>setShuffleSeed(s=>s+1)} style={{display:'flex',alignItems:'center',gap:7,background:'var(--s2)',border:'1px solid var(--bd)',borderRadius:12,padding:'12px 28px',fontFamily:'var(--mono)',fontSize:9,fontWeight:500,letterSpacing:'0.18em',textTransform:'uppercase',color:'var(--mu)',cursor:'pointer'}}>
+                <ShuffleIcon/>Shuffle
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STATS TAB ── */}
+        {tab==='stats' && (
+          <div style={{padding:'14px 14px 120px'}} className="fade-up">
+            <div style={mono({fontSize:7.5,color:'var(--mu)',letterSpacing:'0.25em',textTransform:'uppercase',marginBottom:9,display:'flex',alignItems:'center',gap:8})}>
+              7-Day Trend<div style={{flex:1,height:1,background:'var(--bd)'}}/>
+            </div>
+            <div style={{...card({borderRadius:16}),padding:16,marginBottom:12}}>
+              <div style={{width:'100%',height:130,marginBottom:2}} dangerouslySetInnerHTML={{__html:chartSvg}}/>
+              {/* KPI */}
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:1,background:'var(--bd)',borderRadius:10,overflow:'hidden',marginTop:12}}>
+                {[
+                  {lbl:'7日平均',v:avg>0?avg.toFixed(0)+'g':'—',good:avg>=TARGET},
+                  {lbl:'連続達成',v:streak+'日',good:streak>=3},
+                  {lbl:'最高記録',v:best>0?best.toFixed(0)+'g':'—',good:best>=TARGET},
+                ].map((k,i)=>(
+                  <div key={i} style={{background:'var(--s1)',padding:9,textAlign:'center'}}>
+                    <div style={mono({fontSize:6.5,color:'var(--mu)',letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:3})}>{k.lbl}</div>
+                    <div style={{fontFamily:'var(--serif)',fontSize:16,color:k.good?'var(--em)':'var(--tx)'}}>{k.v}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:'flex',gap:4,marginTop:10}}>
+                {weekDays.map((d,i)=><div key={i} style={{flex:1,height:3,borderRadius:2,background:d.ok?'var(--em)':'var(--brt)'}}/>)}
+              </div>
+            </div>
+            {/* Recent */}
+            <div style={mono({fontSize:7.5,color:'var(--mu)',letterSpacing:'0.25em',textTransform:'uppercase',marginBottom:9,display:'flex',alignItems:'center',gap:8})}>
+              History<div style={{flex:1,height:1,background:'var(--bd)'}}/>
+            </div>
+            {[...meals].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).slice(0,10).map((m,i)=>{
+              const t=new Date(m.timestamp);
+              return (
+                <div key={m._id||m.timestamp} style={{...card({borderRadius:13}),padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:7}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <div style={{width:28,height:28,background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--mono)',fontSize:7.5,color:'var(--mu)',flexShrink:0}}>{m.type}</div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:'var(--tx)'}}>{m.main}</div>
+                      <div style={mono({fontSize:7,color:'var(--mu)',marginTop:2})}>{t.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})} {t.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}</div>
+                    </div>
+                  </div>
+                  <span style={serif(17)}>{m.protein.toFixed(1)}<span style={mono({fontSize:8,color:'var(--mu)',marginLeft:2})}>g</span></span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+
+      {/* ── NAV ── */}
+      <nav style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(4,5,10,0.95)',backdropFilter:'blur(24px)',borderTop:'1px solid var(--bd)',display:'flex',justifyContent:'space-around',padding:`8px 0 max(10px,env(safe-area-inset-bottom))`,zIndex:100}}>
+        {[
+          {id:'log',label:'Log',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="19" height="19"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>},
+          {id:'suggest',label:'Dinner',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="19" height="19"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>},
+          {id:'stats',label:'Stats',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="19" height="19"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
+        ].map(t=>(
+          <div key={t.id} onClick={()=>setTab(t.id)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:5,cursor:'pointer',padding:'7px 20px',borderRadius:12,transition:'all 0.22s',color:tab===t.id?'var(--em)':'var(--mu)',background:tab===t.id?'var(--em-dim)':'transparent'}}>
+            {t.icon}
+            <span style={mono({fontSize:7,letterSpacing:'0.18em',textTransform:'uppercase'})}>{t.label}</span>
+          </div>
+        ))}
+      </nav>
+
+      {/* ── MODALS ── */}
+      {editMeal && <EditModal meal={editMeal} onSave={handleEditSave} onCancel={()=>setEditMeal(null)}/>}
+      {delMeal && <ConfirmModal meal={delMeal} onConfirm={handleDelete} onCancel={()=>setDelMeal(null)}/>}
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
 </body>
 </html>
