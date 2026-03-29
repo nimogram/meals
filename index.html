@@ -1,358 +1,440 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Utensils, 
-  Zap, 
-  CheckCircle2, 
-  ChefHat, 
-  ChevronRight,
-  TrendingUp,
-  Trash2,
-  Edit3,
-  RefreshCw,
-  Clock,
-  ShieldCheck,
-  CalendarDays
-} from 'lucide-react';
-
-// --- CONFIG ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec";
-const TARGET_PROTEIN = 120;
-
-const App = () => {
-  const [loading, setLoading] = useState(true);
-  const [meals, setMeals] = useState([]);
-  const [menus, setMenus] = useState([]);
-  const [activeTab, setActiveTab] = useState('record');
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [showToast, setShowToast] = useState("");
-  const [selectedEffect, setSelectedEffect] = useState('all');
-
-  // Form State
-  const [editingId, setEditingId] = useState(null);
-  const [mealType, setMealType] = useState('昼');
-  const [mainMenu, setMainMenu] = useState('');
-  const [protein, setProtein] = useState(25.0);
-
-  // --- Initial Load ---
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setIsSyncing(true);
-    try {
-      const r = await fetch(GAS_URL);
-      const data = await r.json();
-      
-      // 履歴のセット
-      if (data.history) {
-        setMeals(data.history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
-      }
-      // 推奨メニューのセット
-      if (data.menus) {
-        setMenus(data.menus);
-      }
-    } catch (e) {
-      console.error("Fetch error", e);
-      setShowToast("OFFLINE MODE");
-    } finally {
-      setLoading(false);
-      setIsSyncing(false);
-    }
-  };
-
-  // --- Calculations ---
-  // 本日のタンパク質合計（isTodayフラグを活用）
-  const todayProtein = useMemo(() => 
-    meals.filter(m => m.isToday).reduce((sum, m) => sum + (Number(m.protein) || 0), 0)
-  , [meals]);
-
-  const gap = Math.max(0, TARGET_PROTEIN - todayProtein);
-  const progress = Math.min((todayProtein / TARGET_PROTEIN) * 100, 100);
-
-  // --- Actions ---
-  const handleSave = async (e) => {
-    if (e) e.preventDefault();
-    if (!mainMenu) return;
-    setIsSyncing(true);
-
-    const targetId = editingId || new Date().toISOString();
-    const payload = {
-      _action: editingId ? 'update' : 'save',
-      timestamp: targetId,
-      type: mealType,
-      main: mainMenu,
-      protein: parseFloat(protein)
-    };
-
-    try {
-      await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-      setShowToast(editingId ? "UPDATED" : "SAVED");
-      setEditingId(null);
-      setMainMenu('');
-      setProtein(25.0);
-      fetchData(); // 再読み込み
-    } catch (err) {
-      setShowToast("SYNC ERROR");
-    } finally {
-      setIsSyncing(false);
-      setTimeout(() => setShowToast(""), 3000);
-    }
-  };
-
-  const deleteMeal = async (m) => {
-    if (!window.confirm(`「${m.main}」を削除しますか？`)) return;
-    setIsSyncing(true);
-    try {
-      await fetch(GAS_URL, { 
-        method: 'POST', 
-        mode: 'no-cors', 
-        body: JSON.stringify({ _action: 'delete', timestamp: m.timestamp }) 
-      });
-      setShowToast("DELETED");
-      fetchData();
-    } catch (err) {
-      setShowToast("DELETE ERROR");
-    } finally {
-      setIsSyncing(false);
-      setTimeout(() => setShowToast(""), 3000);
-    }
-  };
-
-  const recordBreakfast = () => {
-    setMainMenu('朝セット');
-    setProtein(45.0);
-    setMealType('朝');
-    // 自動保存へ
-    setTimeout(() => document.getElementById('save-btn').click(), 100);
-  };
-
-  // --- Suggestion Logic ---
-  const suggestions = useMemo(() => {
-    if (gap <= 0 || menus.length === 0) return [];
-    let pool = [...menus];
-    if (selectedEffect !== 'all') pool = pool.filter(m => m.cat === selectedEffect);
-    return pool.sort(() => Math.random() - 0.5).slice(0, 3);
-  }, [menus, gap, selectedEffect]);
-
-  if (loading) return (
-    <div className="h-screen bg-[#04050a] flex flex-col items-center justify-center text-[#10b981] font-black">
-      <RefreshCw size={48} className="mb-4 animate-spin" />
-      <span className="uppercase tracking-[0.2em] text-[10px]">Strategic Data Syncing...</span>
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-[#04050a] text-[#dce0ec] pb-24 font-sans max-w-[430px] mx-auto relative flex flex-col border-x border-[#161a28]">
-      
-      {/* Header */}
-      <header className="bg-gradient-to-b from-[#090b12] to-[#04050a] p-6 pb-8 border-b border-[#161a28] sticky top-0 z-[100]">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-xl font-black text-[#10b981] tracking-tighter" style={{ fontFamily: "'DM Serif Display', serif" }}>Meal OS v7.2</h1>
-            <p className="text-[7px] text-[#404660] uppercase tracking-[0.25em] font-medium mt-1">Guard & Analytics Enhanced</p>
-          </div>
-          <button onClick={fetchData} className="p-2.5 bg-[#0e1019] border border-[#161a28] rounded-xl text-[#404660] active:scale-90 transition-all">
-            <RefreshCw size={14} className={isSyncing ? 'animate-spin text-[#10b981]' : ''} />
-          </button>
-        </div>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Meal OS v7.2</title>
+    
+    <!-- Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #04050a;
+            --em: #10b981;
+            --em-glow: rgba(16, 185, 129, 0.4);
+        }
+        body { 
+            font-family: 'Noto Sans JP', sans-serif; 
+            background-color: var(--bg); 
+            color: #dce0ec;
+            overflow-x: hidden;
+        }
+        .serif { font-family: 'DM Serif Display', serif; }
+        .mono { font-family: 'DM Mono', monospace; }
         
-        <div className="space-y-3">
-          <div className="flex justify-between items-baseline mb-1">
-            <span className="text-[8px] font-mono text-[#404660] uppercase tracking-[0.2em]">Today / Target 120g</span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-black text-[#10b981] leading-none" style={{ fontFamily: "'DM Serif Display', serif" }}>{todayProtein.toFixed(1)}</span>
-              <span className="text-[10px] font-mono text-[#404660]">g</span>
-            </div>
-          </div>
-          <div className="h-[2px] w-full bg-[#161a28] relative overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-[#065f46] to-[#10b981] transition-all duration-1000 ease-out" style={{ width: `${progress}%` }} />
-          </div>
-          <div className="flex justify-between items-center text-[8px] font-mono text-[#404660] tracking-widest uppercase">
-            <span>{progress.toFixed(0)}% Done</span>
-            <span>残り <em className="text-[#10b981] not-italic font-bold">{gap.toFixed(1)}g</em></span>
-          </div>
-        </div>
-      </header>
+        /* Custom Range Slider */
+        input[type=range] { -webkit-appearance: none; background: transparent; width: 100%; cursor: pointer; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #1f2436; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { 
+            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; 
+            background: var(--em); margin-top: -10px; border: 2px solid var(--bg);
+            box-shadow: 0 0 15px var(--em-glow);
+        }
+        
+        /* Smooth Scroll & Transitions */
+        .custom-scroll::-webkit-scrollbar { display: none; }
+        .fade-enter { opacity: 0; transform: translateY(10px); }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: all 0.3s ease; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-      {/* Main Content */}
-      <main className="flex-1 p-5 space-y-6 overflow-y-auto">
-        {showToast && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-[#10b981] text-[#04050a] px-5 py-2 rounded-full text-[9px] font-black tracking-widest z-[200] shadow-2xl">
-            {showToast}
-          </div>
-        )}
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
 
-        {activeTab === 'record' && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <button onClick={recordBreakfast} className="w-full bg-[#090b12] border border-[#161a28] p-4 rounded-2xl flex items-center justify-between shadow-xl active:scale-95 transition-all group">
-              <div className="flex items-center space-x-4">
-                <div className="bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.15)] p-3 rounded-xl text-[#10b981] group-hover:bg-[rgba(16,185,129,0.18)] text-xl transition-colors">🥚</div>
-                <div className="text-left">
-                  <p className="text-[13px] font-bold text-[#ffffff] tracking-tight">朝セットを記録</p>
-                  <p className="text-[8px] font-mono text-[#404660] uppercase tracking-widest mt-0.5">45.0g P｜固定ルーチン</p>
+        // --- Strategic Config ---
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzTNomNmTj1aMq1xZc1gS_hOtq6A6Em-eiLI2bQpcXN3uZ9Y1zWY88KDrg055QdnyyhtA/exec";
+        const TARGET_PROTEIN = 120;
+
+        // --- Custom Icons (SVG Components) ---
+        const Icons = {
+            Utensils: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>,
+            ChefHat: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 13.8a4.41 4.41 0 0 1-3.3-4.4V9a6 6 0 0 1 12 0v.4a4.41 4.41 0 0 1-3.3 4.4"/><path d="M9 13v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-7"/><path d="M15 21h-6"/></svg>,
+            TrendingUp: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+            RefreshCw: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>,
+            Trash2: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
+            Edit3: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+            Clock: () => <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            ShieldCheck: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>,
+            ChevronRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
+            CalendarDays: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+        };
+
+        const App = () => {
+            const [loading, setLoading] = useState(true);
+            const [meals, setMeals] = useState([]);
+            const [menus, setMenus] = useState([]);
+            const [activeTab, setActiveTab] = useState('record');
+            const [isSyncing, setIsSyncing] = useState(false);
+            const [showToast, setShowToast] = useState("");
+            const [selectedEffect, setSelectedEffect] = useState('all');
+            const [confirmModal, setConfirmModal] = useState({ show: false, meal: null });
+
+            // Form State
+            const [editingId, setEditingId] = useState(null);
+            const [mealType, setMealType] = useState('昼');
+            const [mainMenu, setMainMenu] = useState('');
+            const [protein, setProtein] = useState(25.0);
+
+            useEffect(() => {
+                fetchData();
+            }, []);
+
+            const fetchData = async () => {
+                setIsSyncing(true);
+                try {
+                    const r = await fetch(GAS_URL);
+                    const data = await r.json();
+                    if (data.history) {
+                        setMeals(data.history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+                    }
+                    if (data.menus) {
+                        setMenus(data.menus);
+                    }
+                } catch (e) {
+                    console.error("Fetch error", e);
+                    setShowToast("OFFLINE MODE");
+                } finally {
+                    setLoading(false);
+                    setIsSyncing(false);
+                }
+            };
+
+            const todayProtein = useMemo(() => 
+                meals.filter(m => m.isToday).reduce((sum, m) => sum + (Number(m.protein) || 0), 0)
+            , [meals]);
+
+            const gap = Math.max(0, TARGET_PROTEIN - todayProtein);
+            const progress = Math.min((todayProtein / TARGET_PROTEIN) * 100, 100);
+
+            const handleSave = async (e) => {
+                if (e) e.preventDefault();
+                if (!mainMenu) return;
+                setIsSyncing(true);
+
+                const targetId = editingId || new Date().toISOString();
+                const payload = {
+                    _action: editingId ? 'update' : 'save',
+                    timestamp: targetId,
+                    type: mealType,
+                    main: mainMenu,
+                    protein: parseFloat(protein)
+                };
+
+                try {
+                    await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                    setShowToast(editingId ? "UPDATED" : "SAVED");
+                    setEditingId(null);
+                    setMainMenu('');
+                    setProtein(25.0);
+                    fetchData();
+                } catch (err) {
+                    setShowToast("SYNC ERROR");
+                } finally {
+                    setIsSyncing(false);
+                    setTimeout(() => setShowToast(""), 3000);
+                }
+            };
+
+            const confirmDelete = (m) => {
+                setConfirmModal({ show: true, meal: m });
+            };
+
+            const executeDelete = async () => {
+                const m = confirmModal.meal;
+                setIsSyncing(true);
+                setConfirmModal({ show: false, meal: null });
+                try {
+                    await fetch(GAS_URL, { 
+                        method: 'POST', 
+                        mode: 'no-cors', 
+                        body: JSON.stringify({ _action: 'delete', timestamp: m.timestamp }) 
+                    });
+                    setShowToast("DELETED");
+                    fetchData();
+                } catch (err) {
+                    setShowToast("DELETE ERROR");
+                } finally {
+                    setIsSyncing(false);
+                    setTimeout(() => setShowToast(""), 3000);
+                }
+            };
+
+            const recordBreakfast = () => {
+                setMainMenu('朝セット');
+                setProtein(45.0);
+                setMealType('朝');
+                setTimeout(() => document.getElementById('save-btn').click(), 100);
+            };
+
+            const suggestions = useMemo(() => {
+                if (gap <= 0 || menus.length === 0) return [];
+                let pool = [...menus];
+                if (selectedEffect !== 'all') pool = pool.filter(m => m.cat === selectedEffect);
+                return pool.sort(() => Math.random() - 0.5).slice(0, 3);
+            }, [menus, gap, selectedEffect]);
+
+            if (loading) return (
+                <div className="h-screen bg-[#04050a] flex flex-col items-center justify-center text-[#10b981] font-black">
+                    <Icons.RefreshCw className="mb-4 animate-spin h-12 w-12" />
+                    <span className="uppercase tracking-[0.2em] text-[10px] mono">Strategic Data Syncing...</span>
                 </div>
-              </div>
-              <ChevronRight className="text-[#404660]" size={16} />
-            </button>
+            );
 
-            <section className={`bg-[#090b12] border ${editingId ? 'border-[#10b981] shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'border-[#161a28]'} rounded-[2.5rem] p-6 shadow-2xl`}>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-[8px] font-mono text-[#404660] uppercase tracking-[0.25em] flex items-center">
-                  <ShieldCheck size={14} className="mr-2 text-[#10b981]" /> {editingId ? "Edit Mode" : "Strategy Log"}
-                </h2>
-                {editingId && (
-                  <button onClick={() => { setEditingId(null); setMainMenu(''); setProtein(25.0); }} className="text-[8px] font-mono text-[#e05a6a] uppercase font-bold">Cancel</button>
-                )}
-              </div>
-              <form onSubmit={handleSave} className="space-y-6">
-                <div className="flex bg-[#04050a] p-1 rounded-xl border border-[#161a28]">
-                  {['朝', '昼', '夜', '他'].map(t => (
-                    <button key={t} type="button" onClick={() => setMealType(t)} className={`flex-1 py-2.5 text-[9px] font-mono font-bold rounded-lg transition-all ${mealType === t ? 'bg-[#10b981] text-[#04050a]' : 'text-[#404660]'}`}>{t}</button>
-                  ))}
+            return (
+                <div className="min-h-screen bg-[#04050a] text-[#dce0ec] pb-24 font-sans max-w-[430px] mx-auto relative flex flex-col border-x border-[#161a28] shadow-2xl">
+                    
+                    {/* Header */}
+                    <header className="bg-gradient-to-b from-[#090b12] to-[#04050a] p-6 pb-8 border-b border-[#161a28] sticky top-0 z-[100] backdrop-blur-md">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h1 className="text-xl font-black text-[#10b981] tracking-tighter serif leading-none">Meal OS v7.2</h1>
+                                <p className="text-[7px] text-[#404660] uppercase tracking-[0.25em] font-medium mt-1 mono">Guard & Analytics Active</p>
+                            </div>
+                            <button onClick={fetchData} className="p-2.5 bg-[#0e1019] border border-[#161a28] rounded-xl text-[#404660] active:scale-90 transition-all hover:text-[#10b981]">
+                                <Icons.RefreshCw className={isSyncing ? 'animate-spin' : ''} />
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-baseline mb-1">
+                                <span className="text-[8px] mono text-[#404660] uppercase tracking-[0.2em]">Today / Target 120g</span>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-4xl font-black text-[#10b981] leading-none serif">{todayProtein.toFixed(1)}</span>
+                                    <span className="text-[10px] mono text-[#404660]">g</span>
+                                </div>
+                            </div>
+                            <div className="h-[2px] w-full bg-[#161a28] relative overflow-hidden rounded-full">
+                                <div className="h-full bg-gradient-to-r from-[#065f46] to-[#10b981] transition-all duration-1000 ease-out" style={{ width: `${progress}%` }} />
+                            </div>
+                            <div className="flex justify-between items-center text-[8px] mono text-[#404660] tracking-widest uppercase">
+                                <span>{progress.toFixed(0)}% Done</span>
+                                <span>残り <em className="text-[#10b981] not-italic font-bold">{gap.toFixed(1)}g</em></span>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="flex-1 p-5 space-y-6 overflow-y-auto custom-scroll">
+                        {showToast && (
+                            <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-[#10b981] text-[#04050a] px-5 py-2 rounded-full text-[9px] font-black tracking-widest z-[200] shadow-2xl animate-bounce">
+                                {showToast}
+                            </div>
+                        )}
+
+                        {activeTab === 'record' && (
+                            <div className="space-y-6 animate-in fade-in duration-300">
+                                <button onClick={recordBreakfast} className="w-full bg-[#090b12] border border-[#161a28] p-4 rounded-2xl flex items-center justify-between shadow-xl active:scale-95 transition-all group">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="bg-[rgba(16,185,129,0.08)] border border-[rgba(16,185,129,0.15)] p-3 rounded-xl text-[#10b981] group-hover:bg-[rgba(16,185,129,0.18)] transition-colors text-xl">🥚</div>
+                                        <div className="text-left">
+                                            <p className="text-[13px] font-bold text-[#ffffff] tracking-tight">朝セットを記録</p>
+                                            <p className="text-[8px] mono text-[#404660] uppercase tracking-widest mt-0.5">45.0g P｜定型ルーチン</p>
+                                        </div>
+                                    </div>
+                                    <Icons.ChevronRight />
+                                </button>
+
+                                <section className={`bg-[#090b12] border ${editingId ? 'border-[#10b981] shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'border-[#161a28]'} rounded-[2.5rem] p-6 shadow-2xl transition-all`}>
+                                    <div className="flex justify-between items-center mb-6 px-1">
+                                        <h2 className="text-[8px] font-mono text-[#404660] uppercase tracking-[0.25em] flex items-center">
+                                            <Icons.ShieldCheck className="mr-2 text-[#10b981]" /> {editingId ? "Edit Strategy" : "Strategy Log"}
+                                        </h2>
+                                        {editingId && (
+                                            <button onClick={() => { setEditingId(null); setMainMenu(''); setProtein(25.0); }} className="text-[8px] font-mono text-[#e05a6a] bg-[rgba(224,90,106,0.1)] px-3 py-1.5 rounded-full uppercase tracking-widest hover:bg-[rgba(224,90,106,0.2)]">Cancel</button>
+                                        )}
+                                    </div>
+                                    <form onSubmit={handleSave} className="space-y-6">
+                                        <div className="flex bg-[#04050a] p-1 rounded-xl border border-[#161a28]">
+                                            {['朝', '昼', '夜', '他'].map(t => (
+                                                <button key={t} type="button" onClick={() => setMealType(t)} className={`flex-1 py-2.5 text-[9px] mono font-bold rounded-lg transition-all ${mealType === t ? 'bg-[#10b981] text-[#04050a] shadow-lg' : 'text-[#404660] hover:text-[#dde0ea]'}`}>{t}</button>
+                                            ))}
+                                        </div>
+                                        <input type="text" placeholder="主菜（タンパク源）" value={mainMenu} onChange={e => setMainMenu(e.target.value)} className="w-full bg-[#04050a] border border-[#161a28] rounded-xl px-4 py-4 text-sm font-bold text-white focus:border-[#10b981] outline-none transition-all placeholder-[#272c40]" />
+                                        
+                                        <div className="bg-[#04050a] p-5 rounded-2xl border border-[#161a28] space-y-4">
+                                            <div className="flex justify-between items-center px-1">
+                                                <span className="text-[8px] mono text-[#404660] uppercase tracking-[0.2em]">Estimate Protein</span>
+                                                <span className="text-3xl font-black text-[#10b981] leading-none serif">{Number(protein).toFixed(1)}<span className="text-[9px] mono text-[#404660] ml-1">g</span></span>
+                                            </div>
+                                            <input type="range" min="0" max="60" step="0.5" value={protein} onChange={e => setProtein(e.target.value)} />
+                                        </div>
+                                        
+                                        <button type="submit" id="save-btn" disabled={isSyncing} className="w-full bg-[#10b981] text-[#04050a] py-5 rounded-[1.2rem] mono text-[10px] font-bold tracking-[0.2em] shadow-xl active:scale-[0.98] transition-all flex justify-center items-center uppercase">
+                                            {isSyncing ? <Icons.RefreshCw className="animate-spin mr-2" /> : null}
+                                            {editingId ? "修正を確定する →" : "記録を保存する →"}
+                                        </button>
+                                    </form>
+                                </section>
+
+                                <section className="space-y-4">
+                                    <div className="flex items-center gap-2 mb-2 px-1">
+                                        <span className="text-[8px] mono text-[#404660] uppercase tracking-[0.25em]">Records List</span>
+                                        <div className="h-[1px] bg-[#161a28] flex-1" />
+                                    </div>
+                                    {meals.length === 0 ? (
+                                        <div className="text-center py-12 text-[#404660] font-mono text-[10px] tracking-widest italic uppercase">No records found.</div>
+                                    ) : (
+                                        meals.map((m, i) => (
+                                            <div key={i} className={`bg-[#090b12] border ${m.isToday ? 'border-[#161a28]' : 'border-transparent opacity-50'} p-4 rounded-2xl flex items-center justify-between shadow-lg group hover:border-[#404660] transition-all`}>
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="w-10 h-10 bg-[#04050a] rounded-xl flex flex-col items-center justify-center border border-[#161a28]">
+                                                        <span className={`text-[7px] font-bold ${m.isToday ? 'text-[#10b981]' : 'text-[#404660]'}`}>{m.isToday ? 'TODAY' : 'PAST'}</span>
+                                                        <span className="text-[9px] font-bold text-[#dce0ec]">{m.type}</span>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[13px] font-bold text-[#ffffff] leading-none mb-2">{m.main}</p>
+                                                        <p className="text-[8px] mono text-[#404660] uppercase flex items-center gap-1 leading-none">
+                                                            <Icons.Clock /> {new Date(m.timestamp).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center space-x-4">
+                                                    <span className="text-xl font-black text-[#10b981] serif leading-none">{Number(m.protein).toFixed(1)}g</span>
+                                                    <div className="flex flex-col space-y-2 pl-4 border-l border-[#161a28] opacity-20 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => { setEditingId(m.timestamp); setMealType(m.type); setMainMenu(m.main); setProtein(m.protein); window.scrollTo(0,0); }} className="text-[#404660] hover:text-[#10b981]"><Icons.Edit3 /></button>
+                                                        <button onClick={() => confirmDelete(m)} className="text-[#404660] hover:text-[#e05a6a]"><Icons.Trash2 /></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </section>
+                            </div>
+                        )}
+
+                        {activeTab === 'suggest' && (
+                            <div className="space-y-4 animate-in slide-in-from-right-4">
+                                <div className="bg-gradient-to-br from-[#0e1019] to-[#04050a] border border-[#10b981]/20 rounded-2xl p-6 relative overflow-hidden shadow-2xl">
+                                    <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#10b981]/30 to-transparent" />
+                                    <div className="text-[7px] text-[#10b981] mono tracking-[0.2em] uppercase bg-[#10b981]/5 border border-[#10b981]/10 px-3 py-1 rounded-full mb-4 inline-block">Tonight's Strategy</div>
+                                    <div className="text-4xl font-black text-[#ffffff] leading-none mb-2 serif">
+                                        {gap.toFixed(1)}<span className="text-[#10b981] text-xs mono ml-2">g 不足</span>
+                                    </div>
+                                    <p className="text-[10px] text-[#404660]">目標120gまであと少し。アンチエイジングを意識したメニューで細胞ケアを。</p>
+                                </div>
+
+                                <div className="flex bg-[#04050a] p-1 rounded-xl border border-[#161a28]">
+                                    {[['all','ALL'], ['muscle','筋肉増強'], ['recovery','回復'], ['antiaging','老化防止']].map(([val, label]) => (
+                                        <button key={val} onClick={() => setSelectedEffect(val)} className={`flex-1 py-2 text-[8px] mono font-bold rounded-lg transition-all ${selectedEffect === val ? 'bg-[#10b981] text-[#04050a] shadow-lg' : 'text-[#404660]'}`}>{label}</button>
+                                    ))}
+                                </div>
+
+                                <div className="space-y-3">
+                                    {suggestions.length === 0 ? (
+                                        <div className="py-12 text-center text-[#404660] mono text-[10px] uppercase tracking-widest italic">All goals achieved or no data.</div>
+                                    ) : suggestions.map((opt, i) => (
+                                        <div key={i} className="bg-[#090b12] border border-[#161a28] p-5 rounded-[1.5rem] relative group hover:border-[#404660] transition-all shadow-xl">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <h3 className="text-lg font-bold text-[#ffffff] pr-8 serif leading-tight">{opt.main}</h3>
+                                                <div className="text-xl font-black text-[#10b981] serif leading-none">{opt.p.toFixed(1)}g</div>
+                                            </div>
+                                            <p className="text-[10px] text-[#404660] mb-4 font-light italic">副菜：{opt.side}</p>
+                                            <div className="flex flex-wrap gap-2 mb-6">
+                                                {(opt.tags || []).map((t, idx) => (
+                                                    <span key={idx} className="text-[7px] mono border border-[#161a28] text-[#10b981] px-2 py-0.5 rounded-md uppercase tracking-widest leading-none">{t}</span>
+                                                ))}
+                                            </div>
+                                            <button onClick={() => { setMainMenu(opt.main); setProtein(opt.p); setMealType('夜'); setActiveTab('record'); window.scrollTo(0,0); }} className="w-full bg-[#10b981]/10 border border-[#10b981]/20 text-[#10b981] py-3 rounded-xl mono text-[8px] font-bold tracking-[0.2em] uppercase hover:bg-[#10b981] hover:text-[#04050a] transition-all shadow-md">
+                                                この戦略を選択 →
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <div className="pt-4 flex justify-center">
+                                        <button onClick={() => fetchData()} className="text-[8px] font-mono text-[#404660] uppercase tracking-widest flex items-center hover:text-[#10b981] transition-colors">
+                                            <Icons.RefreshCw className="mr-2" /> Shuffle Suggestions
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'stats' && (
+                            <div className="space-y-6 animate-in zoom-in-95">
+                                <div className="bg-[#090b12] border border-[#161a28] p-6 rounded-[1.5rem] shadow-2xl">
+                                    <div className="flex items-center gap-2 mb-8 px-1">
+                                        <Icons.CalendarDays className="text-[#10b981]" />
+                                        <span className="text-[8px] mono text-[#404660] uppercase tracking-widest">Weekly Protein Trend</span>
+                                    </div>
+                                    <div className="h-[120px] flex items-end gap-2 px-2">
+                                        {[...Array(7)].map((_, i) => {
+                                            const h = i === 6 ? progress : Math.random() * 80 + 20; 
+                                            return (
+                                                <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full">
+                                                    <div className="flex-1 w-full flex items-end justify-center">
+                                                        <div className={`w-full max-w-[12px] rounded-t-sm transition-all duration-1000 ${h >= 100 ? 'bg-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-[#1f2436]'}`} style={{ height: `${h}%` }} />
+                                                    </div>
+                                                    <span className={`text-[7px] font-mono ${i === 6 ? 'text-[#10b981] font-bold' : 'text-[#404660]'}`}>{['M','T','W','T','F','S','S'][i]}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                <div className="bg-[#090b12] border border-[#161a28] p-8 rounded-[1.5rem] text-center shadow-xl">
+                                    <div className="text-[#10b981]/20 text-5xl mb-6 opacity-30 flex justify-center"><Icons.TrendingUp /></div>
+                                    <p className="text-[10px] text-[#454a60] italic leading-relaxed max-w-[200px] mx-auto uppercase tracking-tighter">規律の積み重ねが、最高のパフォーマンスを生みます。</p>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Navigation */}
+                    <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-[rgba(4,5,10,0.95)] backdrop-blur-2xl border-t border-[#161a28] flex justify-around p-4 safe-area-bottom z-[150] shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                        {[
+                            { id: 'record', icon: Icons.Utensils, label: 'Log' },
+                            { id: 'suggest', icon: Icons.ChefHat, label: 'Dinner' },
+                            { id: 'stats', icon: Icons.TrendingUp, label: 'Stats' }
+                        ].map(t => (
+                            <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex flex-col items-center gap-1.5 transition-all duration-300 px-6 ${activeTab === t.id ? 'text-[#10b981]' : 'text-[#404660] hover:text-[#dde0ea]'}`}>
+                                <t.icon />
+                                <span className="text-[7px] mono font-bold uppercase tracking-widest">{t.label}</span>
+                                {activeTab === t.id && <div className="w-1 h-1 bg-[#10b981] rounded-full mt-1 animate-pulse"></div>}
+                            </button>
+                        ))}
+                    </nav>
+
+                    {/* Custom Confirmation Modal */}
+                    {confirmModal.show && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] flex items-center justify-center p-6">
+                            <div className="bg-[#0b0d14] border border-[#161a28] w-full max-w-[320px] rounded-[2rem] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-200">
+                                <h3 className="text-lg font-bold text-white mb-2 serif">削除の確認</h3>
+                                <p className="text-[11px] text-[#454a60] leading-relaxed mb-8">
+                                    「<span className="text-[#dce0ec] font-bold">{confirmModal.meal?.main}</span>」の記録を削除します。この操作は取り消せません。よろしいですか？
+                                </p>
+                                <div className="flex gap-3">
+                                    <button 
+                                        onClick={() => setConfirmModal({ show: false, meal: null })} 
+                                        className="flex-1 py-4 rounded-xl bg-[#161a28] text-[9px] font-bold uppercase tracking-widest"
+                                    >
+                                        キャンセル
+                                    </button>
+                                    <button 
+                                        onClick={executeDelete} 
+                                        className="flex-1 py-4 rounded-xl bg-[#e05a6a] text-[#04050a] text-[9px] font-bold uppercase tracking-widest shadow-lg shadow-[#e05a6a]/20"
+                                    >
+                                        削除する
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <input type="text" placeholder="主菜（タンパク源）" value={mainMenu} onChange={e => setMainMenu(e.target.value)} className="w-full bg-[#04050a] border border-[#161a28] rounded-xl px-4 py-4 text-sm font-bold focus:border-[#10b981] outline-none transition-all placeholder-[#272c40]" />
-                
-                <div className="bg-[#04050a] p-5 rounded-2xl border border-[#161a28] space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[8px] font-mono text-[#404660] uppercase tracking-[0.2em]">Protein Value</span>
-                    <span className="text-2xl font-black text-[#10b981]" style={{ fontFamily: "'DM Serif Display', serif" }}>{Number(protein).toFixed(1)}<span className="text-[9px] font-mono text-[#404660] ml-1">g</span></span>
-                  </div>
-                  {/* スライダー上限 60g 厳守 */}
-                  <input type="range" min="0" max="60" step="0.5" value={protein} onChange={e => setProtein(e.target.value)} className="w-full h-[3px] bg-[#1f2436] rounded-lg appearance-none cursor-pointer accent-[#10b981]" />
-                </div>
-                
-                <button type="submit" id="save-btn" disabled={isSyncing} className="w-full bg-[#10b981] text-[#04050a] py-5 rounded-[1.2rem] font-mono text-[10px] font-bold tracking-[0.2em] shadow-xl active:scale-[0.98] transition-all flex justify-center items-center uppercase">
-                  {isSyncing && <RefreshCw className="animate-spin mr-2" size={14} />}
-                  {editingId ? "修正を確定する →" : "記録を保存する →"}
-                </button>
-              </form>
-            </section>
+            );
+        };
 
-            <section className="space-y-4">
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <span className="text-[8px] font-mono text-[#404660] uppercase tracking-[0.25em]">Records</span>
-                <div className="h-[1px] bg-[#161a28] flex-1" />
-              </div>
-              {meals.map((m, i) => (
-                <div key={i} className={`bg-[#090b12] border ${m.isToday ? 'border-[#161a28]' : 'border-transparent opacity-50'} p-4 rounded-2xl flex items-center justify-between shadow-lg group`}>
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-[#04050a] rounded-xl flex flex-col items-center justify-center border border-[#161a28]">
-                      {m.isToday ? (
-                        <span className="text-[7px] text-[#10b981] font-bold">TODAY</span>
-                      ) : (
-                        <span className="text-[7px] text-[#404660] font-bold">PAST</span>
-                      )}
-                      <span className="text-[9px] font-bold text-[#dce0ec]">{m.type}</span>
-                    </div>
-                    <div>
-                      <p className="text-[13px] font-bold text-[#ffffff]">{m.main}</p>
-                      <p className="text-[8px] font-mono text-[#404660] uppercase flex items-center mt-1">
-                        <Clock size={10} className="mr-1" /> {new Date(m.timestamp).toLocaleDateString('ja-JP', {month:'2-digit', day:'2-digit'})} {new Date(m.timestamp).toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'})}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <span className="text-xl font-black text-[#10b981]" style={{ fontFamily: "'DM Serif Display', serif" }}>{Number(m.protein).toFixed(1)}g</span>
-                    <div className="flex flex-col space-y-2 pl-4 border-l border-[#161a28] opacity-20 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => { setEditingId(m.timestamp); setMealType(m.type); setMainMenu(m.main); setProtein(m.protein); window.scrollTo(0,0); }} className="text-[#404660] hover:text-[#10b981]"><Edit3 size={14} /></button>
-                      <button onClick={() => deleteMeal(m)} className="text-[#404660] hover:text-[#e05a6a]"><Trash2 size={14} /></button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </section>
-          </div>
-        )}
-
-        {activeTab === 'suggest' && (
-          <div className="space-y-4 animate-in slide-in-from-right-4">
-            <div className="bg-gradient-to-br from-[#0e1019] to-[#04050a] border border-[#10b981]/20 rounded-2xl p-6 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#10b981]/30 to-transparent" />
-              <div className="sh-badge text-[7px] text-[#10b981] font-mono tracking-[0.2em] uppercase bg-[#10b981]/5 border border-[#10b981]/10 px-3 py-1 rounded-full mb-4 inline-block">Tonight's Strategy</div>
-              <div className="text-4xl font-black text-[#ffffff] leading-none mb-2" style={{ fontFamily: "'DM Serif Display', serif" }}>
-                {gap.toFixed(1)}<span className="text-[#10b981] text-xs font-mono ml-2">g 不足</span>
-              </div>
-              <p className="text-[10px] text-[#404660]">目標120gまであと一歩です。最適なメニューを選択してください。</p>
-            </div>
-
-            <div className="flex bg-[#04050a] p-1 rounded-xl border border-[#161a28]">
-              {[['all','ALL'], ['muscle','筋肉増強'], ['recovery','回復'], ['antiaging','老化防止']].map(([val, label]) => (
-                <button key={val} onClick={() => setSelectedEffect(val)} className={`flex-1 py-2 text-[8px] font-mono font-bold rounded-lg transition-all ${selectedEffect === val ? 'bg-[#10b981] text-[#04050a]' : 'text-[#404660]'}`}>{label}</button>
-              ))}
-            </div>
-
-            <div className="space-y-3">
-              {suggestions.map((opt, i) => (
-                <div key={i} className="bg-[#090b12] border border-[#161a28] p-5 rounded-[1.5rem] relative group">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-lg font-bold text-[#ffffff] pr-8" style={{ fontFamily: "'DM Serif Display', serif" }}>{opt.main}</h3>
-                    <div className="text-xl font-black text-[#10b981]" style={{ fontFamily: "'DM Serif Display', serif" }}>{opt.p.toFixed(1)}g</div>
-                  </div>
-                  <p className="text-[10px] text-[#404660] mb-4">副菜：{opt.side}</p>
-                  <div className="flex gap-2 mb-6">
-                    {opt.tags.map((t, idx) => (
-                      <span key={idx} className="text-[7px] font-mono border border-[#161a28] text-[#10b981] px-2 py-0.5 rounded-md uppercase tracking-widest">{t}</span>
-                    ))}
-                  </div>
-                  <button onClick={() => { setMainMenu(opt.main); setProtein(opt.p); setMealType('夜'); setActiveTab('record'); window.scrollTo(0,0); }} className="w-full bg-[#10b981]/10 border border-[#10b981]/20 text-[#10b981] py-3 rounded-xl font-mono text-[8px] font-bold tracking-[0.2em] uppercase hover:bg-[#10b981] hover:text-[#04050a] transition-all">
-                    このメニューを選択 →
-                  </button>
-                </div>
-              ))}
-              <div className="pt-4 flex justify-center">
-                <button onClick={() => setMenus([...menus])} className="text-[8px] font-mono text-[#404660] uppercase tracking-widest flex items-center">
-                  <RefreshCw size={10} className="mr-2" /> Shuffle Suggestions
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'stats' && (
-          <div className="space-y-6 animate-in zoom-in-95">
-            <div className="bg-[#090b12] border border-[#161a28] p-6 rounded-[1.5rem]">
-              <div className="flex items-center gap-2 mb-8">
-                <CalendarDays size={16} className="text-[#10b981]" />
-                <span className="text-[8px] font-mono text-[#404660] uppercase tracking-widest">Weekly Protein Trend</span>
-              </div>
-              <div className="h-[120px] flex items-end gap-2 px-2">
-                {[...Array(7)].map((_, i) => {
-                  const h = i === 6 ? progress : Math.random() * 80 + 20; // 最終日は本日
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full">
-                      <div className="flex-1 w-full flex items-end justify-center">
-                        <div className={`w-full max-w-[12px] rounded-t-sm transition-all duration-1000 ${h >= 100 ? 'bg-[#10b981] shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'bg-[#1f2436]'}`} style={{ height: `${h}%` }} />
-                      </div>
-                      <span className="text-[7px] font-mono text-[#404660]">{['M','T','W','T','F','S','S'][i]}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="bg-[#090b12] border border-[#161a28] p-6 rounded-[1.5rem] text-center">
-              <TrendingUp size={24} className="text-[#10b981]/30 mx-auto mb-4" />
-              <p className="text-[10px] text-[#404660] italic leading-relaxed">規律の積み重ねが、最高のパフォーマンスを生みます。週末の週次レポをお楽しみに。</p>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-[rgba(4,5,10,0.95)] backdrop-blur-xl border-t border-[#161a28] flex justify-around p-4 safe-area-bottom z-[100]">
-        {[
-          { id: 'record', icon: Utensils, label: 'Log' },
-          { id: 'suggest', icon: ChefHat, label: 'Dinner' },
-          { id: 'stats', icon: TrendingUp, label: 'Stats' }
-        ].map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} className={`flex flex-col items-center gap-1.5 transition-all duration-300 px-6 ${activeTab === t.id ? 'text-[#10b981]' : 'text-[#404660]'}`}>
-            <t.icon size={20} />
-            <span className="text-[7px] font-mono font-bold uppercase tracking-widest">{t.label}</span>
-          </button>
-        ))}
-      </nav>
-    </div>
-  );
-};
-
-export default App;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
