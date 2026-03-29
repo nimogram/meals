@@ -115,6 +115,48 @@ const toJSTDateStr = (d = new Date()) => {
   const jst = new Date(d.getTime() + (d.getTimezoneOffset() + 540) * 60000);
   return jst.toISOString().split('T')[0];
 };
+
+// GASから返るタイムスタンプを YYYY-MM-DDTHH:mm:ss に正規化
+// 対応パターン:
+//   "2026/03/29 12:34:56"  → "2026-03-29T12:34:56"
+//   "2026-03-29T12:34:56Z" → "2026-03-29T12:34:56"
+//   "2026-03-29 12:34:56"  → "2026-03-29T12:34:56"
+//   "3/29/2026 12:34:56"   → "2026-03-29T12:34:56"  (en-US形式)
+const normalizeTimestamp = (ts) => {
+  if (!ts) return '';
+  const s = String(ts).trim();
+
+  // 既にISO形式 (YYYY-MM-DD...)
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    return s.replace(' ', 'T').replace(/Z$/, '');
+  }
+
+  // スラッシュ区切り YYYY/MM/DD HH:mm:ss
+  if (/^\d{4}\/\d{2}\/\d{2}/.test(s)) {
+    return s.replace(/\//g, '-').replace(' ', 'T');
+  }
+
+  // M/D/YYYY HH:mm:ss (en-US スプレッドシート形式)
+  const usMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})([ T](.+))?$/);
+  if (usMatch) {
+    const [,mo,da,yr,,time='00:00:00'] = usMatch;
+    return `${yr}-${mo.padStart(2,'0')}-${da.padStart(2,'0')}T${time}`;
+  }
+
+  // Date.parse で解釈できる場合
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString().replace('Z','').slice(0,19);
+  }
+
+  return s; // 解釈不能はそのまま返す
+};
+
+// タイムスタンプから日付文字列 YYYY-MM-DD を取得
+const extractDate = (ts) => {
+  if (!ts) return '';
+  return normalizeTimestamp(ts).slice(0, 10);
+};
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
 const DAY_JP = ['日','月','火','水','木','金','土'];
 
@@ -256,14 +298,35 @@ const App = () => {
     try {
       const r = await fetch(GAS);
       const data = await r.json();
-      // GASが {history:[...]} または 配列 どちらでも対応
-      const raw = Array.isArray(data) ? data : (data.history || []);
-      setMeals(raw.map(m => ({
-        ...m,
-        _id: m._id || genId(),
-        protein: Number(m.protein) || 0,
-      })));
-      showToast('SYNC COMPLETE');
+
+      // GASのレスポンス形式を全パターン対応
+      let raw = [];
+      if (Array.isArray(data)) {
+        raw = data;
+      } else if (Array.isArray(data.history)) {
+        raw = data.history;
+      } else if (Array.isArray(data.data)) {
+        raw = data.data;
+      } else if (typeof data === 'object') {
+        // オブジェクトの中から配列を探す
+        const arr = Object.values(data).find(v => Array.isArray(v));
+        if (arr) raw = arr;
+      }
+
+      const parsed = raw
+        .filter(m => m && (m.main || m.mainMenu))
+        .map(m => ({
+          ...m,
+          main: (m.main || m.mainMenu || '').trim(),
+          _id: m._id || genId(),
+          protein: Number(m.protein) || 0,
+          // timestamp を必ず ISO 形式（YYYY-MM-DDTHH:mm:ss）に正規化
+          timestamp: normalizeTimestamp(m.timestamp),
+        }))
+        .filter(m => m.main && m.timestamp);
+
+      setMeals(parsed);
+      showToast(`SYNC OK — ${parsed.length}件`);
     } catch(e) {
       showToast('OFFLINE MODE');
     } finally {
@@ -275,11 +338,8 @@ const App = () => {
 
   // ── 今日のログ ────────────────────────────────────────────────────────
   const filteredMeals = useMemo(() => {
-    return meals.filter(m => {
-      if (!m.timestamp) return false;
-      const d = m.timestamp.replace(/\//g,'-').split(/[T ]/)[0];
-      return d === selDate;
-    }).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return meals.filter(m => extractDate(m.timestamp) === selDate)
+      .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
   }, [meals, selDate]);
 
   const totalP = useMemo(() => filteredMeals.reduce((s,m) => s + m.protein, 0), [filteredMeals]);
@@ -386,7 +446,7 @@ const App = () => {
     return Array.from({length:7},(_,i)=>{
       const d = new Date(); d.setDate(d.getDate()-(6-i));
       const ds = toJSTDateStr(d);
-      const tot = meals.filter(m=>m.timestamp?.replace(/\//g,'-').split(/[T ]/)[0]===ds)
+      const tot = meals.filter(m => extractDate(m.timestamp) === ds)
         .reduce((s,m)=>s+m.protein,0);
       return {lbl:DAY_JP[d.getDay()],tot,isToday:ds===todayStr,ok:tot>=TARGET,has:tot>0};
     });
