@@ -22,14 +22,19 @@
 html,body{height:100%;overflow:hidden;background:var(--bg);}
 body{font-family:var(--sans);color:var(--tx);}
 body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
+
 input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--brt);border-radius:2px;outline:none;cursor:pointer;}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:var(--em);border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 12px var(--em-glow);cursor:pointer;}
+
 .scroll::-webkit-scrollbar{display:none;}
 .scroll{scrollbar-width:none;}
+
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 @keyframes spin{to{transform:rotate(360deg);}}
+@keyframes popIn{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
 .fade-up{animation:fadeUp 0.3s ease-out forwards;}
 .spin{animation:spin 1s linear infinite;}
+.pop-in{animation:popIn 0.22s cubic-bezier(0.34,1.4,0.64,1) forwards;}
 </style>
 </head>
 <body>
@@ -41,14 +46,14 @@ const { useState, useEffect, useMemo, useCallback } = React;
 const GAS = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
 const TARGET = 120;
 
-// ── LOCAL FALLBACK MENUS (GAS未取得時のバックアップ) ──────────────────
+// ── LOCAL FALLBACK MENUS ────────────────────────────────────────────────
 const ALL=[0,1,2,3,4,5,6,7,8,9,10,11],W=[0,1,2,3,4,5,6],WD=[1,2,3,4],WE=[0,5,6];
 const INITIAL_MENUS=[
-  {main:"牛肉ステーキ",p:40,side:"ブロッコリーサラダ",tags:["牛","赤身","鉄分"],cat:"burn",season:ALL,dow:W,effect:"鉄分で午後の活力を担保。"},
-  {main:"チキンステーキ",p:40,side:"アボカド",tags:["鶏","低脂質"],cat:"recovery",season:ALL,dow:W,effect:"アンセリンによる疲労回復。"},
-  {main:"生カツオのたたき",p:28.5,side:"玉ねぎポン酢",tags:["カツオ","セレン"],cat:"recovery",season:[3,4,5,6,7,8],dow:W,effect:"セレンが活性酸素を除去。"},
-  {main:"サーモンステーキ",p:28,side:"アスパラ",tags:["アスタキサンチン","Tie2"],cat:"antiaging",season:ALL,dow:W,effect:"毛細血管を強化。"},
-  {main:"サバ味噌煮缶",p:20.9,side:"雑穀米・生姜",tags:["サバ","時短"],cat:"antiaging",season:ALL,dow:WD,effect:"Tie2活性化で毛細血管強化。"}
+  {main:"牛肉ステーキ",p:40,side:"ブロッコリーサラダ",tags:["牛","赤身","鉄分"],cat:"burn",season:ALL,dow:W,effect:"鉄分で午後の活力を担保。L-カルニチンで<em>脂肪燃焼</em>を最大化。"},
+  {main:"チキンステーキ",p:40,side:"アボカド",tags:["鶏","低脂質"],cat:"recovery",season:ALL,dow:W,effect:"アンセリンによる<em>疲労回復</em>と筋肉合成の効率化。"},
+  {main:"生カツオのたたき",p:28.5,side:"玉ねぎポン酢",tags:["カツオ","血流改善"],cat:"recovery",season:[3,4,5,6,7,8],dow:W,effect:"セレンが活性酸素を除去。<em>細胞保護と美肌</em>に貢献。"},
+  {main:"サーモンステーキ",p:28,side:"アスパラ",tags:["アスタキサンチン","Tie2"],cat:"antiaging",season:ALL,dow:W,effect:"アスタキサンチンで<em>毛細血管を強化</em>。Tie2活性化。"},
+  {main:"サバ味噌煮缶",p:20.9,side:"雑穀米・生姜",tags:["サバ","時短"],cat:"antiaging",season:ALL,dow:WD,effect:"Tie2活性化で<em>毛細血管を強化</em>。最高コスパのタンパク源。"}
 ];
 
 // ── UTILS ─────────────────────────────────────────────────────────────────
@@ -60,7 +65,7 @@ const toJSTDateStr = (d = new Date()) => {
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
 const DAY_JP = ['日','月','火','水','木','金','土'];
 
-// ── SVG ICONS ─────────────────────────────────────────────────────────────
+// ── ICONS ─────────────────────────────────────────────────────────────
 const RefreshIcon = ({cls=""}) => (
   <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
     <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
@@ -70,16 +75,51 @@ const EditIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 const TrashIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>);
 const ShuffleIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>);
 
-// ── TOAST ─────────────────────────────────────────────────────────────────
+// ── TOAST & MODALS ────────────────────────────────────────────────────────
 const Toast = ({msg}) => msg ? (
-  <div style={{position:'fixed',top:14,left:'50%',transform:'translateX(-50%)',background:'var(--em)',color:'var(--bg)',padding:'7px 18px',borderRadius:20,fontFamily:'var(--mono)',fontSize:9,fontWeight:500,letterSpacing:'0.14em',zIndex:999,animation:'fadeUp 0.2s ease-out',whiteSpace:'nowrap',boxShadow:'0 4px 20px var(--em-glow)'}}>{msg}</div>
+  <div style={{position:'fixed',top:14,left:'50%',transform:'translateX(-50%)',background:'var(--em)',color:'var(--bg)',padding:'7px 18px',borderRadius:20,fontFamily:'var(--mono)',fontSize:9,fontWeight:700,zIndex:999,animation:'fadeUp 0.2s ease-out',boxShadow:'0 4px 20px var(--em-glow)'}}>{msg}</div>
 ) : null;
+
+const ConfirmModal = ({meal, onConfirm, onCancel}) => (
+  <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',backdropFilter:'blur(10px)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+    <div className="pop-in" style={{background:'var(--s1)',border:'1px solid var(--bd)',borderRadius:20,padding:28,width:'100%',maxWidth:340,textAlign:'center'}}>
+      <div style={{fontSize:28,marginBottom:12}}>🗑️</div>
+      <div style={{fontFamily:'var(--serif)',fontSize:17,color:'var(--tx)',marginBottom:6}}>削除しますか？</div>
+      <div style={{background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:9,padding:'9px 13px',fontSize:12,fontWeight:700,color:'var(--tx)',marginBottom:18}}>{meal?.main}</div>
+      <div style={{display:'flex',gap:9}}>
+        <button onClick={onCancel} style={{flex:1,background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:12,fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)'}}>CANCEL</button>
+        <button onClick={onConfirm} style={{flex:1,background:'#251018',borderRadius:11,padding:12,fontFamily:'var(--mono)',fontSize:8,color:'var(--red)'}}>DELETE</button>
+      </div>
+    </div>
+  </div>
+);
+
+const EditModal = ({meal, onSave, onCancel}) => {
+  const [main, setMain] = useState(meal.main);
+  const [p, setP] = useState(Number(meal.protein));
+  return (
+    <div onClick={(e)=>e.target===e.currentTarget&&onCancel()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',backdropFilter:'blur(8px)',zIndex:300,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+      <div className="slide-in" style={{background:'var(--s1)',borderRadius:'22px 22px 0 0',padding:20,width:'100%',maxWidth:430,paddingBottom:`max(22px, env(safe-area-inset-bottom))`}}>
+        <div style={{width:34,height:3,background:'var(--bd)',borderRadius:2,margin:'0 auto 18px'}}/>
+        <input value={main} onChange={e=>setMain(e.target.value)} style={{width:'100%',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:13,fontSize:14,color:'var(--tx)',outline:'none',marginBottom:14}}/>
+        <div style={{background:'var(--bg)',borderRadius:11,padding:12,marginBottom:14}}>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
+            <span style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)'}}>Protein</span>
+            <span style={{fontFamily:'var(--serif)',fontSize:24,color:'var(--em)'}}>{Number(p).toFixed(1)}g</span>
+          </div>
+          <input type="range" min="0" max="110" step="0.5" value={p} onChange={e=>setP(e.target.value)}/>
+        </div>
+        <button onClick={()=>onSave({...meal,main,protein:parseFloat(p)})} style={{width:'100%',background:'var(--em)',borderRadius:11,padding:13,fontFamily:'var(--mono)',fontWeight:700}}>UPDATE →</button>
+      </div>
+    </div>
+  );
+};
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────
 const App = () => {
   const todayStr = useMemo(() => toJSTDateStr(), []);
   const [meals, setMeals] = useState([]);
-  const [masterMenus, setMasterMenus] = useState(INITIAL_MENUS); // 動的メニューマスタ
+  const [masterMenus, setMasterMenus] = useState(INITIAL_MENUS);
   const [tab, setTab] = useState('log');
   const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState('');
@@ -89,62 +129,75 @@ const App = () => {
   const [protein, setProtein] = useState(25);
   const [effect, setEffect] = useState('all');
   const [shuffleSeed, setShuffleSeed] = useState(0);
+  const [editMeal, setEditMeal] = useState(null);
+  const [delMeal, setDelMeal] = useState(null);
 
   const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),2800); };
 
-  // ── FETCH (履歴 + メニューマスタの両方を取得) ──
   const fetchData = useCallback(async () => {
     setSyncing(true);
     try {
       const r = await fetch(GAS);
       const data = await r.json();
-      
-      // 1. 履歴の同期
       const historyRaw = Array.isArray(data) ? data : (data.history || []);
       setMeals(historyRaw.map(m => ({
-        ...m,
-        _id: m._id || genId(),
+        ...m, _id: m._id || genId(),
         main: m.main || m.mainMenu || "Untitled",
         protein: Number(m.protein) || 0,
         timestamp: m.timestamp || new Date().toISOString()
       })));
 
-      // 2. メニューマスタの同期 (重要: スプレッドシート側の menus シート)
       if (data.menus && Array.isArray(data.menus) && data.menus.length > 0) {
         setMasterMenus(data.menus.map(m => ({
-          ...m,
-          p: Number(m.p) || 20,
+          ...m, p: Number(m.p) || 20,
           season: typeof m.season === 'string' ? JSON.parse(m.season) : (m.season || ALL),
           dow: typeof m.dow === 'string' ? JSON.parse(m.dow) : (m.dow || W),
-          tags: typeof m.tags === 'string' ? m.tags.split(',') : (m.tags || [])
+          tags: Array.isArray(m.tags) ? m.tags : (typeof m.tags === 'string' ? m.tags.split(',') : [])
         })));
-        showToast('MASTER SYNCED');
+        showToast('SYNC: COMPLETE');
       } else {
-        showToast('HISTORY SYNCED');
+        showToast('SYNC: HISTORY ONLY');
       }
-    } catch(e) {
-      showToast('OFFLINE MODE');
-    } finally {
-      setSyncing(false);
-    }
+    } catch(e) { showToast('OFFLINE'); } finally { setSyncing(false); }
   }, []);
 
   useEffect(() => { fetchData(); }, []);
 
-  // ── FILTERING ──
   const filteredMeals = useMemo(() => {
-    return meals.filter(m => {
-      if (!m.timestamp) return false;
-      const d = m.timestamp.toString().replace(/\//g,'-').split(/[T ]/)[0];
-      return d === selDate;
-    }).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return meals.filter(m => m.timestamp?.toString().replace(/\//g,'-').split(/[T ]/)[0] === selDate)
+      .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
   }, [meals, selDate]);
 
-  const totalP = useMemo(() => filteredMeals.reduce((s,m) => s + m.protein, 0), [filteredMeals]);
+  const totalP = useMemo(() => filteredMeals.reduce((sum, m) => sum + m.protein, 0), [filteredMeals]);
   const gap = Math.max(0, TARGET - totalP);
   const pct = Math.min(totalP / TARGET * 100, 100);
 
-  // ── SUGGEST (動的マスターを参照) ──
+  const handleSave = async (mName, mP, mType) => {
+    if (!mName.trim()) return;
+    const now = new Date();
+    const ts = `${selDate}T${now.toTimeString().split(' ')[0]}`;
+    const newMeal = { _id: genId(), timestamp: ts, type: mType, main: mName, protein: parseFloat(mP) };
+    setMeals(prev => [newMeal, ...prev]);
+    setMainMenu('');
+    showToast('SAVED');
+    try { await fetch(GAS, { method:'POST', mode:'no-cors', body: JSON.stringify({ _action:'save', ...newMeal }) }); } catch(e) {}
+  };
+
+  const handleDelete = async () => {
+    const m = delMeal;
+    setMeals(prev => prev.filter(x => x._id !== m._id));
+    setDelMeal(null);
+    showToast('DELETED');
+    try { await fetch(GAS, { method:'POST', mode:'no-cors', body: JSON.stringify({ _action:'delete', timestamp: m.timestamp }) }); } catch(e) {}
+  };
+
+  const handleEditSave = async (updated) => {
+    setMeals(prev => prev.map(m => m._id === updated._id ? updated : m));
+    setEditMeal(null);
+    showToast('UPDATED');
+    try { await fetch(GAS, { method:'POST', mode:'no-cors', body: JSON.stringify({ _action:'update', ...updated }) }); } catch(e) {}
+  };
+
   const suggestions = useMemo(() => {
     if (gap <= 0) return [];
     const now = new Date();
@@ -158,123 +211,246 @@ const App = () => {
       return notRecent && m.season.includes(mon) && m.dow.includes(dow) && (effect==='all'||m.cat===effect);
     });
     
-    if(pool.length < 3) pool = masterMenus.filter(m=>effect==='all'||m.cat===effect);
+    if(pool.length < 3) pool = masterMenus.filter(m=>(effect==='all'||m.cat===effect));
     const seeded = [...pool].map((m,i)=>({m,r:Math.sin(shuffleSeed*997+i*31)*10000%1}));
     seeded.sort((a,b)=>a.r-b.r);
     return seeded.slice(0,3).map(x=>x.m);
   }, [meals, masterMenus, gap, effect, shuffleSeed]);
 
-  // ── ACTIONS ──
-  const handleSave = async (mName, mP, mType) => {
-    const now = new Date();
-    const ts = `${toJSTDateStr()}T${now.toTimeString().split(' ')[0]}`;
-    const newMeal = { _id: genId(), timestamp: ts, type: mType, main: mName, protein: parseFloat(mP) };
-    setMeals(prev => [newMeal, ...prev]);
-    showToast('SAVED');
-    try {
-      await fetch(GAS, { method:'POST', mode:'no-cors', body: JSON.stringify({ _action:'save', ...newMeal }) });
-    } catch(e) {}
-  };
+  // ── STATS LOGIC ──
+  const weekDays = useMemo(() => {
+    return Array.from({length:7},(_,i)=>{
+      const d = new Date(); d.setDate(d.getDate()-(6-i));
+      const ds = toJSTDateStr(d);
+      const tot = meals.filter(m=>m.timestamp?.toString().replace(/\//g,'-').split(/[T ]/)[0]===ds).reduce((s,m)=>s+m.protein,0);
+      return {lbl:DAY_JP[d.getDay()],tot,isToday:ds===todayStr,ok:tot>=TARGET,has:tot>0};
+    });
+  },[meals,todayStr]);
+
+  const chartSvg = useMemo(()=>{
+    const W=320,H=120,PL=30,PR=8,PT=18,PB=26,cW=W-PL-PR,cH=H-PT-PB;
+    const maxV=Math.max(...weekDays.map(d=>d.tot),TARGET*1.1,10);
+    const xStep=cW/6;
+    const grids=[0,Math.round(TARGET/2),TARGET].map(v=>{
+      const y=PT+cH-(v/maxV)*cH;
+      const isT=v===TARGET;
+      return `<line stroke="${isT?'rgba(16,185,129,0.22)':'#161a28'}" stroke-width="1" ${isT?'stroke-dasharray="4,3"':''} x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}"/>
+      <text font-family="var(--mono)" font-size="7" fill="${isT?'rgba(16,185,129,0.5)':'#404660'}" text-anchor="end" x="${PL-3}" y="${(y+2.5).toFixed(1)}">${v}</text>`;
+    }).join('');
+    const pts=weekDays.map((d,i)=>({x:PL+i*xStep,y:PT+cH-(d.tot/maxV)*cH,d}));
+    const lineD=pts.map((p,i)=>i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const dots=pts.map(p=>`
+      ${p.d.has?`<text font-family="var(--mono)" font-size="7" fill="${p.d.ok?'#10b981':'#404660'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(p.y-8).toFixed(1)}">${p.d.tot.toFixed(0)}</text>`:''}
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.d.isToday?4.5:3}" fill="${p.d.ok?'#10b981':p.d.has?'#1f2436':'#0d0f18'}" stroke="#10b981" stroke-width="1.5"/>
+      <text font-family="var(--mono)" font-size="8" fill="${p.d.isToday?'#10b981':'#404660'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(PT+cH+14).toFixed(1)}">${p.d.lbl}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;overflow:visible">${grids}<path fill="none" stroke="#10b981" stroke-width="1.8" d="${lineD}"/>${dots}</svg>`;
+  },[weekDays]);
 
   const selDateLbl = useMemo(() => {
     const d = new Date(selDate+'T12:00:00');
     return `${d.getMonth()+1}/${d.getDate()}(${DAY_JP[d.getDay()]})`;
   }, [selDate]);
 
-  const card = (extra={}) => ({background:'var(--s1)',border:'1px solid var(--bd)',borderRadius:16,...extra});
+  const cardStyle = (extra={}) => ({background:'var(--s1)',border:'1px solid var(--bd)',borderRadius:16,...extra});
   const mono = (extra={}) => ({fontFamily:'var(--mono)',...extra});
   const serif = (sz=20,extra={}) => ({fontFamily:'var(--serif)',fontSize:sz,color:'var(--em)',lineHeight:1,...extra});
 
   return (
     <div style={{maxWidth:430,margin:'0 auto',height:'100dvh',display:'flex',flexDirection:'column',background:'var(--bg)',position:'relative',overflow:'hidden',borderLeft:'1px solid var(--bd)',borderRight:'1px solid var(--bd)'}}>
       <Toast msg={toast}/>
+      
+      {/* ── HEADER ── */}
       <header style={{background:'linear-gradient(180deg,var(--s1) 0%,var(--bg) 100%)',borderBottom:'1px solid var(--bd)',padding:'14px 16px 16px',flexShrink:0,zIndex:10}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
           <div>
-            <div style={{fontFamily:'var(--serif)',fontSize:18,color:'var(--em)'}}>Meal OS</div>
-            <div style={mono({fontSize:7,color:'var(--mu)',marginTop:3})}>DYNAMIC MASTER MODE</div>
+            <div style={{fontFamily:'var(--serif)',fontSize:18,color:'var(--em)',letterSpacing:'0.03em'}}>Meal OS</div>
+            <div style={mono({fontSize:7,color:'var(--mu)',marginTop:3,letterSpacing:'0.2em'})}>STRATEGIC PROTEIN MONITOR</div>
           </div>
-          <button onClick={fetchData} style={{width:30,height:30,background:'var(--s2)',border:'1px solid var(--bd)',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--mu)'}}>
-            <RefreshIcon cls={syncing?'spin':''}/>
-          </button>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={mono({fontSize:8,color:'var(--mu)',background:'var(--s2)',border:'1px solid var(--bd)',padding:'4px 10px',borderRadius:20})}>{selDateLbl}</div>
+            <button onClick={fetchData} style={{width:32,height:32,background:'var(--s2)',border:'1px solid var(--bd)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--mu)',cursor:'pointer'}}>
+              <RefreshIcon cls={syncing?'spin':''}/>
+            </button>
+          </div>
         </div>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:9}}>
-          <div style={mono({fontSize:7.5,color:'var(--mu)'})}>{selDate===todayStr?'Today':'Selected'} / {TARGET}g</div>
+          <div style={mono({fontSize:7.5,color:'var(--mu)'})}>{selDate===todayStr?'Today':'Selected'} / TARGET {TARGET}g</div>
           <div style={{display:'flex',alignItems:'baseline',gap:3}}>
             <span style={serif(32)}>{totalP.toFixed(1)}</span><span style={mono({fontSize:9,color:'var(--mu)'})}>g</span>
           </div>
         </div>
         <div style={{height:2,background:'var(--bd)',borderRadius:1,marginBottom:8,position:'relative'}}>
-          <div style={{height:'100%',background:'linear-gradient(90deg,#065f46,var(--em))',width:`${pct}%`,transition:'width 0.8s ease-out'}}/>
+          <div style={{height:'100%',background:'linear-gradient(90deg,#065f46,var(--em))',width:`${pct}%`,transition:'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'}}/>
         </div>
       </header>
 
+      {/* ── MAIN ── */}
       <main style={{flex:1,overflowY:'auto'}} className="scroll">
+        
+        {/* ── LOG TAB ── */}
         {tab==='log' && (
           <div style={{padding:'14px 14px 120px'}} className="fade-up">
-            <div style={{...card(),padding:16,marginBottom:12}}>
+            <div style={{...cardStyle(),display:'flex',alignItems:'center',padding:4,gap:2,marginBottom:10}}>
+              <button onClick={()=> { const d=new Date(selDate+'T12:00:00'); d.setDate(d.getDate()-1); setSelDate(toJSTDateStr(d)) }} style={{width:38,height:38,background:'transparent',border:'none',color:'var(--mu)'}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <div style={{flex:1,textAlign:'center'}}>
+                <div style={mono({fontSize:13,color:'var(--em)',fontWeight:500})}>{selDateLbl}</div>
+                {selDate!==todayStr && <button onClick={()=>setSelDate(todayStr)} style={{background:'var(--em)',color:'var(--bg)',border:'none',borderRadius:8,fontSize:7,padding:'2px 8px',marginTop:4,fontWeight:700}}>TODAY</button>}
+              </div>
+              <button onClick={()=> { const d=new Date(selDate+'T12:00:00'); d.setDate(d.getDate()+1); if(toJSTDateStr(d)<=todayStr) setSelDate(toJSTDateStr(d)) }} style={{width:38,height:38,background:'transparent',border:'none',color:'var(--mu)',opacity:selDate===todayStr?0.1:1}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+
+            {selDate===todayStr && (
+              <button onClick={()=>handleSave('朝セット', 45, '朝')} style={{width:'100%',...cardStyle(),padding:12,display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10,cursor:'pointer'}}>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{width:36,height:36,background:'var(--em-dim)',borderRadius:11,display:'flex',alignItems:'center',justifyContent:'center',fontSize:17}}>🥚</div>
+                  <div style={{textAlign:'left'}}>
+                    <div style={{fontSize:13,fontWeight:700}}>朝セットを記録</div>
+                    <div style={mono({fontSize:7.5,color:'var(--mu)'})}>45.0g P — 卵・納豆・ヨーグルト</div>
+                  </div>
+                </div>
+                <RefreshIcon/>
+              </button>
+            )}
+
+            <div style={{...cardStyle(),padding:16,marginBottom:12}}>
               <div style={{display:'flex',background:'var(--bg)',borderRadius:10,padding:3,gap:2,marginBottom:12}}>
                 {['朝','昼','夜','他'].map(t=>(
-                  <button key={t} onClick={()=>setMealType(t)} style={{flex:1,padding:'10px 0',fontFamily:'var(--mono)',fontSize:9,borderRadius:7,background:mealType===t?'var(--em)':'transparent',color:mealType===t?'var(--bg)':'var(--mu)'}}>{t}</button>
+                  <button key={t} onClick={()=>setMealType(t)} style={{flex:1,padding:'10px 0',fontFamily:'var(--mono)',fontSize:9,borderRadius:7,background:mealType===t?'var(--em)':'transparent',color:mealType===t?'var(--bg)':'var(--mu)',fontWeight:700}}>{t}</button>
                 ))}
               </div>
-              <input value={mainMenu} onChange={e=>setMainMenu(e.target.value)} placeholder="主菜（タンパク源）" style={{width:'100%',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:13,fontSize:14,color:'var(--tx)',outline:'none',marginBottom:12}}/>
+              <input value={mainMenu} onChange={e=>setMainMenu(e.target.value)} placeholder="主菜（タンパク源）" style={{width:'100%',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:14,fontSize:14,color:'var(--tx)',outline:'none',marginBottom:12}}/>
               <div style={{background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:12,marginBottom:12}}>
                 <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
-                  <span style={mono({fontSize:7.5,color:'var(--mu)'})}>Protein</span>
+                  <span style={mono({fontSize:7.5,color:'var(--mu)'})}>PROTEIN</span>
                   <span style={serif(24)}>{Number(protein).toFixed(1)}g</span>
                 </div>
-                <input type="range" min="0" max="80" step="0.5" value={protein} onChange={e=>setProtein(e.target.value)}/>
+                <input type="range" min="0" max="110" step="0.5" value={protein} onChange={e=>setProtein(e.target.value)}/>
               </div>
-              <button onClick={()=>handleSave(mainMenu, protein, mealType)} style={{width:'100%',background:'var(--em)',color:'var(--bg)',padding:16,borderRadius:11,fontFamily:'var(--mono)',fontWeight:700}}>SAVE RECORD →</button>
+              <button onClick={()=>handleSave(mainMenu, protein, mealType)} style={{width:'100%',background:'var(--em)',color:'var(--bg)',padding:16,borderRadius:11,fontFamily:'var(--mono)',fontWeight:700,letterSpacing:'0.1em'}}>RECORD →</button>
             </div>
 
             <div style={mono({fontSize:7.5,color:'var(--mu)',marginBottom:9,display:'flex',alignItems:'center',gap:8})}>
               RECORDS ({filteredMeals.length}) <div style={{flex:1,height:1,background:'var(--bd)'}}/>
             </div>
-            {filteredMeals.map((m, i)=>(
-              <div key={m._id + i} style={{...card(),padding:'11px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:7}}>
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{width:28,height:28,background:'var(--bg)',borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'var(--mu)'}}>{m.type}</div>
-                  <div><div style={{fontSize:13,fontWeight:700}}>{m.main}</div></div>
+            {filteredMeals.length === 0 ? <div style={{textAlign:'center',padding:40,color:'var(--mu)',fontSize:10}}>No records today.</div> : 
+              filteredMeals.map((m, i)=>(
+                <div key={m._id} className="fade-up" style={{...cardStyle(),padding:'11px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:7}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <div style={{width:28,height:28,background:'var(--bg)',borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'var(--mu)',fontWeight:700}}>{m.type}</div>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700}}>{m.main}</div>
+                      <div style={mono({fontSize:7,color:'var(--mu)'})}>{m.timestamp?.split(/[T ]/)[1]?.slice(0,5)}</div>
+                    </div>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:12}}>
+                    <span style={serif(18)}>{Number(m.protein).toFixed(1)}<span style={{fontSize:8,marginLeft:1}}>g</span></span>
+                    <div style={{display:'flex',flexDirection:'column',gap:4,borderLeft:'1px solid var(--bd)',paddingLeft:10}}>
+                      <button onClick={()=>setEditMeal(m)} style={{background:'none',border:'none',color:'var(--mu)',cursor:'pointer'}}><EditIcon/></button>
+                      <button onClick={()=>setDelMeal(m)} style={{background:'none',border:'none',color:'var(--mu)',cursor:'pointer'}}><TrashIcon/></button>
+                    </div>
+                  </div>
                 </div>
-                <span style={serif(18)}>{Number(m.protein).toFixed(1)}g</span>
-              </div>
-            ))}
+              ))
+            }
           </div>
         )}
 
+        {/* ── SUGGEST TAB ── */}
         {tab==='suggest' && (
           <div style={{padding:'14px 14px 120px'}} className="fade-up">
-            <div style={{background:'linear-gradient(135deg,var(--s2),#080a14)',border:'1px solid var(--bd)',borderRadius:16,padding:16,marginBottom:10}}>
-              <div style={mono({fontSize:7,color:'var(--em)',marginBottom:6})}>DYNAMIC STRATEGY</div>
-              <div style={serif(28, {color:'var(--tx)'})}>{gap.toFixed(1)}<span style={{fontSize:12,marginLeft:4}}>g 不足</span></div>
-              <div style={mono({fontSize:6,color:'var(--mu)',marginTop:4})}>提案数: {masterMenus.length}品から最適化</div>
-            </div>
-            {suggestions.map((opt,i)=>(
-              <div key={i} style={{...card(),padding:16,marginBottom:8}}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-                  <div>
-                    <div style={{fontFamily:'var(--serif)',fontSize:17}}>{opt.main}</div>
-                    <div style={{fontSize:10,color:'var(--mu)'}}>副菜：{opt.side}</div>
-                  </div>
-                  <div style={serif(24)}>{opt.p.toFixed(1)}g</div>
+            <div style={{background:'linear-gradient(135deg,var(--s2),#080a14)',border:'1px solid var(--bd)',borderRadius:18,padding:18,marginBottom:12,position:'relative',overflow:'hidden'}}>
+              <div style={mono({fontSize:7,color:'var(--em)',letterSpacing:'0.2em',marginBottom:8,fontWeight:700})}>TONIGHT'S STRATEGY</div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end'}}>
+                <div>
+                  <div style={mono({fontSize:8,color:'var(--mu)',marginBottom:4})}>夕食で補うべき量</div>
+                  <div style={serif(32, {color:'var(--tx)'})}>{gap.toFixed(1)}<span style={{fontSize:14,marginLeft:4,color:'var(--em)'}}>g 不足</span></div>
                 </div>
-                <button onClick={()=> { handleSave(opt.main, opt.p, '夜'); setTab('log'); }} style={{width:'100%',background:'var(--em-mid)',color:'var(--em)',border:'1px solid var(--em)',borderRadius:8,padding:10,fontSize:9,fontWeight:700}}>CHOOSE THIS →</button>
+                <div style={{fontSize:28,opacity:0.6}}>🌙</div>
+              </div>
+            </div>
+
+            <div style={{display:'flex',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:10,padding:3,gap:2,marginBottom:12}}>
+              {[['all','ALL'],['burn','燃焼'],['recovery','回復'],['antiaging','老化']].map(([v,l])=>(
+                <button key={v} onClick={()=>setEffect(v)} style={{flex:1,padding:'10px 0',fontFamily:'var(--mono)',fontSize:8,fontWeight:700,border:'none',borderRadius:7,background:effect===v?'var(--em)':'transparent',color:effect===v?'var(--bg)':'var(--mu)'}}>{l}</button>
+              ))}
+            </div>
+
+            {gap<=0 
+              ? <div style={{textAlign:'center',padding:60,fontFamily:'var(--serif)',color:'var(--em)',fontSize:20}}>Goal Achieved ✓</div> 
+              : suggestions.map((opt,i)=>(
+                <div key={i} style={{...cardStyle({border:i===0?'1px solid rgba(16,185,129,0.4)':'1px solid var(--bd)'}),padding:18,marginBottom:10}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                    <div>
+                      <div style={mono({fontSize:7,color:'var(--mu)',marginBottom:4})}>OPTION {['A','B','C'][i]} {i===0&&'• BEST'}</div>
+                      <div style={{fontFamily:'var(--serif)',fontSize:19,color:'var(--tx)'}}>{opt.main}</div>
+                      <div style={{fontSize:10,color:'var(--mu)',marginTop:2}}>副菜：{opt.side}</div>
+                    </div>
+                    <div style={serif(26)}>{opt.p.toFixed(1)}<span style={{fontSize:10}}>g</span></div>
+                  </div>
+                  {opt.effect && (
+                    <div style={{fontSize:8,color:'var(--mu)',background:'var(--bg)',padding:10,borderRadius:10,marginBottom:12,lineHeight:1.6}} 
+                      dangerouslySetInnerHTML={{__html: opt.effect.replace(/<em>/g, '<em style="color:var(--em);font-style:normal;font-weight:700">')}}/>
+                  )}
+                  <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                    {(opt.tags || []).slice(0,3).map(t=>(
+                      <span key={t} style={{fontSize:6,fontFamily:'var(--mono)',background:'var(--s2)',color:'var(--mu)',padding:'3px 7px',borderRadius:5,border:'1px solid var(--bd)'}}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+            ))}
+            
+            <button onClick={()=>setShuffleSeed(s=>s+1)} style={{display:'flex',alignItems:'center',gap:7,margin:'12px auto',background:'transparent',border:'none',color:'var(--mu)',fontSize:9,fontFamily:'var(--mono)'}}>
+              <ShuffleIcon/> SHUFFLE MENU
+            </button>
+          </div>
+        )}
+
+        {/* ── STATS TAB ── */}
+        {tab==='stats' && (
+          <div style={{padding:'14px 14px 120px'}} className="fade-up">
+            <div style={mono({fontSize:7.5,color:'var(--mu)',marginBottom:9})}>7-DAY TREND</div>
+            <div style={{...cardStyle(),padding:16,marginBottom:20}}>
+              <div style={{width:'100%',height:130,marginBottom:2}} dangerouslySetInnerHTML={{__html:chartSvg}}/>
+            </div>
+            
+            <div style={mono({fontSize:7.5,color:'var(--mu)',marginBottom:9})}>HISTORY LOG</div>
+            {[...meals].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).slice(0,12).map((m,i)=>(
+              <div key={i} style={{...cardStyle(),padding:12,display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:7}}>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{fontSize:8,color:'var(--mu)',background:'var(--bg)',padding:'4px 6px',borderRadius:6}}>{m.type}</div>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700}}>{m.main}</div>
+                    <div style={mono({fontSize:7,color:'var(--mu)'})}>{new Date(m.timestamp).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}</div>
+                  </div>
+                </div>
+                <div style={serif(16)}>{Number(m.protein).toFixed(1)}g</div>
               </div>
             ))}
-            <button onClick={()=>setShuffleSeed(s=>s+1)} style={{display:'flex',alignItems:'center',gap:7,margin:'10px auto',background:'transparent',border:'none',color:'var(--mu)',fontSize:10}}><ShuffleIcon/> SHUFFLE</button>
           </div>
         )}
       </main>
 
-      <nav style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(4,5,10,0.95)',backdropFilter:'blur(20px)',borderTop:'1px solid var(--bd)',display:'flex',justifyContent:'space-around',padding:`10px 0 max(10px,env(safe-area-inset-bottom))`}}>
-        {['log','suggest'].map(t=>(
-          <div key={t} onClick={()=>setTab(t)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,color:tab===t?'var(--em)':'var(--mu)',padding:'8px 20px',borderRadius:12,background:tab===t?'var(--em-dim)':'transparent'}}>
-            <div style={mono({fontSize:8,fontWeight:700})}>{t.toUpperCase()}</div>
+      {/* ── NAV ── */}
+      <nav style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(4,5,10,0.96)',backdropFilter:'blur(24px)',borderTop:'1px solid var(--bd)',display:'flex',justifyContent:'space-around',padding:`10px 0 max(12px,env(safe-area-inset-bottom))`,zIndex:100}}>
+        {[
+          {id:'log',lbl:'LOG',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>},
+          {id:'suggest',lbl:'DINNER',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>},
+          {id:'stats',lbl:'STATS',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
+        ].map(t=>(
+          <div key={t.id} onClick={()=>setTab(t.id)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:5,color:tab===t.id?'var(--em)':'var(--mu)',padding:'8px 25px',borderRadius:14,background:tab===t.id?'var(--em-dim)':'transparent',cursor:'pointer',transition:'all 0.3s'}}>
+            {t.icon}
+            <span style={mono({fontSize:7.5,fontWeight:900,letterSpacing:'0.1em'})}>{t.lbl}</span>
           </div>
         ))}
       </nav>
+
+      {/* ── MODALS ── */}
+      {editMeal && <EditModal meal={editMeal} onSave={handleEditSave} onCancel={()=>setEditMeal(null)}/>}
+      {delMeal && <ConfirmModal meal={delMeal} onConfirm={handleDelete} onCancel={()=>setDelMeal(null)}/>}
     </div>
   );
 };
