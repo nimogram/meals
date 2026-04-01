@@ -13,39 +13,79 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
-  --bg:#04050a;--s1:#090b12;--s2:#0e1019;
-  --bd:#161a28;--brt:#1f2436;
-  --em:#10b981;--em-dim:rgba(16,185,129,0.07);--em-mid:rgba(16,185,129,0.16);--em-glow:rgba(16,185,129,0.3);
-  --tx:#dce0ec;--mu:#404660;--mu2:#1f2436;--red:#e05a6a;--yel:#facc15;
-  --mono:'DM Mono',monospace;--serif:'DM Serif Display',serif;--sans:'Noto Sans JP',sans-serif;
+  --bg:#05060f;
+  --glass:rgba(18, 20, 36, 0.7);
+  --glass-brt:rgba(255, 255, 255, 0.03);
+  --bd:rgba(255, 255, 255, 0.08);
+  --em:#bef264; /* Healthy Lime Green */
+  --em-grad:linear-gradient(135deg, #bef264 0%, #84cc16 100%);
+  --em-glow:rgba(190, 242, 100, 0.3);
+  --tx:#f1f3f9;
+  --mu:#64748b;
+  --red:#ff4b5c;
+  --yel:#fbbf24;
+  --mono:'DM Mono',monospace;
+  --serif:'DM Serif Display',serif;
+  --sans:'Noto Sans JP',sans-serif;
 }
-html,body{height:100%;overflow:hidden;background:var(--bg);}
-body{font-family:var(--sans);color:var(--tx);}
-body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);}
+body::before{
+  content:'';position:fixed;inset:0;
+  background: radial-gradient(circle at 50% -20%, #1e293b 0%, transparent 50%),
+              radial-gradient(circle at 0% 100%, #0f172a 0%, transparent 40%);
+  pointer-events:none;z-index:0;
+}
 
-input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--brt);border-radius:2px;outline:none;cursor:pointer;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:var(--em);border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 12px var(--em-glow);cursor:pointer;}
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;background:rgba(255,255,255,0.05);border-radius:10px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:var(--tx);border-radius:50%;box-shadow:0 0 20px rgba(0,0,0,0.5);cursor:pointer;border:4px solid var(--em);}
 
 .scroll::-webkit-scrollbar{display:none;}
 .scroll{scrollbar-width:none;}
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 @keyframes spin{to{transform:rotate(360deg);}}
-@keyframes popIn{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
-.fade-up{animation:fadeUp 0.3s ease-out forwards;}
+.animate-slide{animation:slideIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;}
+.animate-fade{animation:fadeIn 0.8s ease-out forwards;}
 .spin{animation:spin 1s linear infinite;}
-.pop-in{animation:popIn 0.22s cubic-bezier(0.34,1.4,0.64,1) forwards;}
 
-/* 3D立体ボタン */
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--bd);
+  border-top: 1px solid var(--glass-brt);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.btn-luxury {
+  background: var(--em-grad);
+  color: #05060f;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  box-shadow: 0 8px 20px var(--em-glow);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: none;
+  cursor: pointer;
+}
+.btn-luxury:active { transform: scale(0.96); box-shadow: 0 4px 10px var(--em-glow); }
+
 .btn-3d {
-  background: linear-gradient(180deg, #161c2d 0%, #0c101d 100%);
-  border: 1px solid #1f2943;
-  box-shadow: 0 4px 0 #080a14, 0 8px 15px rgba(0,0,0,0.5);
-  transition: all 0.1s active;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid #334155;
+  box-shadow: 0 4px 0 #020617, 0 8px 15px rgba(0,0,0,0.5);
+  transition: all 0.1s;
+  cursor: pointer;
 }
 .btn-3d:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #080a14, 0 4px 8px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 0 #020617, 0 4px 8px rgba(0,0,0,0.5);
+}
+
+.tab-nav {
+  background: rgba(10, 12, 22, 0.8);
+  backdrop-filter: blur(30px);
+  border-top: 1px solid var(--bd);
 }
 </style>
 </head>
@@ -58,77 +98,42 @@ const { useState, useEffect, useMemo, useCallback } = React;
 const GAS = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
 const TARGET = 120;
 
-// ── CONSTANTS ──
+// Icons
+function RefreshIcon({cls=""}) {
+  return (
+    <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+      <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+    </svg>
+  );
+}
+
+function ShuffleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="var(--em)" strokeWidth="2.5" width="14" height="14">
+      <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+    </svg>
+  );
+}
+
 const ALL_MONTHS = [0,1,2,3,4,5,6,7,8,9,10,11];
 const ALL_DOW = [0,1,2,3,4,5,6];
 const WEEKDAYS = [1,2,3,4,5];
 
-// ── INITIAL DATA (個別推奨コメントを強化) ──
 const INITIAL_MENUS = [
-  {main:"牛肉ステーキ",p:40,side:"ブロッコリーサラダ",tags:["牛","赤身","筋肥大"],cat:"bulkup",reason:"豊富な亜鉛と天然のクレアチンが、今日のトレーニングを確かな筋肥大へと繋げます。",season:ALL_MONTHS,dow:ALL_DOW},
-  {main:"チキンステーキ",p:40,side:"アボカド",tags:["鶏","低脂質","疲労回復"],cat:"recovery",reason:"アンセリンによる強力な抗疲労作用で、睡眠中に脳と体のダメージをリセットします。",season:ALL_MONTHS,dow:ALL_DOW},
-  {main:"生ラム肉のグリル",p:32,side:"焼き玉ねぎ・アスパラ",tags:["ラム","筋肥大","亜鉛"],cat:"bulkup",reason:"L-カルニチンの代謝支援により、無駄な脂肪を削ぎ落としながら筋肉をビルドアップします。",season:ALL_MONTHS,dow:ALL_DOW},
-  {main:"サーモンステーキ",p:28,side:"アスパラ",tags:["サーモン","アスタキサンチン","抗老化"],cat:"antiaging",reason:"最強の抗酸化物質アスタキサンチンが、細胞の酸化を抑え、内側から若々しい血管を保ちます。",season:ALL_MONTHS,dow:ALL_DOW},
-  {main:"サバ味噌煮缶",p:20.9,side:"雑穀米・生姜",tags:["サバ","抗老化","Tie2"],cat:"antiaging",reason:"EPA/DHAが毛細血管のTie2を活性化。血流の質を改善し、肌と思考の透明感を高めます。",season:ALL_MONTHS,dow:WEEKDAYS}
+  {main:"黒毛和牛のグリル",p:40,side:"ケールとナッツのサラダ",tags:["Premium","筋肥大","亜鉛"],cat:"bulkup",reason:"希少なクレアチンと良質な脂質が、細胞に戦略的な活力を供給します。",season:ALL_MONTHS,dow:ALL_DOW},
+  {main:"大山鶏のハーブロースト",p:40,side:"完熟アボカド",tags:["Recovery","低脂質","アンセリン"],cat:"recovery",reason:"高純度なアンセリンが、深夜の思考疲れをリセット。翌朝を最高の状態で迎えるために。",season:ALL_MONTHS,dow:ALL_DOW},
+  {main:"生ラム肉のタリアータ",p:32,side:"トリュフ香る焼き玉ねぎ",tags:["Metabolism","燃焼","L-カルニチン"],cat:"bulkup",reason:"カルニチンのブーストにより、脂肪燃焼と筋合成を同時に最適化。知的な身体管理の極致です。",season:ALL_MONTHS,dow:ALL_DOW},
+  {main:"キングサーモンの低温調理",p:28,side:"季節のアスパラガス",tags:["Anti-Aging","アスタキサンチン","Tie2"],cat:"antiaging",reason:"強力な抗酸化成分が血管から若々しさをリビルド。時間を味方につける選択です。",season:ALL_MONTHS,dow:ALL_DOW},
+  {main:"極みサバの生姜煮",p:21,side:"五穀米のガレット",tags:["Vascular","DHA/EPA","Tie2"],cat:"antiaging",reason:"血管の弾力を守るTie2活性化メニュー。ビジネスの瞬発力を支える血流を実現します。",season:ALL_MONTHS,dow:WEEKDAYS}
 ];
 
-const toJSTDateStr = (d = new Date()) => {
-  return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-};
+const toJSTDateStr = (d = new Date()) => d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
 const DAY_JP = ['日','月','火','水','木','金','土'];
 
-const RefreshIcon = ({cls=""}) => (
-  <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
-    <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-  </svg>
-);
-const EditIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>);
-const TrashIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>);
-const ShuffleIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="var(--em)" strokeWidth="2.5" width="14" height="14">
-    <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
-  </svg>
-);
-
 const Toast = ({msg}) => msg ? (
-  <div style={{position:'fixed',top:14,left:'50%',transform:'translateX(-50%)',background:'var(--em)',color:'var(--bg)',padding:'7px 18px',borderRadius:20,fontFamily:'var(--mono)',fontSize:9,fontWeight:700,zIndex:999,animation:'fadeUp 0.2s ease-out',boxShadow:'0 4px 20px var(--em-glow)'}}>{msg}</div>
+  <div style={{position:'fixed',top:24,left:'50%',transform:'translateX(-50%)',background:'var(--em)',color:'#000',padding:'10px 24px',borderRadius:30,fontFamily:'var(--mono)',fontSize:10,fontWeight:900,zIndex:999,animation:'slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',boxShadow:'0 10px 30px var(--em-glow)'}}>{msg}</div>
 ) : null;
-
-const ConfirmModal = ({meal, onConfirm, onCancel}) => (
-  <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',backdropFilter:'blur(10px)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-    <div className="pop-in" style={{background:'var(--s1)',border:'1px solid var(--bd)',borderRadius:20,padding:28,width:'100%',maxWidth:340,textAlign:'center'}}>
-      <div style={{fontSize:28,marginBottom:12}}>🗑️</div>
-      <div style={{fontFamily:'var(--serif)',fontSize:17,color:'var(--tx)',marginBottom:6}}>削除しますか？</div>
-      <div style={{background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:9,padding:'9px 13px',fontSize:12,fontWeight:700,color:'var(--tx)',marginBottom:18}}>{meal?.main}</div>
-      <div style={{display:'flex',gap:9}}>
-        <button onClick={onCancel} style={{flex:1,background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:12,fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)'}}>CANCEL</button>
-        <button onClick={onConfirm} style={{flex:1,background:'#251018',borderRadius:11,padding:12,fontFamily:'var(--mono)',fontSize:8,color:'var(--red)'}}>DELETE</button>
-      </div>
-    </div>
-  </div>
-);
-
-const EditModal = ({meal, onSave, onCancel}) => {
-  const [main, setMain] = useState(meal.main);
-  const [p, setP] = useState(Number(meal.protein));
-  return (
-    <div onClick={(e)=>e.target===e.currentTarget&&onCancel()} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',backdropFilter:'blur(8px)',zIndex:300,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
-      <div className="slide-in" style={{background:'var(--s1)',borderRadius:'22px 22px 0 0',padding:20,width:'100%',maxWidth:430,paddingBottom:`max(22px, env(safe-area-inset-bottom))`}}>
-        <div style={{width:34,height:3,background:'var(--bd)',borderRadius:2,margin:'0 auto 18px'}}/>
-        <input value={main} onChange={e=>setMain(e.target.value)} style={{width:'100%',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:13,fontSize:14,color:'var(--tx)',outline:'none',marginBottom:14}}/>
-        <div style={{background:'var(--bg)',borderRadius:11,padding:12,marginBottom:14}}>
-          <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
-            <span style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)'}}>Protein</span>
-            <span style={{fontFamily:'var(--serif)',fontSize:24,color:'var(--em)'}}>{Number(p).toFixed(1)}g</span>
-          </div>
-          <input type="range" min="0" max="110" step="0.5" value={p} onChange={e=>setP(e.target.value)}/>
-        </div>
-        <button onClick={()=>onSave({...meal,main,protein:parseFloat(p)})} style={{width:'100%',background:'var(--em)',borderRadius:11,padding:13,fontFamily:'var(--mono)',fontWeight:700}}>UPDATE →</button>
-      </div>
-    </div>
-  );
-};
 
 const App = () => {
   const todayStr = useMemo(() => toJSTDateStr(new Date()), []);
@@ -140,15 +145,12 @@ const App = () => {
   const [selDate, setSelDate] = useState(todayStr);
   const [mealType, setMealType] = useState('昼');
   const [mainMenu, setMainMenu] = useState('');
-  const [sideMenu, setSideMenu] = useState('');
   const [protein, setProtein] = useState(25);
   const [effect, setEffect] = useState('all');
   const [shuffleSeed, setShuffleSeed] = useState(0);
-  const [editMeal, setEditMeal] = useState(null);
-  const [delMeal, setDelMeal] = useState(null);
   const [showMorningPrompt, setShowMorningPrompt] = useState(false);
 
-  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),2800); };
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),3000); };
 
   const fetchData = useCallback(async () => {
     setSyncing(true);
@@ -156,174 +158,80 @@ const App = () => {
       const r = await fetch(GAS);
       const data = await r.json();
       const historyRaw = Array.isArray(data) ? data : (data.history || []);
-      
-      const normalizedHistory = historyRaw
-        .filter(m => (m.Main_Menu || m.main || m.mainMenu) && (m.Timestamp || m.timestamp))
-        .map(m => {
-          const main = m.Main_Menu || m.main || m.mainMenu || "Untitled";
-          const proteinRaw = m.Protein_g || m.protein || m.p || 0;
-          const type = m.Meal_Type || m.type || m.mealType || "他";
-          const side = m.Side_Menu || m.side || "-";
-          let ts = m.Timestamp || m.timestamp || new Date().toISOString();
-          if (typeof ts === 'string') ts = ts.replace(/\//g, '-');
-          
-          return {
-            ...m,
-            _id: m._id || genId(),
-            main: main,
-            protein: Number(proteinRaw),
-            type: type,
-            side: side,
-            timestamp: ts
-          };
-        });
-
-      setMeals(normalizedHistory);
-
-      if (data.menus && Array.isArray(data.menus) && data.menus.length > 0) {
+      setMeals(historyRaw.map(m => ({
+        ...m,
+        _id: m._id || genId(),
+        main: m.Main_Menu || m.main || "No Title",
+        protein: Number(m.Protein_g || m.protein || 0),
+        type: m.Meal_Type || m.type || "他",
+        timestamp: m.Timestamp || m.timestamp || new Date().toISOString()
+      })));
+      if (data.menus?.length > 0) {
         setMasterMenus(data.menus.map(m => ({
           ...m,
-          p: Number(m.Protein_g || m.p || 20),
-          main: m.Main_Menu || m.main || "Untitled",
-          side: m.Side_Menu || m.side || "-",
-          cat: (m.cat === 'burn' || m.cat === 'muscle') ? 'bulkup' : m.cat,
+          main: m.main || m.Main_Menu,
+          p: Number(m.p || m.Protein_g || 20),
           reason: m.reason || "タンパク質を補完し、規律ある身体作りをサポートします。",
-          season: typeof m.season === 'string' ? JSON.parse(m.season) : (m.season || ALL_MONTHS),
-          dow: typeof m.dow === 'string' ? JSON.parse(m.dow) : (m.dow || ALL_DOW),
-          tags: Array.isArray(m.tags) ? m.tags : (typeof m.tags === 'string' ? m.tags.split(',') : [])
+          tags: Array.isArray(m.tags) ? m.tags : (m.tags ? m.tags.split(',') : [])
         })));
-        showToast('SYNC: COMPLETE');
-      } else {
-        showToast('SYNC: HISTORY ONLY');
       }
-    } catch(e) { showToast('OFFLINE'); } finally { setSyncing(false); }
+      showToast('SYSTEM SYNCED');
+    } catch(e) { showToast('OFFLINE MODE'); } finally { setSyncing(false); }
   }, []);
 
-  useEffect(() => { 
-    fetchData(); 
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredMeals = useMemo(() => {
-    return meals.filter(m => {
-      if (!m.timestamp) return false;
-      const datePart = m.timestamp.toString().split(/[T ]/)[0];
-      return datePart === selDate;
-    }).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+    return meals.filter(m => m.timestamp.split(/[T ]/)[0] === selDate)
+                .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
   }, [meals, selDate]);
+
+  // 直近2日間のログ
+  const lastTwoDaysMeals = useMemo(() => {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const tStr = toJSTDateStr(today);
+    const yStr = toJSTDateStr(yesterday);
+    return meals.filter(m => {
+      const d = m.timestamp.split(/[T ]/)[0];
+      return d === tStr || d === yStr;
+    }).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }, [meals]);
 
   const totalP = useMemo(() => filteredMeals.reduce((sum, m) => sum + m.protein, 0), [filteredMeals]);
   const gap = Math.max(0, TARGET - totalP);
   const pct = Math.min(totalP / TARGET * 100, 100);
 
-  const handleSave = async (mName, mP, mType, sName = "-") => {
-    if (!mName || !mName.trim()) return;
+  const handleSave = async (mName, mP, mType) => {
+    if (!mName.trim()) return;
     const now = new Date();
-    const timeStr = now.toLocaleTimeString('ja-JP', { hour12: false });
-    const ts = `${selDate}T${timeStr}`;
-    
-    const newMeal = { 
-      _id: genId(), 
-      Timestamp: ts, 
-      Meal_Type: mType, 
-      Main_Menu: mName.trim(), 
-      Side_Menu: sName,
-      Protein_g: parseFloat(mP),
-      Is_Reception: false,
-      main: mName.trim(),
-      protein: parseFloat(mP),
-      type: mType,
-      timestamp: ts
-    };
-
+    const ts = `${selDate}T${now.toLocaleTimeString('ja-JP', { hour12: false })}`;
+    const newMeal = { _id: genId(), main: mName.trim(), protein: parseFloat(mP), type: mType, timestamp: ts };
     setMeals(prev => [newMeal, ...prev]);
     setMainMenu('');
-    setSideMenu('');
-    showToast('RECORDED');
-    try { await fetch(GAS, { method:'POST', mode:'no-cors', body: JSON.stringify({ _action:'save', ...newMeal }) }); } catch(e) {}
-  };
-
-  const handleDelete = async () => {
-    const m = delMeal;
-    if (!m) return;
-    setMeals(prev => prev.filter(x => x._id !== m._id));
-    setDelMeal(null);
-    showToast('DELETED');
-    try { 
-      const ts = m.Timestamp || m.timestamp;
-      await fetch(GAS, { method:'POST', mode:'no-cors', body: JSON.stringify({ _action:'delete', timestamp: ts }) }); 
-    } catch(e) {}
-  };
-
-  const handleEditSave = async (updated) => {
-    const mapped = {
-      ...updated,
-      Main_Menu: updated.main,
-      Protein_g: updated.protein,
-      Meal_Type: updated.type,
-      Timestamp: updated.timestamp
-    };
-    setMeals(prev => prev.map(m => m._id === updated._id ? mapped : m));
-    setEditMeal(null);
-    showToast('UPDATED');
-    try { await fetch(GAS, { method:'POST', mode:'no-cors', body: JSON.stringify({ _action:'update', ...mapped }) }); } catch(e) {}
+    showToast('HEALTH LOGGED');
+    try { await fetch(GAS, { method:'POST', mode:'no-cors', body: JSON.stringify({ _action:'save', ...newMeal, Main_Menu:newMeal.main, Protein_g:newMeal.protein, Meal_Type:newMeal.type, Timestamp:ts }) }); } catch(e) {}
   };
 
   const suggestions = useMemo(() => {
     if (gap <= 0) return [];
-    const now = new Date();
-    const mon = now.getMonth(), dow = now.getDay();
-    const ago7 = Date.now() - 7*864e5;
-    const recent = meals.filter(m=>new Date(m.timestamp).getTime()>ago7).map(m=>m.main.toLowerCase());
-    
-    let pool = masterMenus.filter(m => {
-      if(!m.main) return false;
-      const nm = m.main.toLowerCase();
-      const notRecent = !recent.some(r=>nm.includes(r)||r.includes(nm));
+    const pool = masterMenus.filter(m => {
       const catMatch = (effect === 'all' || m.cat === effect || (effect === 'bulkup' && (m.cat === 'burn' || m.cat === 'muscle')));
-      const seasonMatch = (m.season || ALL_MONTHS).includes(mon);
-      const dowMatch = (m.dow || ALL_DOW).includes(dow);
-      return notRecent && seasonMatch && dowMatch && catMatch;
+      return catMatch;
     });
-    
-    if(pool.length < 3) pool = masterMenus.filter(m => effect==='all' || m.cat===effect || (effect === 'bulkup' && (m.cat === 'burn' || m.cat === 'muscle')));
     const seeded = [...pool].map((m,i)=>({m,r:Math.sin(shuffleSeed*997+i*31)*10000%1}));
-    seeded.sort((a,b)=>a.r-b.r);
-    return seeded.slice(0,3).map(x=>x.m);
-  }, [meals, masterMenus, gap, effect, shuffleSeed]);
+    return seeded.sort((a,b)=>a.r-b.r).slice(0,3).map(x=>x.m);
+  }, [masterMenus, gap, effect, shuffleSeed]);
 
   const weekDays = useMemo(() => {
     return Array.from({length:7},(_,i)=>{
       const d = new Date(); d.setDate(d.getDate()-(6-i));
       const ds = toJSTDateStr(d);
-      const tot = meals.filter(m=>m.timestamp?.toString().split(/[T ]/)[0]===ds).reduce((s,m)=>s+m.protein,0);
+      const tot = meals.filter(m => m.timestamp.split(/[T ]/)[0] === ds).reduce((s,m)=>s+m.protein,0);
       return {lbl:DAY_JP[d.getDay()],tot,isToday:ds===todayStr,ok:tot>=TARGET,has:tot>0};
     });
   },[meals,todayStr]);
-
-  const statsSummary = useMemo(() => {
-    const okCount = weekDays.filter(d => d.ok).length;
-    const avg = weekDays.reduce((s, d) => s + d.tot, 0) / 7;
-    
-    let title = "Discipline Check";
-    let comment = "データ不足です。まずは数日のログを積み重ねましょう。";
-    let cheer = "明日は120gの壁に挑んでください。";
-
-    if (avg >= TARGET) {
-      title = "Excellent Discipline";
-      comment = `直近7日の平均摂取量は ${avg.toFixed(1)}g。完璧な規律を維持しています。`;
-      cheer = "この一貫性が、ニモさんの市場価値を支える基盤になります。継続ですよ。";
-    } else if (okCount >= 4) {
-      title = "Strong Consistency";
-      comment = `週の過半数で目標を達成。平均は ${avg.toFixed(1)}g と高水準です。`;
-      cheer = "あと少しの積み上げで完全勝利です。120gを越える快感を脳に刻みましょう。";
-    } else if (okCount >= 1) {
-      title = "Back to Routine";
-      comment = `目標達成は週 ${okCount} 回。平均 ${avg.toFixed(1)}g です。`;
-      cheer = "ニモさんのポテンシャルはこんなものではないはず。明日は本気を見せてください。";
-    }
-
-    return { title, comment, cheer };
-  }, [weekDays]);
 
   const chartSvg = useMemo(()=>{
     const W=320,H=140,PL=30,PR=8,PT=22,PB=30,cW=W-PL-PR,cH=H-PT-PB;
@@ -332,179 +240,161 @@ const App = () => {
     const grids=[0,Math.round(TARGET/2),TARGET].map(v=>{
       const y=PT+cH-(v/maxV)*cH;
       const isT=v===TARGET;
-      // イエロー点線のターゲットライン
-      return `<line stroke="${isT?'var(--yel)':'#161a28'}" stroke-width="${isT?2:1}" ${isT?'stroke-dasharray="4,3"':'stroke-dasharray="2,2"'} x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}"/>
-      <text font-family="var(--mono)" font-size="8" fill="${isT?'var(--yel)':'#404660'}" font-weight="${isT?900:400}" text-anchor="end" x="${PL-4}" y="${(y+3).toFixed(1)}">${v}</text>`;
+      return `<line stroke="${isT?'var(--yel)':'var(--bd)'}" stroke-width="${isT?2:1}" ${isT?'stroke-dasharray="4,3"':'stroke-dasharray="2,2"'} x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}"/>
+      <text font-family="var(--mono)" font-size="8" fill="${isT?'var(--yel)':'var(--mu)'}" font-weight="${isT?900:400}" text-anchor="end" x="${PL-4}" y="${(y+3).toFixed(1)}">${v}</text>`;
     }).join('');
     const pts=weekDays.map((d,i)=>({x:PL+i*xStep,y:PT+cH-(d.tot/maxV)*cH,d}));
     const lineD=pts.map((p,i)=>i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
     const dots=pts.map(p=>`
-      ${p.d.has?`<text font-family="var(--mono)" font-size="12" font-weight="900" fill="${p.d.ok?'#10b981':'#dce0ec'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(p.y-12).toFixed(1)}">${p.d.tot.toFixed(0)}</text>`:''}
-      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.d.isToday?5:3.5}" fill="${p.d.ok?'#10b981':p.d.has?'#1f2436':'#0d0f18'}" stroke="#10b981" stroke-width="1.8"/>
-      <text font-family="var(--mono)" font-size="9" fill="${p.d.isToday?'#10b981':'#404660'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(PT+cH+16).toFixed(1)}">${p.d.lbl}</text>`).join('');
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;overflow:visible">${grids}<path fill="none" stroke="#10b981" stroke-width="2" d="${lineD}"/>${dots}</svg>`;
+      ${p.d.has?`<text font-family="var(--mono)" font-size="12" font-weight="900" fill="${p.d.ok?'var(--em)':'var(--tx)'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(p.y-12).toFixed(1)}">${p.d.tot.toFixed(0)}</text>`:''}
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.d.isToday?5:3.5}" fill="${p.d.ok?'var(--em)':p.d.has?'var(--bg)':'#000'}" stroke="var(--em)" stroke-width="1.8"/>
+      <text font-family="var(--mono)" font-size="9" fill="${p.d.isToday?'var(--em)':'var(--mu)'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(PT+cH+16).toFixed(1)}">${p.d.lbl}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;overflow:visible">${grids}<path fill="none" stroke="var(--em)" stroke-width="2" d="${lineD}"/>${dots}</svg>`;
   },[weekDays]);
 
-  const selDateLbl = useMemo(() => {
-    const d = new Date(selDate+'T12:00:00');
-    return `${d.getMonth()+1}/${d.getDate()}(${DAY_JP[d.getDay()]})`;
-  }, [selDate]);
+  const statsSummary = useMemo(() => {
+    const okCount = weekDays.filter(d => d.ok).length;
+    const avg = weekDays.reduce((s,d)=>s+d.tot,0)/7;
+    if (avg >= TARGET) return { title: "Peak Discipline", cheer: "完璧な規律です。身体のキレが思考のキレを加速させます。" };
+    if (okCount >= 4) return { title: "Strong Consistency", cheer: "安定したパフォーマンスです。この一貫性が未来の肉体を作ります。" };
+    return { title: "Strategic Balance", cheer: "あと少しのタンパク質が、明日のニモさんの価値を作ります。" };
+  }, [weekDays]);
 
-  const cardStyle = (extra={}) => ({background:'var(--s1)',border:'1px solid var(--bd)',borderRadius:16,...extra});
   const mono = (extra={}) => ({fontFamily:'var(--mono)',...extra});
   const serif = (sz=20,extra={}) => ({fontFamily:'var(--serif)',fontSize:sz,color:'var(--em)',lineHeight:1,...extra});
 
   return (
-    <div style={{maxWidth:430,margin:'0 auto',height:'100dvh',display:'flex',flexDirection:'column',background:'var(--bg)',position:'relative',overflow:'hidden',borderLeft:'1px solid var(--bd)',borderRight:'1px solid var(--bd)'}}>
+    <div style={{maxWidth:430,margin:'0 auto',height:'100dvh',display:'flex',flexDirection:'column',position:'relative',overflow:'hidden'}}>
       <Toast msg={toast}/>
-      <header style={{background:'linear-gradient(180deg,var(--s1) 0%,var(--bg) 100%)',borderBottom:'1px solid var(--bd)',padding:'14px 16px 16px',flexShrink:0,zIndex:100}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+      
+      {/* Dynamic Header */}
+      <header style={{padding:'24px 24px 20px',zIndex:100}} className="animate-fade">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:tab==='stats'?0:24}}>
           <div>
-            <div style={{fontFamily:'var(--serif)',fontSize:18,color:'var(--em)'}}>Meal OS</div>
-            <div style={mono({fontSize:7,color:'var(--mu)',marginTop:3})}>STRATEGIC POLISH v7.5.5</div>
+            <h1 style={{fontFamily:'var(--serif)',fontSize:28,color:'var(--em)',letterSpacing:'-0.02em'}}>Meal OS</h1>
+            <p style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)',letterSpacing:'0.3em',marginTop:4,fontWeight:500}}>VITALITY LIME v7.6.3</p>
           </div>
-          <button onClick={fetchData} style={{width:32,height:32,background:'var(--s2)',border:'1px solid var(--bd)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--mu)',cursor:'pointer'}}>
+          <button onClick={fetchData} style={{width:40,height:40,background:'rgba(255,255,255,0.05)',borderRadius:'50%',border:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--em)',cursor:'pointer'}}>
             <RefreshIcon cls={syncing?'spin':''}/>
           </button>
         </div>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:9}}>
-          <div style={mono({fontSize:7.5,color:'var(--mu)'})}>{selDate===todayStr?'Today':'Selected'} / TARGET {TARGET}g</div>
-          <div style={{display:'flex',alignItems:'baseline',gap:3}}>
-            <span style={serif(32)}>{totalP.toFixed(1)}</span><span style={mono({fontSize:9,color:'var(--mu)'})}>g</span>
+        
+        {/* Hide Summary Card on Analysis Page per User Request */}
+        {tab !== 'stats' && (
+          <div className="glass-card animate-fade" style={{padding:'20px 24px',borderRadius:24,position:'relative',overflow:'hidden'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:12}}>
+              <span style={{fontFamily:'var(--mono)',fontSize:9,color:'var(--mu)',letterSpacing:'0.1em'}}>PROTEIN INTAKE</span>
+              <span style={{fontFamily:'var(--serif)',fontSize:42,color:'var(--tx)',lineHeight:1}}>{totalP.toFixed(1)}<span style={{fontSize:14,color:'var(--mu)',marginLeft:4}}>g</span></span>
+            </div>
+            <div style={{height:4,background:'rgba(255,255,255,0.05)',borderRadius:2,position:'relative'}}>
+              <div style={{height:'100%',background:'var(--em-grad)',width:`${pct}%`,transition:'width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)',boxShadow:'0 0 15px var(--em-glow)'}}/>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',marginTop:12,fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)'}}>
+              <span>TARGET: {TARGET}g</span>
+              <span style={{color:'var(--em)',fontWeight:900}}>{pct.toFixed(0)}% COMPLETE</span>
+            </div>
           </div>
-        </div>
-        <div style={{height:2,background:'var(--bd)',borderRadius:1,marginBottom:8,position:'relative'}}>
-          <div style={{height:'100%',background:'linear-gradient(90deg,#065f46,var(--em))',width:`${pct}%`,transition:'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'}}/>
-        </div>
+        )}
       </header>
 
-      <main style={{flex:1,overflowY:'auto'}} className="scroll">
+      <main style={{flex:1,overflowY:'auto',padding:'0 24px 120px'}} className="scroll animate-slide">
         {tab==='log' && (
-          <div style={{padding:'14px 14px 120px'}} className="fade-up">
-            <div style={{...cardStyle(),display:'flex',alignItems:'center',padding:4,gap:2,marginBottom:10}}>
-              <button onClick={()=> { const d=new Date(selDate+'T12:00:00'); d.setDate(d.getDate()-1); setSelDate(toJSTDateStr(d)) }} style={{width:38,height:38,background:'transparent',border:'none',color:'var(--mu)'}}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
-              <div style={{flex:1,textAlign:'center'}}>
-                <div style={mono({fontSize:13,color:'var(--em)',fontWeight:500})}>{selDateLbl}</div>
-                {selDate!==todayStr && <button onClick={()=>setSelDate(todayStr)} style={{background:'var(--em)',color:'var(--bg)',border:'none',borderRadius:8,fontSize:7,padding:'2px 8px',marginTop:4,fontWeight:700}}>TODAY</button>}
+          <div className="animate-slide">
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+              <button onClick={()=>{const d=new Date(selDate+'T12:00:00');d.setDate(d.getDate()-1);setSelDate(toJSTDateStr(d))}} style={{color:'var(--mu)',background:'none',border:'none',cursor:'pointer'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><path d="M15 18l-6-6 6-6"/></svg></button>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontFamily:'var(--serif)',fontSize:20,color:'var(--tx)'}}>{new Date(selDate+'T12:00:00').getMonth()+1} / {new Date(selDate+'T12:00:00').getDate()} ({DAY_JP[new Date(selDate+'T12:00:00').getDay()]})</div>
               </div>
-              <button onClick={()=> { const d=new Date(selDate+'T12:00:00'); d.setDate(d.getDate()+1); if(toJSTDateStr(d)<=todayStr) setSelDate(toJSTDateStr(d)) }} style={{width:38,height:38,background:'transparent',border:'none',color:'var(--mu)',opacity:selDate===todayStr?0.1:1}}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
+              <button onClick={()=>{const d=new Date(selDate+'T12:00:00');d.setDate(d.getDate()+1);if(toJSTDateStr(d)<=todayStr)setSelDate(toJSTDateStr(d))}} style={{color:selDate===todayStr?'transparent':'var(--mu)',background:'none',border:'none',cursor:'pointer'}}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><path d="M9 18l6-6-6-6"/></svg></button>
             </div>
 
-            <div style={{...cardStyle(),padding:16,marginBottom:12}}>
-              <div style={{display:'flex',background:'var(--bg)',borderRadius:10,padding:3,gap:2,marginBottom:12}}>
-                {['朝', '昼', '夜', '他'].map(t=>(
-                  <button key={t} 
-                    onClick={()=>{
-                      setMealType(t);
-                      if(t==='朝') setShowMorningPrompt(true);
-                      else setShowMorningPrompt(false);
-                    }} 
-                    style={{flex:1,padding:'10px 0',fontFamily:'var(--mono)',fontSize:9,borderRadius:7,background:mealType===t?'var(--em)':'transparent',color:mealType===t?'var(--bg)':'var(--mu)',fontWeight:700}}>{t}</button>
+            <section className="glass-card" style={{padding:24,borderRadius:32,marginBottom:24}}>
+              <div style={{display:'flex',gap:8,marginBottom:20}}>
+                {['朝','昼','夜','他'].map(t=>(
+                  <button key={t} onClick={()=>{setMealType(t); if(t==='朝') setShowMorningPrompt(true); else setShowMorningPrompt(false);}} style={{flex:1,padding:'12px 0',borderRadius:14,border:'none',background:mealType===t?'var(--em)':'rgba(255,255,255,0.03)',color:mealType===t?'#000':'var(--mu)',fontSize:11,fontWeight:900,transition:'all 0.3s',cursor:'pointer'}}>{t}</button>
                 ))}
               </div>
-
+              
               {showMorningPrompt && (
-                <div className="fade-up" style={{background:'var(--em-dim)', border:'1px dashed var(--em)', borderRadius:11, padding:14, marginBottom:14, textAlign:'center'}}>
-                  <div style={{fontSize:11, fontWeight:700, color:'var(--em)', marginBottom:10}}>朝セット（45.0g P）を登録しますか？</div>
-                  <div style={{display:'flex', gap:8}}>
-                    <button onClick={()=>{handleSave('朝セット', 45, '朝', 'マカ・コーヒー・サプリ'); setShowMorningPrompt(false);}} style={{flex:1, background:'var(--em)', color:'var(--bg)', border:'none', borderRadius:8, padding:'8px', fontSize:9, fontWeight:900}}>YES</button>
-                    <button onClick={()=>setShowMorningPrompt(false)} style={{flex:1, background:'var(--bg)', color:'var(--mu)', border:'1px solid var(--bd)', borderRadius:8, padding:'8px', fontSize:9, fontWeight:900}}>NO</button>
+                <div style={{background:'rgba(163, 230, 53, 0.1)',borderRadius:16,padding:16,marginBottom:16,border:'1px dashed var(--em)',textAlign:'center'}} className="animate-fade">
+                  <p style={{fontSize:12,fontWeight:700,color:'var(--em)',marginBottom:12}}>朝セット（45g）をレポしますか？</p>
+                  <div style={{display:'flex',gap:8}}>
+                    <button onClick={()=>{handleSave('朝セット', 45, '朝'); setShowMorningPrompt(false);}} className="btn-luxury" style={{flex:1,padding:'10px',borderRadius:10,fontSize:10}}>YES</button>
+                    <button onClick={()=>setShowMorningPrompt(false)} style={{flex:1,background:'rgba(255,255,255,0.05)',color:'var(--mu)',border:'none',borderRadius:10,padding:'10px',fontSize:10,fontWeight:900}}>NO</button>
                   </div>
                 </div>
               )}
 
-              <input value={mainMenu} onChange={e=>setMainMenu(e.target.value)} placeholder="主菜（Main Menu）" style={{width:'100%',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:14,fontSize:14,color:'var(--tx)',outline:'none',marginBottom:12}}/>
-              <input value={sideMenu} onChange={e=>setSideMenu(e.target.value)} placeholder="副菜（Side Menu）" style={{width:'100%',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:14,fontSize:14,color:'var(--tx)',outline:'none',marginBottom:12}}/>
-              <div style={{background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:12,marginBottom:12}}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}>
-                  <span style={mono({fontSize:7.5,color:'var(--mu)'})}>PROTEIN (g)</span>
-                  <span style={serif(24)}>{Number(protein).toFixed(1)}g</span>
+              <input value={mainMenu} onChange={e=>setMainMenu(e.target.value)} placeholder="Main Menu" style={{width:'100%',background:'rgba(255,255,255,0.03)',border:'1px solid var(--bd)',borderRadius:16,padding:18,fontSize:15,color:'var(--tx)',outline:'none',marginBottom:16}}/>
+              
+              <div style={{marginBottom:24}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:12}}>
+                  <span style={{fontFamily:'var(--mono)',fontSize:9,color:'var(--mu)'}}>PROTEIN WEIGHT</span>
+                  <span style={{fontFamily:'var(--serif)',fontSize:28,color:'var(--em)'}}>{Number(protein).toFixed(1)}<span style={{fontSize:12,marginLeft:2}}>g</span></span>
                 </div>
                 <input type="range" min="0" max="110" step="0.5" value={protein} onChange={e=>setProtein(e.target.value)}/>
               </div>
-              <button onClick={()=>handleSave(mainMenu, protein, mealType, sideMenu)} style={{width:'100%',background:'var(--em)',color:'var(--bg)',padding:16,borderRadius:11,fontFamily:'var(--mono)',fontWeight:700,letterSpacing:'0.1em'}}>RECORD REPORT →</button>
-            </div>
+              
+              <button onClick={()=>handleSave(mainMenu, protein, mealType)} className="btn-luxury" style={{width:'100%',padding:20,borderRadius:18,fontSize:12}}>STAY HEALTHY →</button>
+            </section>
 
-            <div style={mono({fontSize:7.5,color:'var(--mu)',marginBottom:9,display:'flex',alignItems:'center',gap:8})}>
-              RECORDS ({filteredMeals.length}) <div style={{flex:1,height:1,background:'var(--bd)'}}/>
+            <div style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)',letterSpacing:'0.2em',marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
+              LATEST LOGS <div style={{flex:1,height:1,background:'var(--bd)'}}/>
             </div>
-            {filteredMeals.length === 0 ? <div style={{textAlign:'center',padding:40,color:'var(--mu)',fontSize:10}}>No records for this date.</div> : 
-              filteredMeals.map((m, i)=>(
-                <div key={m._id} className="fade-up" style={{...cardStyle(),padding:'11px 14px',display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:7}}>
-                  <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    <div style={{width:28,height:28,background:'var(--bg)',borderRadius:7,display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,color:'var(--mu)',fontWeight:700}}>{m.type}</div>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:700}}>{m.main}</div>
-                      <div style={mono({fontSize:7,color:'var(--mu)'})}>{m.timestamp?.split(/[T ]/)[1]?.slice(0,5)} • {m.side}</div>
-                    </div>
+            
+            {filteredMeals.map((m,i)=>(
+              <div key={m._id} className="glass-card" style={{padding:'16px 20px',borderRadius:20,marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                    <span style={{fontSize:8,background:'var(--em)',color:'#000',padding:'2px 6px',borderRadius:4,fontWeight:900}}>{m.type}</span>
+                    <span style={{fontFamily:'var(--serif)',fontSize:17}}>{m.main}</span>
                   </div>
-                  <div style={{display:'flex',alignItems:'center',gap:12}}>
-                    <span style={serif(18)}>{Number(m.protein).toFixed(1)}<span style={{fontSize:8,marginLeft:1}}>g</span></span>
-                    <div style={{display:'flex',flexDirection:'column',gap:4,borderLeft:'1px solid var(--bd)',paddingLeft:10}}>
-                      <button onClick={()=>setEditMeal(m)} style={{background:'none',border:'none',color:'var(--mu)',cursor:'pointer'}}><EditIcon/></button>
-                      <button onClick={()=>setDelMeal(m)} style={{background:'none',border:'none',color:'var(--mu)',cursor:'pointer'}}><TrashIcon/></button>
-                    </div>
-                  </div>
+                  <div style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)'}}>{m.timestamp.split(/[T ]/)[1].slice(0,5)} • STRATEGIC FUEL</div>
                 </div>
-              ))
-            }
+                <div style={{fontFamily:'var(--serif)',fontSize:22,color:'var(--em)'}}>{m.protein.toFixed(1)}<span style={{fontSize:10,marginLeft:1}}>g</span></div>
+              </div>
+            ))}
           </div>
         )}
 
         {tab==='suggest' && (
-          <div style={{padding:'14px 14px 120px'}} className="fade-up">
-            <div style={{background:'linear-gradient(135deg,var(--s2),#080a14)',border:'1px solid var(--bd)',borderRadius:18,padding:18,marginBottom:12,position:'relative',overflow:'hidden'}}>
-              <div style={mono({fontSize:7,color:'var(--em)',letterSpacing:'0.2em',marginBottom:8,fontWeight:700})}>TONIGHT'S STRATEGY</div>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end'}}>
-                <div>
-                  <div style={mono({fontSize:8,color:'var(--mu)',marginBottom:4})}>夕食で補うべき量</div>
-                  <div style={serif(32, {color:'var(--tx)'})}>{gap.toFixed(1)}<span style={{fontSize:14,marginLeft:4,color:'var(--em)'}}>g 不足</span></div>
-                </div>
-                <div style={{fontSize:28,opacity:0.6}}>🌙</div>
-              </div>
+          <div className="animate-slide">
+            <div className="glass-card" style={{background:'linear-gradient(135deg, rgba(163, 230, 53, 0.1) 0%, transparent 100%)',padding:28,borderRadius:32,marginBottom:20,textAlign:'center'}}>
+              <div style={{fontFamily:'var(--mono)',fontSize:9,color:'var(--em)',letterSpacing:'0.3em',marginBottom:12,fontWeight:900}}>STRATEGY GAP</div>
+              <div style={{fontFamily:'var(--serif)',fontSize:48,lineHeight:1}}>{gap.toFixed(1)}<span style={{fontSize:16,color:'var(--mu)',marginLeft:6}}>g 不足</span></div>
+              <p style={{fontSize:11,color:'var(--mu)',marginTop:12}}>本日の目標達成に向けた最適な補完メニューを提案します。</p>
             </div>
 
-            <div style={{display:'flex',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:10,padding:3,gap:2,marginBottom:10}}>
+            <div style={{display:'flex',gap:4,marginBottom:10,background:'rgba(255,255,255,0.03)',padding:4,borderRadius:14}}>
               {[['all','ALL'],['bulkup','筋肥大'],['recovery','疲労回復'],['antiaging','抗老化']].map(([v,l])=>(
-                <button key={v} onClick={()=>setEffect(v)} style={{flex:1,padding:'10px 0',fontFamily:'var(--mono)',fontSize:8,fontWeight:700,border:'none',borderRadius:7,background:effect===v?'var(--em)':'transparent',color:effect===v?'var(--bg)':'var(--mu)'}}>{l}</button>
+                <button key={v} onClick={()=>setEffect(v)} style={{flex:1,padding:'10px 0',borderRadius:10,border:'none',background:effect===v?'var(--em)':'transparent',color:effect===v?'#000':'var(--mu)',fontSize:8,fontWeight:900,textTransform:'uppercase',cursor:'pointer'}}>{l}</button>
               ))}
             </div>
-            
-            {/* 3D立体化されたシャッフルボタン */}
-            <button 
-              className="btn-3d"
-              onClick={()=>setShuffleSeed(s=>s+1)} 
-              style={{display:'flex',alignItems:'center',justifyContent:'center',gap:7,width:'100%',borderRadius:12,padding:'14px',color:'var(--em)',fontSize:10,fontFamily:'var(--mono)',fontWeight:900,marginBottom:18,cursor:'pointer'}}>
-              <ShuffleIcon/> SHUFFLE STRATEGY
+
+            <button onClick={()=>setShuffleSeed(s=>s+1)} className="btn-3d" style={{width:'100%',padding:16,borderRadius:16,color:'var(--em)',fontFamily:'var(--mono)',fontSize:10,fontWeight:900,letterSpacing:'0.1em',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+              <ShuffleIcon/> SHUFFLE MENU
             </button>
 
             {gap<=0 
               ? <div style={{textAlign:'center',padding:60,fontFamily:'var(--serif)',color:'var(--em)',fontSize:20}}>Goal Achieved ✓</div> 
               : (suggestions.length === 0 ? <div style={{textAlign:'center',padding:40,color:'var(--mu)',fontSize:10}}>分析中...</div> : 
-              suggestions.map((opt,i)=>(
-                <div key={i} style={{...cardStyle({border:i===0?'1px solid rgba(16,185,129,0.4)':'1px solid var(--bd)'}),padding:20,marginBottom:10}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
-                    <div style={{flex:1}}>
-                      <div style={mono({fontSize:7,color:'var(--mu)',marginBottom:4})}>OPTION {['A','B','C'][i]}</div>
-                      <div style={{fontFamily:'var(--serif)',fontSize:19,color:'var(--tx)',lineHeight:1.2}}>{opt.main}</div>
-                      <div style={{fontSize:10,color:'var(--mu)',marginTop:4}}>副菜：{opt.side}</div>
+              suggestions.map((opt, i)=>(
+                <div key={i} className="glass-card" style={{padding:24,borderRadius:28,marginBottom:12,border:i===0?'1px solid var(--em)':'1px solid var(--bd)'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
+                    <div>
+                      <div style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)',marginBottom:6}}>OPTION {i+1}</div>
+                      <div style={{fontFamily:'var(--serif)',fontSize:22,lineHeight:1.2}}>{opt.main}</div>
+                      <div style={{fontSize:11,color:'var(--mu)',marginTop:6}}>{opt.side}</div>
                     </div>
-                    <div style={serif(26)}>{Number(opt.p).toFixed(1)}<span style={{fontSize:10,marginLeft:1}}>g</span></div>
+                    <div style={{fontFamily:'var(--serif)',fontSize:32,color:'var(--em)',lineHeight:1}}>{Number(opt.p).toFixed(1)}<span style={{fontSize:12,marginLeft:2}}>g</span></div>
                   </div>
-                  
-                  {/* メニューごとの特徴を出した推奨理由 */}
-                  <div style={{background:'var(--bg)',borderLeft:'2px solid var(--em)',padding:'10px 12px',borderRadius:'0 8px 8px 0',margin:'12px 0'}}>
-                    <div style={mono({fontSize:7,color:'var(--em)',marginBottom:4,fontWeight:700})}>STRATEGIC REASON</div>
-                    <div style={{fontSize:10,color:'var(--tx)',lineHeight:1.5}}>{opt.reason}</div>
+                  {/* Fixed Reason Display */}
+                  <div style={{background:'rgba(255,255,255,0.03)',borderLeft:'2px solid var(--em)',padding:'12px 16px',borderRadius:'0 8px 8px 0',fontSize:11,lineHeight:1.6,color:'var(--tx)',fontStyle:'italic'}}>
+                    "{opt.reason}"
                   </div>
-
-                  <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
-                    {(opt.tags || []).slice(0,3).map(t=>(
-                      <span key={t} style={{fontSize:6,fontFamily:'var(--mono)',background:'var(--s2)',color:'var(--em)',padding:'4px 9px',borderRadius:6,border:'1px solid var(--bd)',fontWeight:700}}>{t}</span>
+                  <div style={{display:'flex',gap:6,marginTop:16,flexWrap:'wrap'}}>
+                    {(opt.tags||[]).map(t=>(
+                      <span key={t} style={{fontSize:10,color:'var(--em)',background:'rgba(163, 230, 53, 0.1)',padding:'4px 10px',borderRadius:6,fontWeight:900,textTransform:'uppercase',border:'1px solid rgba(163, 230, 53, 0.2)'}}>{t}</span>
                     ))}
                   </div>
                 </div>
@@ -514,54 +404,57 @@ const App = () => {
         )}
 
         {tab==='stats' && (
-          <div style={{padding:'14px 14px 120px'}} className="fade-up">
-            <div style={mono({fontSize:7.5,color:'var(--mu)',marginBottom:9})}>7-DAY TREND</div>
-            <div style={{...cardStyle(),padding:16,marginBottom:20}}>
-              <div style={{width:'100%',height:150,marginBottom:2}} dangerouslySetInnerHTML={{__html:chartSvg}}/>
+          <div className="animate-slide">
+            <div className="glass-card" style={{padding:24,borderRadius:32,marginBottom:24}}>
+              <div style={{fontFamily:'var(--mono)',fontSize:9,color:'var(--mu)',letterSpacing:'0.2em',marginBottom:20}}>WEEKLY TREND</div>
+              <div style={{width:'100%',height:180}} dangerouslySetInnerHTML={{__html:chartSvg}}/>
             </div>
 
-            {/* 週のサマリコメント (視認性を向上) */}
-            <div style={{...cardStyle({background:'linear-gradient(135deg,var(--s2),var(--bg))'}),padding:20,marginBottom:20,borderLeft:'4px solid var(--em)'}}>
-              <div style={mono({fontSize:7.5,color:'var(--em)',fontWeight:700,letterSpacing:'0.2em',marginBottom:10})}>{statsSummary.title.toUpperCase()}</div>
-              <div style={{fontSize:13,color:'var(--tx)',lineHeight:1.6,marginBottom:12}}>{statsSummary.comment}</div>
-              <div style={{fontSize:11,color:'#FFFFFF',fontStyle:'italic',borderTop:'1px solid var(--bd)',paddingTop:12,display:'flex',gap:10}}>
-                <span style={{fontSize:18}}>💬</span>
-                <span style={{flex:1}}>{statsSummary.cheer}</span>
+            <div className="glass-card" style={{padding:28,borderRadius:32,borderLeft:'6px solid var(--em)',marginBottom:24}}>
+              <div style={{fontFamily:'var(--serif)',fontSize:24,color:'var(--tx)',marginBottom:8}}>{statsSummary.title}</div>
+              <p style={{fontSize:13,lineHeight:1.6,color:'var(--tx)',marginBottom:20}}>{statsSummary.cheer}</p>
+              <div style={{display:'flex',alignItems:'center',gap:12,paddingTop:16,borderTop:'1px solid var(--bd)'}}>
+                <span style={{fontSize:24}}>💎</span>
+                <span style={{fontSize:11,color:'#FFF',fontWeight:700,fontStyle:'italic'}}>規律の継続こそが、真の自由への鍵です。</span>
               </div>
             </div>
+
+            {/* Last 2 Days Performance Logs */}
+            <div style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)',letterSpacing:'0.2em',marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
+              LAST 2 DAYS PERFORMANCE LOG <div style={{flex:1,height:1,background:'var(--bd)'}}/>
+            </div>
             
-            <div style={mono({fontSize:7.5,color:'var(--mu)',marginBottom:9})}>HISTORY LOG (LATEST 12)</div>
-            {[...meals].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).slice(0,12).map((m,i)=>(
-              <div key={i} style={{...cardStyle(),padding:12,display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:7}}>
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{fontSize:8,color:'var(--mu)',background:'var(--bg)',padding:'4px 6px',borderRadius:6}}>{m.type}</div>
-                  <div>
-                    <div style={{fontSize:12,fontWeight:700}}>{m.main}</div>
-                    <div style={mono({fontSize:7,color:'var(--mu)'})}>{new Date(m.timestamp).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}</div>
+            {lastTwoDaysMeals.length === 0 ? <div style={{textAlign:'center',padding:40,color:'var(--mu)',fontSize:10}}>No logs for the last 2 days.</div> : 
+              lastTwoDaysMeals.map((m,i)=>(
+                <div key={i} className="glass-card" style={{padding:'12px 16px',borderRadius:16,marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <div style={{fontSize:8,color:'var(--bg)',background:'var(--em)',padding:'4px 6px',borderRadius:6,fontWeight:900}}>{m.type}</div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700}}>{m.main}</div>
+                      <div style={mono({fontSize:7,color:'var(--mu)'})}>{new Date(m.timestamp).toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'})}</div>
+                    </div>
                   </div>
+                  <div style={serif(16)}>{m.protein.toFixed(1)}g</div>
                 </div>
-                <div style={serif(16)}>{Number(m.protein).toFixed(1)}g</div>
-              </div>
-            ))}
+              ))
+            }
           </div>
         )}
       </main>
 
-      <nav style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(4,5,10,0.96)',backdropFilter:'blur(24px)',borderTop:'1px solid var(--bd)',display:'flex',justifyContent:'space-around',padding:`10px 0 max(12px,env(safe-area-inset-bottom))`,zIndex:1000}}>
+      <nav className="tab-nav" style={{position:'absolute',bottom:0,left:0,right:0,display:'flex',justifyContent:'space-around',padding:`16px 0 max(24px, env(safe-area-inset-bottom))`}}>
         {[
-          {id:'log',lbl:'LOG',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>},
-          {id:'suggest',lbl:'DINNER',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>},
-          {id:'stats',lbl:'STATS',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
+          {id:'log',lbl:'LOG',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="22" height="22"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>},
+          {id:'suggest',lbl:'STRATEGY',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="22" height="22"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>},
+          {id:'stats',lbl:'ANALYSIS',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="22" height="22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
         ].map(t=>(
-          <div key={t.id} onClick={()=>setTab(t.id)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:5,color:tab===t.id?'var(--em)':'var(--mu)',padding:'8px 25px',borderRadius:14,background:tab===t.id?'var(--em-dim)':'transparent',cursor:'pointer',transition:'all 0.3s'}}>
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,background:'none',border:'none',color:tab===t.id?'var(--em)':'var(--mu)',transition:'all 0.3s',cursor:'pointer'}}>
             {t.icon}
-            <span style={mono({fontSize:7.5,fontWeight:900,letterSpacing:'0.1em'})}>{t.lbl}</span>
-          </div>
+            <span style={{fontFamily:'var(--mono)',fontSize:8,fontWeight:900}}>{t.lbl}</span>
+            {tab===t.id && <div style={{width:4,height:4,background:'var(--em)',borderRadius:'50%',marginTop:2,boxShadow:'0 0 8px var(--em)'}}/>}
+          </button>
         ))}
       </nav>
-
-      {editMeal && <EditModal meal={editMeal} onSave={handleEditSave} onCancel={()=>setEditMeal(null)}/>}
-      {delMeal && <ConfirmModal meal={delMeal} onConfirm={handleDelete} onCancel={()=>setDelMeal(null)}/>}
     </div>
   );
 };
