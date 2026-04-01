@@ -58,7 +58,6 @@ const INITIAL_MENUS=[
 
 // ── UTILS (Robust JST Logic) ──────────────────────────────────────────────
 const toJSTDateStr = (d = new Date()) => {
-  // ブラウザのタイムゾーン設定に依存せず、確実に日本時間のYYYY-MM-DDを返す
   return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
 };
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
@@ -116,14 +115,13 @@ const EditModal = ({meal, onSave, onCancel}) => {
 
 // ── MAIN APP ──────────────────────────────────────────────────────────────
 const App = () => {
-  // 起動時の今日の日付をJST基準で固定
   const todayStr = useMemo(() => toJSTDateStr(new Date()), []);
   const [meals, setMeals] = useState([]);
   const [masterMenus, setMasterMenus] = useState(INITIAL_MENUS);
   const [tab, setTab] = useState('log');
   const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState('');
-  const [selDate, setSelDate] = useState(todayStr); // 初期値に確実に今日を入れる
+  const [selDate, setSelDate] = useState(todayStr);
   const [mealType, setMealType] = useState('昼');
   const [mainMenu, setMainMenu] = useState('');
   const [sideMenu, setSideMenu] = useState('');
@@ -142,27 +140,27 @@ const App = () => {
       const data = await r.json();
       const historyRaw = Array.isArray(data) ? data : (data.history || []);
       
-      const normalizedHistory = historyRaw.map(m => {
-        const main = m.Main_Menu || m.main || m.mainMenu || "Untitled";
-        const proteinRaw = m.Protein_g || m.protein || m.p || 0;
-        const type = m.Meal_Type || m.type || m.mealType || "他";
-        const side = m.Side_Menu || m.side || "-";
-        
-        let ts = m.Timestamp || m.timestamp || new Date().toISOString();
-        // 日付文字列の区切りを統一
-        if (typeof ts === 'string') ts = ts.replace(/\//g, '-');
-        
-        return {
-          ...m,
-          _id: m._id || genId(),
-          main: main,
-          protein: Number(proteinRaw),
-          type: type,
-          side: side,
-          timestamp: ts,
-          isReception: m.Is_Reception || false
-        };
-      });
+      // ── ゴーストデータ（空行）の徹底除外ロジック ──
+      const normalizedHistory = historyRaw
+        .filter(m => (m.Main_Menu || m.main || m.mainMenu) && (m.Timestamp || m.timestamp))
+        .map(m => {
+          const main = m.Main_Menu || m.main || m.mainMenu || "Untitled";
+          const proteinRaw = m.Protein_g || m.protein || m.p || 0;
+          const type = m.Meal_Type || m.type || m.mealType || "他";
+          const side = m.Side_Menu || m.side || "-";
+          let ts = m.Timestamp || m.timestamp || new Date().toISOString();
+          if (typeof ts === 'string') ts = ts.replace(/\//g, '-');
+          
+          return {
+            ...m,
+            _id: m._id || genId(),
+            main: main,
+            protein: Number(proteinRaw),
+            type: type,
+            side: side,
+            timestamp: ts
+          };
+        });
 
       setMeals(normalizedHistory);
 
@@ -185,9 +183,7 @@ const App = () => {
 
   useEffect(() => { 
     fetchData(); 
-    // ブラウザのコンソールでデバッグ用に今日の日付を出力
-    console.log("Meal OS Initialized. JST Today:", todayStr);
-  }, [fetchData, todayStr]);
+  }, [fetchData]);
 
   const filteredMeals = useMemo(() => {
     return meals.filter(m => {
@@ -202,9 +198,8 @@ const App = () => {
   const pct = Math.min(totalP / TARGET * 100, 100);
 
   const handleSave = async (mName, mP, mType, sName = "-") => {
-    if (!mName.trim()) return;
+    if (!mName || !mName.trim()) return; // 空文字の保存をブロック
     const now = new Date();
-    // 時刻を含めたJSTタイムスタンプを生成
     const timeStr = now.toLocaleTimeString('ja-JP', { hour12: false });
     const ts = `${selDate}T${timeStr}`;
     
@@ -231,6 +226,7 @@ const App = () => {
 
   const handleDelete = async () => {
     const m = delMeal;
+    if (!m) return;
     setMeals(prev => prev.filter(x => x._id !== m._id));
     setDelMeal(null);
     showToast('DELETED');
@@ -317,7 +313,7 @@ const App = () => {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
           <div>
             <div style={{fontFamily:'var(--serif)',fontSize:18,color:'var(--em)'}}>Meal OS</div>
-            <div style={mono({fontSize:7,color:'var(--mu)',marginTop:3})}>STRICT JST MODE v7.4.8</div>
+            <div style={mono({fontSize:7,color:'var(--mu)',marginTop:3})}>ROBUST FILTER MODE v7.4.9</div>
           </div>
           <button onClick={fetchData} style={{width:32,height:32,background:'var(--s2)',border:'1px solid var(--bd)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--mu)',cursor:'pointer'}}>
             <RefreshIcon cls={syncing?'spin':''}/>
@@ -407,7 +403,6 @@ const App = () => {
           </div>
         )}
 
-        {/* ── SUGGEST TAB ── */}
         {tab==='suggest' && (
           <div style={{padding:'14px 14px 120px'}} className="fade-up">
             <div style={{background:'linear-gradient(135deg,var(--s2),#080a14)',border:'1px solid var(--bd)',borderRadius:18,padding:18,marginBottom:12,position:'relative',overflow:'hidden'}}>
