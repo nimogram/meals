@@ -16,7 +16,7 @@
   --bg:#04050a;--s1:#090b12;--s2:#0e1019;
   --bd:#161a28;--brt:#1f2436;
   --em:#10b981;--em-dim:rgba(16,185,129,0.07);--em-mid:rgba(16,185,129,0.16);--em-glow:rgba(16,185,129,0.3);
-  --tx:#dce0ec;--mu:#404660;--mu2:#1f2436;--red:#e05a6a;
+  --tx:#dce0ec;--mu:#404660;--mu2:#1f2436;--red:#e05a6a;--yel:#facc15;
   --mono:'DM Mono',monospace;--serif:'DM Serif Display',serif;--sans:'Noto Sans JP',sans-serif;
 }
 html,body{height:100%;overflow:hidden;background:var(--bg);}
@@ -35,6 +35,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;heigh
 .fade-up{animation:fadeUp 0.3s ease-out forwards;}
 .spin{animation:spin 1s linear infinite;}
 .pop-in{animation:popIn 0.22s cubic-bezier(0.34,1.4,0.64,1) forwards;}
+
+/* 3D立体ボタン */
+.btn-3d {
+  background: linear-gradient(180deg, #161c2d 0%, #0c101d 100%);
+  border: 1px solid #1f2943;
+  box-shadow: 0 4px 0 #080a14, 0 8px 15px rgba(0,0,0,0.5);
+  transition: all 0.1s active;
+}
+.btn-3d:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #080a14, 0 4px 8px rgba(0,0,0,0.5);
+}
 </style>
 </head>
 <body>
@@ -46,24 +58,26 @@ const { useState, useEffect, useMemo, useCallback } = React;
 const GAS = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
 const TARGET = 120;
 
-// ── LOCAL FALLBACK MENUS ────────────────────────────────────────────────
-const ALL=[0,1,2,3,4,5,6,7,8,9,10,11],W=[0,1,2,3,4,5,6],WD=[1,2,3,4],WE=[0,5,6];
-const INITIAL_MENUS=[
-  {main:"牛肉ステーキ",p:40,side:"ブロッコリーサラダ",tags:["牛","赤身","鉄分"],cat:"burn",season:ALL,dow:W,effect:"鉄分で午後の活力を担保。L-カルニチンで<em>脂肪燃焼</em>を最大化。"},
-  {main:"チキンステーキ",p:40,side:"アボカド",tags:["鶏","低脂質"],cat:"recovery",season:ALL,dow:W,effect:"アンセリンによる<em>疲労回復</em>と筋肉合成の効率化。"},
-  {main:"生カツオのたたき",p:28.5,side:"玉ねぎポン酢",tags:["カツオ","血流改善"],cat:"recovery",season:[3,4,5,6,7,8],dow:W,effect:"セレンが活性酸素を除去。<em>細胞保護と美肌</em>に貢献。"},
-  {main:"サーモンステーキ",p:28,side:"アスパラ",tags:["アスタキサンチン","Tie2"],cat:"antiaging",season:ALL,dow:W,effect:"アスタキサンチンで<em>毛細血管を強化</em>。Tie2活性化。"},
-  {main:"サバ味噌煮缶",p:20.9,side:"雑穀米・生姜",tags:["サバ","時短"],cat:"antiaging",season:ALL,dow:WD,effect:"Tie2活性化で<em>毛細血管を強化</em>。最高コスパのタンパク源。"}
+// ── CONSTANTS ──
+const ALL_MONTHS = [0,1,2,3,4,5,6,7,8,9,10,11];
+const ALL_DOW = [0,1,2,3,4,5,6];
+const WEEKDAYS = [1,2,3,4,5];
+
+// ── INITIAL DATA (個別推奨コメントを強化) ──
+const INITIAL_MENUS = [
+  {main:"牛肉ステーキ",p:40,side:"ブロッコリーサラダ",tags:["牛","赤身","筋肥大"],cat:"bulkup",reason:"豊富な亜鉛と天然のクレアチンが、今日のトレーニングを確かな筋肥大へと繋げます。",season:ALL_MONTHS,dow:ALL_DOW},
+  {main:"チキンステーキ",p:40,side:"アボカド",tags:["鶏","低脂質","疲労回復"],cat:"recovery",reason:"アンセリンによる強力な抗疲労作用で、睡眠中に脳と体のダメージをリセットします。",season:ALL_MONTHS,dow:ALL_DOW},
+  {main:"生ラム肉のグリル",p:32,side:"焼き玉ねぎ・アスパラ",tags:["ラム","筋肥大","亜鉛"],cat:"bulkup",reason:"L-カルニチンの代謝支援により、無駄な脂肪を削ぎ落としながら筋肉をビルドアップします。",season:ALL_MONTHS,dow:ALL_DOW},
+  {main:"サーモンステーキ",p:28,side:"アスパラ",tags:["サーモン","アスタキサンチン","抗老化"],cat:"antiaging",reason:"最強の抗酸化物質アスタキサンチンが、細胞の酸化を抑え、内側から若々しい血管を保ちます。",season:ALL_MONTHS,dow:ALL_DOW},
+  {main:"サバ味噌煮缶",p:20.9,side:"雑穀米・生姜",tags:["サバ","抗老化","Tie2"],cat:"antiaging",reason:"EPA/DHAが毛細血管のTie2を活性化。血流の質を改善し、肌と思考の透明感を高めます。",season:ALL_MONTHS,dow:WEEKDAYS}
 ];
 
-// ── UTILS (Robust JST Logic) ──────────────────────────────────────────────
 const toJSTDateStr = (d = new Date()) => {
   return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
 };
 const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
 const DAY_JP = ['日','月','火','水','木','金','土'];
 
-// ── ICONS ─────────────────────────────────────────────────────────────
 const RefreshIcon = ({cls=""}) => (
   <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
     <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
@@ -71,9 +85,12 @@ const RefreshIcon = ({cls=""}) => (
 );
 const EditIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>);
 const TrashIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>);
-const ShuffleIcon = () => (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>);
+const ShuffleIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="var(--em)" strokeWidth="2.5" width="14" height="14">
+    <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+  </svg>
+);
 
-// ── TOAST & MODALS ────────────────────────────────────────────────────────
 const Toast = ({msg}) => msg ? (
   <div style={{position:'fixed',top:14,left:'50%',transform:'translateX(-50%)',background:'var(--em)',color:'var(--bg)',padding:'7px 18px',borderRadius:20,fontFamily:'var(--mono)',fontSize:9,fontWeight:700,zIndex:999,animation:'fadeUp 0.2s ease-out',boxShadow:'0 4px 20px var(--em-glow)'}}>{msg}</div>
 ) : null;
@@ -113,7 +130,6 @@ const EditModal = ({meal, onSave, onCancel}) => {
   );
 };
 
-// ── MAIN APP ──────────────────────────────────────────────────────────────
 const App = () => {
   const todayStr = useMemo(() => toJSTDateStr(new Date()), []);
   const [meals, setMeals] = useState([]);
@@ -130,6 +146,7 @@ const App = () => {
   const [shuffleSeed, setShuffleSeed] = useState(0);
   const [editMeal, setEditMeal] = useState(null);
   const [delMeal, setDelMeal] = useState(null);
+  const [showMorningPrompt, setShowMorningPrompt] = useState(false);
 
   const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),2800); };
 
@@ -140,7 +157,6 @@ const App = () => {
       const data = await r.json();
       const historyRaw = Array.isArray(data) ? data : (data.history || []);
       
-      // ── ゴーストデータ（空行）の徹底除外ロジック ──
       const normalizedHistory = historyRaw
         .filter(m => (m.Main_Menu || m.main || m.mainMenu) && (m.Timestamp || m.timestamp))
         .map(m => {
@@ -170,8 +186,10 @@ const App = () => {
           p: Number(m.Protein_g || m.p || 20),
           main: m.Main_Menu || m.main || "Untitled",
           side: m.Side_Menu || m.side || "-",
-          season: typeof m.season === 'string' ? JSON.parse(m.season) : (m.season || ALL),
-          dow: typeof m.dow === 'string' ? JSON.parse(m.dow) : (m.dow || W),
+          cat: (m.cat === 'burn' || m.cat === 'muscle') ? 'bulkup' : m.cat,
+          reason: m.reason || "タンパク質を補完し、規律ある身体作りをサポートします。",
+          season: typeof m.season === 'string' ? JSON.parse(m.season) : (m.season || ALL_MONTHS),
+          dow: typeof m.dow === 'string' ? JSON.parse(m.dow) : (m.dow || ALL_DOW),
           tags: Array.isArray(m.tags) ? m.tags : (typeof m.tags === 'string' ? m.tags.split(',') : [])
         })));
         showToast('SYNC: COMPLETE');
@@ -198,7 +216,7 @@ const App = () => {
   const pct = Math.min(totalP / TARGET * 100, 100);
 
   const handleSave = async (mName, mP, mType, sName = "-") => {
-    if (!mName || !mName.trim()) return; // 空文字の保存をブロック
+    if (!mName || !mName.trim()) return;
     const now = new Date();
     const timeStr = now.toLocaleTimeString('ja-JP', { hour12: false });
     const ts = `${selDate}T${timeStr}`;
@@ -258,12 +276,16 @@ const App = () => {
     const recent = meals.filter(m=>new Date(m.timestamp).getTime()>ago7).map(m=>m.main.toLowerCase());
     
     let pool = masterMenus.filter(m => {
+      if(!m.main) return false;
       const nm = m.main.toLowerCase();
       const notRecent = !recent.some(r=>nm.includes(r)||r.includes(nm));
-      return notRecent && m.season.includes(mon) && m.dow.includes(dow) && (effect==='all'||m.cat===effect);
+      const catMatch = (effect === 'all' || m.cat === effect || (effect === 'bulkup' && (m.cat === 'burn' || m.cat === 'muscle')));
+      const seasonMatch = (m.season || ALL_MONTHS).includes(mon);
+      const dowMatch = (m.dow || ALL_DOW).includes(dow);
+      return notRecent && seasonMatch && dowMatch && catMatch;
     });
     
-    if(pool.length < 3) pool = masterMenus.filter(m=>(effect==='all'||m.cat===effect));
+    if(pool.length < 3) pool = masterMenus.filter(m => effect==='all' || m.cat===effect || (effect === 'bulkup' && (m.cat === 'burn' || m.cat === 'muscle')));
     const seeded = [...pool].map((m,i)=>({m,r:Math.sin(shuffleSeed*997+i*31)*10000%1}));
     seeded.sort((a,b)=>a.r-b.r);
     return seeded.slice(0,3).map(x=>x.m);
@@ -278,23 +300,49 @@ const App = () => {
     });
   },[meals,todayStr]);
 
+  const statsSummary = useMemo(() => {
+    const okCount = weekDays.filter(d => d.ok).length;
+    const avg = weekDays.reduce((s, d) => s + d.tot, 0) / 7;
+    
+    let title = "Discipline Check";
+    let comment = "データ不足です。まずは数日のログを積み重ねましょう。";
+    let cheer = "明日は120gの壁に挑んでください。";
+
+    if (avg >= TARGET) {
+      title = "Excellent Discipline";
+      comment = `直近7日の平均摂取量は ${avg.toFixed(1)}g。完璧な規律を維持しています。`;
+      cheer = "この一貫性が、ニモさんの市場価値を支える基盤になります。継続ですよ。";
+    } else if (okCount >= 4) {
+      title = "Strong Consistency";
+      comment = `週の過半数で目標を達成。平均は ${avg.toFixed(1)}g と高水準です。`;
+      cheer = "あと少しの積み上げで完全勝利です。120gを越える快感を脳に刻みましょう。";
+    } else if (okCount >= 1) {
+      title = "Back to Routine";
+      comment = `目標達成は週 ${okCount} 回。平均 ${avg.toFixed(1)}g です。`;
+      cheer = "ニモさんのポテンシャルはこんなものではないはず。明日は本気を見せてください。";
+    }
+
+    return { title, comment, cheer };
+  }, [weekDays]);
+
   const chartSvg = useMemo(()=>{
-    const W=320,H=120,PL=30,PR=8,PT=18,PB=26,cW=W-PL-PR,cH=H-PT-PB;
+    const W=320,H=140,PL=30,PR=8,PT=22,PB=30,cW=W-PL-PR,cH=H-PT-PB;
     const maxV=Math.max(...weekDays.map(d=>d.tot),TARGET*1.1,10);
     const xStep=cW/6;
     const grids=[0,Math.round(TARGET/2),TARGET].map(v=>{
       const y=PT+cH-(v/maxV)*cH;
       const isT=v===TARGET;
-      return `<line stroke="${isT?'rgba(16,185,129,0.22)':'#161a28'}" stroke-width="1" ${isT?'stroke-dasharray="4,3"':''} x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}"/>
-      <text font-family="var(--mono)" font-size="7" fill="${isT?'rgba(16,185,129,0.5)':'#404660'}" text-anchor="end" x="${PL-3}" y="${(y+2.5).toFixed(1)}">${v}</text>`;
+      // イエロー点線のターゲットライン
+      return `<line stroke="${isT?'var(--yel)':'#161a28'}" stroke-width="${isT?2:1}" ${isT?'stroke-dasharray="4,3"':'stroke-dasharray="2,2"'} x1="${PL}" y1="${y.toFixed(1)}" x2="${W-PR}" y2="${y.toFixed(1)}"/>
+      <text font-family="var(--mono)" font-size="8" fill="${isT?'var(--yel)':'#404660'}" font-weight="${isT?900:400}" text-anchor="end" x="${PL-4}" y="${(y+3).toFixed(1)}">${v}</text>`;
     }).join('');
     const pts=weekDays.map((d,i)=>({x:PL+i*xStep,y:PT+cH-(d.tot/maxV)*cH,d}));
     const lineD=pts.map((p,i)=>i===0?`M${p.x.toFixed(1)},${p.y.toFixed(1)}`:`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
     const dots=pts.map(p=>`
-      ${p.d.has?`<text font-family="var(--mono)" font-size="7" fill="${p.d.ok?'#10b981':'#404660'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(p.y-8).toFixed(1)}">${p.d.tot.toFixed(0)}</text>`:''}
-      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.d.isToday?4.5:3}" fill="${p.d.ok?'#10b981':p.d.has?'#1f2436':'#0d0f18'}" stroke="#10b981" stroke-width="1.5"/>
-      <text font-family="var(--mono)" font-size="8" fill="${p.d.isToday?'#10b981':'#404660'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(PT+cH+14).toFixed(1)}">${p.d.lbl}</text>`).join('');
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;overflow:visible">${grids}<path fill="none" stroke="#10b981" stroke-width="1.8" d="${lineD}"/>${dots}</svg>`;
+      ${p.d.has?`<text font-family="var(--mono)" font-size="12" font-weight="900" fill="${p.d.ok?'#10b981':'#dce0ec'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(p.y-12).toFixed(1)}">${p.d.tot.toFixed(0)}</text>`:''}
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.d.isToday?5:3.5}" fill="${p.d.ok?'#10b981':p.d.has?'#1f2436':'#0d0f18'}" stroke="#10b981" stroke-width="1.8"/>
+      <text font-family="var(--mono)" font-size="9" fill="${p.d.isToday?'#10b981':'#404660'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(PT+cH+16).toFixed(1)}">${p.d.lbl}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;overflow:visible">${grids}<path fill="none" stroke="#10b981" stroke-width="2" d="${lineD}"/>${dots}</svg>`;
   },[weekDays]);
 
   const selDateLbl = useMemo(() => {
@@ -313,7 +361,7 @@ const App = () => {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
           <div>
             <div style={{fontFamily:'var(--serif)',fontSize:18,color:'var(--em)'}}>Meal OS</div>
-            <div style={mono({fontSize:7,color:'var(--mu)',marginTop:3})}>ROBUST FILTER MODE v7.4.9</div>
+            <div style={mono({fontSize:7,color:'var(--mu)',marginTop:3})}>STRATEGIC POLISH v7.5.5</div>
           </div>
           <button onClick={fetchData} style={{width:32,height:32,background:'var(--s2)',border:'1px solid var(--bd)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--mu)',cursor:'pointer'}}>
             <RefreshIcon cls={syncing?'spin':''}/>
@@ -346,25 +394,29 @@ const App = () => {
               </button>
             </div>
 
-            {selDate===todayStr && (
-              <button onClick={()=>handleSave('朝セット', 45, '朝', 'マカ・コーヒー・サプリ')} style={{width:'100%',...cardStyle(),padding:12,display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10,cursor:'pointer'}}>
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{width:36,height:36,background:'var(--em-dim)',borderRadius:11,display:'flex',alignItems:'center',justifyContent:'center',fontSize:17}}>🥚</div>
-                  <div style={{textAlign:'left'}}>
-                    <div style={{fontSize:13,fontWeight:700}}>朝セットを記録</div>
-                    <div style={mono({fontSize:7.5,color:'var(--mu)'})}>45.0g P — 卵・納豆・ヨーグルト</div>
-                  </div>
-                </div>
-                <RefreshIcon/>
-              </button>
-            )}
-
             <div style={{...cardStyle(),padding:16,marginBottom:12}}>
               <div style={{display:'flex',background:'var(--bg)',borderRadius:10,padding:3,gap:2,marginBottom:12}}>
                 {['朝', '昼', '夜', '他'].map(t=>(
-                  <button key={t} onClick={()=>setMealType(t)} style={{flex:1,padding:'10px 0',fontFamily:'var(--mono)',fontSize:9,borderRadius:7,background:mealType===t?'var(--em)':'transparent',color:mealType===t?'var(--bg)':'var(--mu)',fontWeight:700}}>{t}</button>
+                  <button key={t} 
+                    onClick={()=>{
+                      setMealType(t);
+                      if(t==='朝') setShowMorningPrompt(true);
+                      else setShowMorningPrompt(false);
+                    }} 
+                    style={{flex:1,padding:'10px 0',fontFamily:'var(--mono)',fontSize:9,borderRadius:7,background:mealType===t?'var(--em)':'transparent',color:mealType===t?'var(--bg)':'var(--mu)',fontWeight:700}}>{t}</button>
                 ))}
               </div>
+
+              {showMorningPrompt && (
+                <div className="fade-up" style={{background:'var(--em-dim)', border:'1px dashed var(--em)', borderRadius:11, padding:14, marginBottom:14, textAlign:'center'}}>
+                  <div style={{fontSize:11, fontWeight:700, color:'var(--em)', marginBottom:10}}>朝セット（45.0g P）を登録しますか？</div>
+                  <div style={{display:'flex', gap:8}}>
+                    <button onClick={()=>{handleSave('朝セット', 45, '朝', 'マカ・コーヒー・サプリ'); setShowMorningPrompt(false);}} style={{flex:1, background:'var(--em)', color:'var(--bg)', border:'none', borderRadius:8, padding:'8px', fontSize:9, fontWeight:900}}>YES</button>
+                    <button onClick={()=>setShowMorningPrompt(false)} style={{flex:1, background:'var(--bg)', color:'var(--mu)', border:'1px solid var(--bd)', borderRadius:8, padding:'8px', fontSize:9, fontWeight:900}}>NO</button>
+                  </div>
+                </div>
+              )}
+
               <input value={mainMenu} onChange={e=>setMainMenu(e.target.value)} placeholder="主菜（Main Menu）" style={{width:'100%',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:14,fontSize:14,color:'var(--tx)',outline:'none',marginBottom:12}}/>
               <input value={sideMenu} onChange={e=>setSideMenu(e.target.value)} placeholder="副菜（Side Menu）" style={{width:'100%',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:14,fontSize:14,color:'var(--tx)',outline:'none',marginBottom:12}}/>
               <div style={{background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:11,padding:12,marginBottom:12}}>
@@ -416,39 +468,48 @@ const App = () => {
               </div>
             </div>
 
-            <div style={{display:'flex',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:10,padding:3,gap:2,marginBottom:12}}>
-              {[['all','ALL'],['burn','燃焼'],['recovery','回復'],['antiaging','老化']].map(([v,l])=>(
+            <div style={{display:'flex',background:'var(--bg)',border:'1px solid var(--bd)',borderRadius:10,padding:3,gap:2,marginBottom:10}}>
+              {[['all','ALL'],['bulkup','筋肥大'],['recovery','疲労回復'],['antiaging','抗老化']].map(([v,l])=>(
                 <button key={v} onClick={()=>setEffect(v)} style={{flex:1,padding:'10px 0',fontFamily:'var(--mono)',fontSize:8,fontWeight:700,border:'none',borderRadius:7,background:effect===v?'var(--em)':'transparent',color:effect===v?'var(--bg)':'var(--mu)'}}>{l}</button>
               ))}
             </div>
+            
+            {/* 3D立体化されたシャッフルボタン */}
+            <button 
+              className="btn-3d"
+              onClick={()=>setShuffleSeed(s=>s+1)} 
+              style={{display:'flex',alignItems:'center',justifyContent:'center',gap:7,width:'100%',borderRadius:12,padding:'14px',color:'var(--em)',fontSize:10,fontFamily:'var(--mono)',fontWeight:900,marginBottom:18,cursor:'pointer'}}>
+              <ShuffleIcon/> SHUFFLE STRATEGY
+            </button>
 
             {gap<=0 
               ? <div style={{textAlign:'center',padding:60,fontFamily:'var(--serif)',color:'var(--em)',fontSize:20}}>Goal Achieved ✓</div> 
-              : suggestions.map((opt,i)=>(
-                <div key={i} style={{...cardStyle({border:i===0?'1px solid rgba(16,185,129,0.4)':'1px solid var(--bd)'}),padding:18,marginBottom:10}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
-                    <div>
-                      <div style={mono({fontSize:7,color:'var(--mu)',marginBottom:4})}>OPTION {['A','B','C'][i]} {i===0&&'• BEST'}</div>
-                      <div style={{fontFamily:'var(--serif)',fontSize:19,color:'var(--tx)'}}>{opt.main}</div>
-                      <div style={{fontSize:10,color:'var(--mu)',marginTop:2}}>副菜：{opt.side}</div>
+              : (suggestions.length === 0 ? <div style={{textAlign:'center',padding:40,color:'var(--mu)',fontSize:10}}>分析中...</div> : 
+              suggestions.map((opt,i)=>(
+                <div key={i} style={{...cardStyle({border:i===0?'1px solid rgba(16,185,129,0.4)':'1px solid var(--bd)'}),padding:20,marginBottom:10}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+                    <div style={{flex:1}}>
+                      <div style={mono({fontSize:7,color:'var(--mu)',marginBottom:4})}>OPTION {['A','B','C'][i]}</div>
+                      <div style={{fontFamily:'var(--serif)',fontSize:19,color:'var(--tx)',lineHeight:1.2}}>{opt.main}</div>
+                      <div style={{fontSize:10,color:'var(--mu)',marginTop:4}}>副菜：{opt.side}</div>
                     </div>
-                    <div style={serif(26)}>{opt.p.toFixed(1)}<span style={{fontSize:10}}>g</span></div>
+                    <div style={serif(26)}>{Number(opt.p).toFixed(1)}<span style={{fontSize:10,marginLeft:1}}>g</span></div>
                   </div>
-                  {opt.effect && (
-                    <div style={{fontSize:8,color:'var(--mu)',background:'var(--bg)',padding:10,borderRadius:10,marginBottom:12,lineHeight:1.6}} 
-                      dangerouslySetInnerHTML={{__html: opt.effect.replace(/<em>/g, '<em style="color:var(--em);font-style:normal;font-weight:700">')}}/>
-                  )}
+                  
+                  {/* メニューごとの特徴を出した推奨理由 */}
+                  <div style={{background:'var(--bg)',borderLeft:'2px solid var(--em)',padding:'10px 12px',borderRadius:'0 8px 8px 0',margin:'12px 0'}}>
+                    <div style={mono({fontSize:7,color:'var(--em)',marginBottom:4,fontWeight:700})}>STRATEGIC REASON</div>
+                    <div style={{fontSize:10,color:'var(--tx)',lineHeight:1.5}}>{opt.reason}</div>
+                  </div>
+
                   <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
                     {(opt.tags || []).slice(0,3).map(t=>(
-                      <span key={t} style={{fontSize:6,fontFamily:'var(--mono)',background:'var(--s2)',color:'var(--mu)',padding:'3px 7px',borderRadius:5,border:'1px solid var(--bd)'}}>{t}</span>
+                      <span key={t} style={{fontSize:6,fontFamily:'var(--mono)',background:'var(--s2)',color:'var(--em)',padding:'4px 9px',borderRadius:6,border:'1px solid var(--bd)',fontWeight:700}}>{t}</span>
                     ))}
                   </div>
                 </div>
-            ))}
-            
-            <button onClick={()=>setShuffleSeed(s=>s+1)} style={{display:'flex',alignItems:'center',gap:7,margin:'12px auto',background:'transparent',border:'none',color:'var(--mu)',fontSize:9,fontFamily:'var(--mono)'}}>
-              <ShuffleIcon/> SHUFFLE MENU
-            </button>
+              )))
+            }
           </div>
         )}
 
@@ -456,7 +517,17 @@ const App = () => {
           <div style={{padding:'14px 14px 120px'}} className="fade-up">
             <div style={mono({fontSize:7.5,color:'var(--mu)',marginBottom:9})}>7-DAY TREND</div>
             <div style={{...cardStyle(),padding:16,marginBottom:20}}>
-              <div style={{width:'100%',height:130,marginBottom:2}} dangerouslySetInnerHTML={{__html:chartSvg}}/>
+              <div style={{width:'100%',height:150,marginBottom:2}} dangerouslySetInnerHTML={{__html:chartSvg}}/>
+            </div>
+
+            {/* 週のサマリコメント (視認性を向上) */}
+            <div style={{...cardStyle({background:'linear-gradient(135deg,var(--s2),var(--bg))'}),padding:20,marginBottom:20,borderLeft:'4px solid var(--em)'}}>
+              <div style={mono({fontSize:7.5,color:'var(--em)',fontWeight:700,letterSpacing:'0.2em',marginBottom:10})}>{statsSummary.title.toUpperCase()}</div>
+              <div style={{fontSize:13,color:'var(--tx)',lineHeight:1.6,marginBottom:12}}>{statsSummary.comment}</div>
+              <div style={{fontSize:11,color:'#FFFFFF',fontStyle:'italic',borderTop:'1px solid var(--bd)',paddingTop:12,display:'flex',gap:10}}>
+                <span style={{fontSize:18}}>💬</span>
+                <span style={{flex:1}}>{statsSummary.cheer}</span>
+              </div>
             </div>
             
             <div style={mono({fontSize:7.5,color:'var(--mu)',marginBottom:9})}>HISTORY LOG (LATEST 12)</div>
