@@ -14,8 +14,8 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
   --bg:#010206;
-  --glass:rgba(255, 255, 255, 0.03); 
-  --glass-header:rgba(255, 255, 255, 0.08); /* 透過率を上げ、半透明感を強調 */
+  --glass:rgba(255, 255, 255, 0.02); 
+  --glass-header:rgba(255, 255, 255, 0.08);
   --bd:rgba(190, 242, 100, 0.15);
   --em:#bef264; 
   --em-grad:linear-gradient(135deg, #bef264 0%, #84cc16 100%);
@@ -61,16 +61,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
 .animate-fade{animation:fadeIn 1s ease-out forwards;}
 .spin{animation:spin 1.5s linear infinite;}
 
+/* Micro-animations Classes */
 .glass-card {
   background: var(--glass);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s;
 }
+.glass-card:hover { transform: scale(1.005); box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
 
 .glass-header-card {
-  background: var(--glass-header); /* 半透明背景 */
+  background: var(--glass-header);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -83,11 +86,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   font-weight: 900;
   letter-spacing: 0.05em;
   box-shadow: 0 6px 16px var(--em-glow);
-  transition: all 0.3s;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   border: none;
   cursor: pointer;
 }
-.btn-lime:active { transform: scale(0.97); }
+.btn-lime:active { transform: scale(0.95); box-shadow: 0 2px 8px var(--em-glow); }
 
 .btn-3d {
   background: rgba(255, 255, 255, 0.03);
@@ -96,6 +99,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   transition: all 0.2s;
   cursor: pointer;
 }
+.btn-3d:active { transform: translateY(1px) scale(0.98); background: rgba(255, 255, 255, 0.08); }
 
 .adjust-btn {
   background: rgba(255, 255, 255, 0.06);
@@ -108,7 +112,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.1s;
 }
+.adjust-btn:active { background: var(--em); color: #000; transform: scale(0.9); }
 
 .tab-nav {
   background: rgba(1, 2, 6, 0.7);
@@ -116,14 +122,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.nav-item { transition: all 0.3s; }
+.nav-item:active { transform: translateY(-4px); }
+
 .sticky-header {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(1, 2, 6, 0.8);
-  backdrop-filter: blur(20px);
+  background: rgba(1, 2, 6, 0.85);
+  backdrop-filter: blur(25px);
   margin: 0 -20px;
   padding: 10px 20px 20px;
+  border-bottom: 1px solid rgba(190, 242, 100, 0.05);
 }
 </style>
 </head>
@@ -136,7 +146,7 @@ const { useState, useEffect, useMemo, useCallback } = React;
 const GAS = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
 const TARGET = 120;
 
-// Strategic Recommendation Logic Database (Client-Side Master)
+// Strategic Reasoning Engine
 const STRATEGIC_REASONS = {
   "黒毛和牛のグリル": "希少なクレアチンと鉄分が、INTJの鋭い意思決定に必要なホルモンバランスをリビルドします。",
   "大山鶏のハーブロースト": "高純度なアンセリンが深夜の思考疲れをリセット。明朝のブレイン・パフォーマンスを支えます。",
@@ -146,10 +156,7 @@ const STRATEGIC_REASONS = {
   "真鯛のアクアパッツァ": "タウリンが肝機能を保護。長時間のマルチタスクによる体内ダメージを精密に修復します。",
   "カツオのレアカツ": "強烈な抗疲労成分が筋肉の緊張を解きほぐし、質の高い回復へと誘います。",
   "厚揚げのニラ玉炒め": "アリシンがタンパク質吸収を最大化。最短距離で理想のフィジカルへ到達させます。",
-  "生ラムのたたき": "L-カルニチンの代謝支援により、無駄な脂肪を削ぎ落きながら筋肉をビルドアップします。",
-  "金目鯛のアクアパッツァ": "アスタキサンチンとTie2活性化の相乗効果。血管内皮から若さを保つ投資的メニューです。",
-  "鶏むね肉のバジルソテー": "イミダペプチドが自律神経を安定させ、ハードワークに耐えうるメンタルを構築します。",
-  "茹でダコのカルパッチョ": "タウリンによる血管ケア。しなやかな血管が、淀みのない血流とクリアな思考を実現します。",
+  "生ラムのたたき": "L-カルニチンの代謝支援により、無駄な脂肪を削ぎ落としながら筋肉をビルドアップします。",
   "朝セット": "規律ある朝のルーチン。45gの速攻性プロテインが1日の代謝をキックオフします。"
 };
 
@@ -176,11 +183,7 @@ const INITIAL_MENUS = [
   {main:"黒毛和牛のグリル",p:40,side:"ケールとナッツのサラダ",tags:["Premium","筋肥大","亜鉛"],cat:"bulkup"},
   {main:"大山鶏のハーブロースト",p:40,side:"完熟アボカド",tags:["Recovery","低脂質","アンセリン"],cat:"recovery"},
   {main:"生ラム肉のタリアータ",p:32,side:"トリュフ香る焼き玉ねぎ",tags:["Metabolism","燃焼","L-カルニチン"],cat:"bulkup"},
-  {main:"キングサーモンの低温調理",p:28,side:"季節のアスパラガス",tags:["Anti-Aging","アスタキサンチン","Tie2"],cat:"antiaging"},
-  {main:"極みサバの生姜煮",p:21,side:"五穀米のガレット",tags:["Vascular","DHA/EPA","Tie2"],cat:"antiaging"},
-  {main:"真鯛のアクアパッツァ",p:26,side:"あさりとドライトマト",tags:["Anti-Aging","タウリン","ミネラル"],cat:"antiaging"},
-  {main:"カツオのレアカツ",p:27,side:"大根おろしポン酢",tags:["Recovery","アンセリン","血行促進"],cat:"recovery"},
-  {main:"厚揚げのニラ玉炒め",p:21,side:"トマトサラダ",tags:["Bulkup","テストステロン","アリシン"],cat:"bulkup"}
+  {main:"キングサーモンの低温調理",p:28,side:"季節のアスパラガス",tags:["Anti-Aging","アスタキサンチン","Tie2"],cat:"antiaging"}
 ];
 
 const toJSTDateStr = (d = new Date()) => d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
@@ -210,14 +213,25 @@ const App = () => {
       const r = await fetch(GAS);
       const data = await r.json();
       const historyRaw = Array.isArray(data) ? data : (data.history || []);
-      setMeals(historyRaw.map(m => ({
-        ...m,
-        _id: m._id || genId(),
-        main: m.Main_Menu || m.main || "No Title",
-        protein: Number(m.Protein_g || m.protein || 0),
-        type: m.Meal_Type || m.type || "他",
-        timestamp: m.Timestamp || m.timestamp || new Date().toISOString()
-      })));
+      
+      // FIX: Filter out empty entries, dummy rows, or invalid logs that cause "Other 0g" issues
+      const cleanedMeals = historyRaw
+        .filter(m => {
+          const name = m.Main_Menu || m.main;
+          const p = Number(m.Protein_g || m.protein || 0);
+          return name && name.trim() !== "" && name !== "-" && (p > 0 || name === "朝セット");
+        })
+        .map(m => ({
+          ...m,
+          _id: m._id || genId(),
+          main: m.Main_Menu || m.main,
+          protein: Number(m.Protein_g || m.protein || 0),
+          type: m.Meal_Type || m.type || "他",
+          timestamp: m.Timestamp || m.timestamp || new Date().toISOString()
+        }));
+
+      setMeals(cleanedMeals);
+      
       if (data.menus?.length > 0) {
         setMasterMenus(data.menus.map(m => ({
           ...m,
@@ -285,9 +299,8 @@ const App = () => {
     const maxV = Math.max(...weekDays.map(d=>d.tot), TARGET, 10) * 1.15;
     const xStep=cW/6;
     
-    // 背景グリッドとターゲットライン
-    const gridValues = [0, Math.round(TARGET / 2), TARGET];
-    const grids = gridValues.map(v => {
+    // Grid values including the 120g Yellow Dotted Line
+    const grids = [0, Math.round(TARGET / 2), TARGET].map(v => {
       const y = PT + cH - (v / maxV) * cH;
       const isTarget = v === TARGET;
       return `
@@ -328,14 +341,13 @@ const App = () => {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:tab==='stats'?0:14}}>
           <div>
             <h1 style={{fontFamily:'var(--serif)',fontSize:28,color:'var(--em)',letterSpacing:'-0.02em',lineHeight:1}}>Meal OS</h1>
-            <p style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)',letterSpacing:'0.25em',marginTop:4,fontWeight:500}}>VITALITY ANALYTICS v7.7.0</p>
+            <p style={{fontFamily:'var(--mono)',fontSize:8,color:'var(--mu)',letterSpacing:'0.25em',marginTop:4,fontWeight:500}}>VITALITY ANALYTICS v7.7.1</p>
           </div>
           <button onClick={fetchData} style={{width:38,height:38,background:'rgba(255,255,255,0.08)',borderRadius:'50%',border:'1px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--em)',cursor:'pointer'}}>
             <RefreshIcon cls={syncing?'spin':''}/>
           </button>
         </div>
         
-        {/* DAILY FLOW CARD - TRANSLUCENT GLASS */}
         {tab !== 'stats' && (
           <div className="glass-header-card animate-fade" style={{padding:'14px 18px',borderRadius:22,position:'relative',overflow:'hidden'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:8}}>
@@ -398,7 +410,7 @@ const App = () => {
             </section>
             
             {filteredMeals.map((m,i)=>(
-              <div key={m._id} className="glass-card" style={{padding:'14px 18px',borderRadius:20,marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div key={m._id} className="glass-card animate-slide" style={{padding:'14px 18px',borderRadius:20,marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <div>
                   <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:2}}>
                     <span style={{fontSize:8,background:'var(--em)',color:'#000',padding:'2px 6px',borderRadius:4,fontWeight:900}}>{m.type}</span>
@@ -429,7 +441,7 @@ const App = () => {
               : (suggestions.length === 0 ? <div style={{textAlign:'center',padding:40,color:'var(--mu)',fontSize:10}}>分析中...</div> : 
               <div style={{display:'flex', flexDirection:'column', gap:6}}>
                 {suggestions.map((opt, i)=>(
-                  <div key={i} className="glass-card" style={{padding:'10px 14px',borderRadius:20,border:i===0?'1.2px solid var(--em)':'1px solid rgba(255,255,255,0.05)'}}>
+                  <div key={i} className="glass-card animate-slide" style={{padding:'10px 14px',borderRadius:20,border:i===0?'1.2px solid var(--em)':'1px solid rgba(255,255,255,0.05)'}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
                       <div>
                         <div style={{fontFamily:'var(--serif)',fontSize:16,lineHeight:1.1}}>{opt.main}</div>
@@ -438,7 +450,6 @@ const App = () => {
                       <div style={{fontFamily:'var(--serif)',fontSize:22,color:'var(--em)',lineHeight:1}}>{Number(opt.p).toFixed(1)}<span style={{fontSize:10,marginLeft:2}}>g</span></div>
                     </div>
                     
-                    {/* ENFORCED UNIQUE STRATEGIC REASONS */}
                     <div style={{background:'rgba(255,255,255,0.03)',borderLeft:'2px solid var(--em)',padding:'6px 10px',borderRadius:'0 8px 8px 0',fontSize:9.5,lineHeight:1.4,color:'var(--tx)',fontStyle:'italic',marginBottom:6}}>
                       "{getReason(opt.main)}"
                     </div>
@@ -457,7 +468,6 @@ const App = () => {
 
         {tab==='stats' && (
           <div className="animate-slide">
-            {/* STICKY GRAPH HEADER */}
             <div className="sticky-header">
               <div className="glass-card" style={{padding:20,borderRadius:28, background: 'rgba(255,255,255,0.02)'}}>
                 <div style={{fontFamily:'var(--mono)',fontSize:9,color:'var(--mu)',letterSpacing:'0.2em',marginBottom:16, display:'flex', justifyContent:'space-between'}}>
@@ -468,7 +478,7 @@ const App = () => {
               </div>
             </div>
 
-            <div className="glass-card" style={{padding:24,borderRadius:28,borderLeft:'5px solid var(--em)',marginTop:10, marginBottom:20}}>
+            <div className="glass-card animate-slide" style={{padding:24,borderRadius:28,borderLeft:'5px solid var(--em)',marginTop:10, marginBottom:20}}>
               <div style={{fontFamily:'var(--serif)',fontSize:22,color:'var(--tx)',marginBottom:6}}>{statsSummary.title}</div>
               <p style={{fontSize:12,lineHeight:1.5,color:'var(--tx)',marginBottom:16}}>{statsSummary.cheer}</p>
             </div>
@@ -479,7 +489,7 @@ const App = () => {
             
             {lastThreeDaysMeals.length === 0 ? <div style={{textAlign:'center',padding:40,color:'var(--mu)',fontSize:10}}>No logs for the last 3 days.</div> : 
               lastThreeDaysMeals.map((m,i)=>(
-                <div key={i} className="glass-card" style={{padding:'12px 16px',borderRadius:18,marginBottom:6,display:'flex',justifyContent:'space-between',alignItems:'center', background:'rgba(255,255,255,0.02)'}}>
+                <div key={i} className="glass-card animate-slide" style={{padding:'12px 16px',borderRadius:18,marginBottom:6,display:'flex',justifyContent:'space-between',alignItems:'center', background:'rgba(255,255,255,0.02)'}}>
                   <div style={{display:'flex',alignItems:'center',gap:10}}>
                     <div style={{fontSize:8,color:'var(--bg)',background:'var(--em)',padding:'3px 7px',borderRadius:6,fontWeight:900}}>{m.type}</div>
                     <div>
@@ -501,7 +511,7 @@ const App = () => {
           {id:'suggest',lbl:'STRATEGY',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="22" height="22"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>},
           {id:'stats',lbl:'ANALYSIS',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="22" height="22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
         ].map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,background:'none',border:'none',color:tab===t.id?'var(--em)':'var(--mu)',transition:'all 0.3s',cursor:'pointer'}}>
+          <button key={t.id} onClick={()=>setTab(t.id)} className="nav-item" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,background:'none',border:'none',color:tab===t.id?'var(--em)':'var(--mu)',transition:'all 0.3s',cursor:'pointer'}}>
             {t.icon}
             <span style={{fontFamily:'var(--mono)',fontSize:8,fontWeight:900}}>{t.lbl}</span>
             {tab===t.id && <div style={{width:5,height:5,background:'var(--em)',borderRadius:'50%',marginTop:2,boxShadow:'0 0 10px var(--em)'}}/>}
