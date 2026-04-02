@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Meal OS v7.8.2</title>
+    <title>Meal OS v7.9.2</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -50,8 +50,11 @@
 
         @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes chart-draw { from { stroke-dashoffset: 500; } to { stroke-dashoffset: 0; } }
+        
         .animate-slide { animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         .animate-fade { animation: fadeIn 0.8s ease-out forwards; }
+        .chart-path { stroke-dasharray: 500; stroke-dashoffset: 500; animation: chart-draw 3.0s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 
         .glass-card {
             background: var(--glass);
@@ -68,7 +71,7 @@
             border: none;
             cursor: pointer;
             box-shadow: 0 6px 20px var(--em-glow);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.2s;
         }
         .btn-lime:active { transform: scale(0.95); }
 
@@ -113,15 +116,6 @@
             padding: 8px;
         }
         .delete-btn:hover { opacity: 1; }
-
-        .badge-tag {
-            font-size: 8px;
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-family: var(--mono);
-            font-weight: 900;
-            text-transform: uppercase;
-        }
     </style>
 </head>
 <body>
@@ -162,16 +156,17 @@
             const getStrategicReason = useCallback((name, p, currentGap) => {
                 if (!name) return "規律ある身体資産の構築へ。";
                 for (const key in STRATEGIC_REASONS) { if (name.includes(key)) return STRATEGIC_REASONS[key]; }
-                
-                // 動的生成 (重複回避ロジック)
-                const efficiency = ((p / currentGap) * 100).toFixed(0);
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) { hash = ((hash << 5) - hash) + name.charCodeAt(i); hash |= 0; }
+                const index = Math.abs(hash) % 5;
                 const options = [
-                    `現在の不足分に対し、このメニューは ${p.toFixed(1)}g（達成率 ${efficiency}%）を補完する高効率な選択です。`,
+                    `現在の不足分に対し、このメニューは ${p.toFixed(1)}g を補完する高効率な選択です。`,
                     `120gの規律を死守するための戦略的パーツ。純粋なビルドアップ素材が明日の活力を形成します。`,
-                    `栄養密度の最適解。過剰な脂質を避けつつタンパク質を加算し、体組成のキレを維持します。`
+                    `栄養密度の最適解。過剰な脂質を避けつつタンパク質を加算し、体組成のキレを維持します。`,
+                    `INTJの論理的選択。この ${p.toFixed(1)}g の加算が、明日の市場価値を数学的に保証します。`,
+                    `身体というハードウェアへの最適化パッチ。思考のクロック周波数を高めるための補給です。`
                 ];
-                const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                return options[hash % options.length];
+                return options[index];
             }, []);
 
             const fetchData = useCallback(async () => {
@@ -179,37 +174,42 @@
                 try {
                     const r = await fetch(GAS_URL + "?cache=" + Date.now());
                     const data = await r.json();
-                    
-                    // --- ログのクレンジングと正規化 ---
                     const historyRaw = Array.isArray(data) ? data : (data.history || []);
                     const cleanedLogs = historyRaw
                         .filter(m => {
-                            const name = (m.Main_Menu || m.main || "").toString().trim();
-                            const val = Number(m.Protein_g || m.protein || 0);
-                            const rawTs = (m.Timestamp || m.timestamp || "").toString();
-                            return name.length > 0 && name !== "-" && rawTs.startsWith('202') && (val > 0 || name.includes("朝セット"));
+                            const name = (m.main || m.Main_Menu || "").toString().trim();
+                            const val = Number(m.protein || m.Protein_g || 0);
+                            return name.length > 0 && name !== "-" && (val > 0 || name.includes("朝セット"));
                         })
                         .map(m => {
-                            const rawTs = (m.Timestamp || m.timestamp || "").toString();
-                            const datePart = rawTs.split(/[ T]/)[0].replace(/\//g, '-');
+                            const rawTs = (m.timestamp || m.Timestamp || "").toString();
+                            let dateObj;
+                            try {
+                                // 【解析強化】スペース区切りをT区切りに変換し、ブラウザ解析エラーを回避
+                                const isoTs = rawTs.replace(/\//g, '-').replace(' ', 'T');
+                                dateObj = new Date(isoTs);
+                                if (isNaN(dateObj.getTime())) dateObj = new Date();
+                            } catch(e) { dateObj = new Date(); }
+                            
+                            const datePart = dateObj.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+
                             return {
-                                id: rawTs + "_" + (m.Main_Menu || m.main),
-                                main: m.Main_Menu || m.main,
-                                protein: Number(m.Protein_g || m.protein || 0),
-                                type: m.Meal_Type || m.type || "他",
+                                id: rawTs + "_" + (m.main || m.Main_Menu),
+                                main: m.main || m.Main_Menu,
+                                protein: Number(m.protein || m.Protein_g || 0),
+                                type: m.type || m.Meal_Type || "他",
                                 timestamp: rawTs,
-                                dateOnly: datePart
+                                dateOnly: datePart,
+                                timeMs: dateObj.getTime()
                             };
                         })
-                        .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        .sort((a,b) => b.timeMs - a.timeMs);
                     setMeals(cleanedLogs);
-                    
-                    // --- 推奨メニューの正規化 ---
                     if (data.menus && data.menus.length > 0) {
                         setMasterMenus(data.menus.map(m => ({
                             main: m.main || m.Main_Menu || "Unknown",
-                            side: m.side || m.Side_Menu || "-",
                             p: Number(m.p || m.Protein_g || 20),
+                            side: m.side || m.Side_Menu || "-",
                             tags: m.tags ? (Array.isArray(m.tags) ? m.tags : String(m.tags).split(',')) : [],
                             cat: m.cat || "all"
                         })));
@@ -220,19 +220,23 @@
 
             useEffect(() => { fetchData(); }, [fetchData]);
 
-            const currentMeals = useMemo(() => 
-                meals.filter(m => m.dateOnly === selDate)
-            , [meals, selDate]);
-
-            const totalP = useMemo(() => currentMeals.reduce((s, m) => s + m.protein, 0), [currentMeals]);
+            const currentMeals = useMemo(() => meals.filter(m => m.dateOnly === selDate), [meals, selDate]);
+            const totalP = useMemo(() => currentMeals.reduce((sum, m) => sum + m.protein, 0), [currentMeals]);
             const progress = Math.min((totalP / TARGET) * 100, 100);
             const gap = Math.max(0, TARGET - totalP);
+
+            const suggestions = useMemo(() => {
+                if (gap <= 0 || masterMenus.length === 0) return [];
+                let pool = masterMenus.filter(m => effect === 'all' || m.cat === effect);
+                if (pool.length === 0) pool = masterMenus;
+                const seeded = [...pool].map((m, i) => ({ m, r: Math.sin(shuffleSeed * 997 + i * 31) }));
+                return seeded.sort((a, b) => a.r - b.r).slice(0, 3).map(x => x.m);
+            }, [masterMenus, gap, effect, shuffleSeed]);
 
             const handleSave = async (mName, mP, mType) => {
                 if (!mName || mName.trim().length < 2) return;
                 const now = new Date();
                 const ts = `${selDate} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
-                
                 showToast('SAVING...');
                 try { 
                     await fetch(GAS_URL, { 
@@ -259,20 +263,11 @@
                 } catch (err) { showToast('DELETE ERROR'); } finally { setSyncing(false); }
             };
 
-            const suggestions = useMemo(() => {
-                if (gap <= 0 || masterMenus.length === 0) return [];
-                let pool = masterMenus.filter(m => effect === 'all' || m.cat === effect);
-                if (pool.length === 0) pool = masterMenus;
-                const seeded = [...pool].map((m, i) => ({ m, r: Math.sin(shuffleSeed * 997 + i * 31) }));
-                return seeded.sort((a, b) => a.r - b.r).slice(0, 3).map(x => x.m);
-            }, [masterMenus, gap, effect, shuffleSeed]);
-
             const chartSvg = useMemo(() => {
                 const W=320, H=150, PL=30, PR=10, PT=20, PB=30, cW=W-PL-PR, cH=H-PT-PB;
                 const days = Array.from({length:7}, (_,i) => {
                     const d = new Date(); d.setDate(d.getDate()-(6-i));
                     const ds = d.toLocaleDateString('sv-SE', {timeZone:'Asia/Tokyo'});
-                    // 厳格な日付マッチ
                     const val = meals.filter(m => m.dateOnly === ds).reduce((s,m)=>s+m.protein,0);
                     return { lbl: ['日','月','火','水','木','金','土'][d.getDay()], val, isToday: ds === todayStr };
                 });
@@ -281,38 +276,48 @@
                 const grids = [0, TARGET/2, TARGET].map(v => {
                     const y = PT + cH - (v / maxV) * cH;
                     const isTarget = v === TARGET;
-                    return `
-                        <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="${isTarget ? 'var(--yel)' : 'var(--mu)'}" stroke-width="${isTarget ? 2 : 1}" stroke-dasharray="${isTarget ? '4,4' : '2,2'}" opacity="${isTarget ? 1 : 0.2}" />
-                        <text x="${PL-5}" y="${y+3}" font-family="var(--mono)" font-size="8" fill="${isTarget ? 'var(--yel)' : 'var(--mu)'}" text-anchor="end">${v}</text>
-                    `;
+                    return `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="${isTarget ? 'var(--yel)' : 'var(--mu)'}" stroke-width="${isTarget ? 2 : 1}" stroke-dasharray="${isTarget ? '4,4' : '2,2'}" opacity="${isTarget ? 0.8 : 0.2}" />
+                            <text x="${PL-5}" y="${y+3}" font-family="var(--mono)" font-size="8" fill="${isTarget ? 'var(--yel)' : 'var(--mu)'}" text-anchor="end">${v}</text>`;
                 }).join('');
                 const points = days.map((d, i) => ({ x: PL + i*xStep, y: PT + cH - (d.val/maxV)*cH, ...d }));
                 const pathD = points.map((p, i) => (i===0 ? 'M' : 'L') + `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-                const dots = points.map(p => `
-                    <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.isToday?5:3}" fill="${p.val >= TARGET ? 'var(--em)' : p.val>0 ? 'white' : 'var(--mu)'}" />
-                    <text x="${p.x.toFixed(1)}" y="${H-5}" font-size="9" fill="${p.isToday?'var(--em)':'var(--mu)'}" text-anchor="middle">${p.lbl}</text>
-                    ${p.val > 0 ? `<text x="${p.x.toFixed(1)}" y="${(p.y-8).toFixed(1)}" font-size="9" fill="white" font-family="var(--mono)" text-anchor="middle" font-weight="900">${Math.round(p.val)}</text>` : ''}
+                const line = `<path d="${pathD}" fill="none" stroke="var(--em)" stroke-width="2.5" class="chart-path" stroke-linejoin="round" />`;
+                const dots = points.map((p, i) => `
+                    <g>
+                        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.isToday?5:3}" fill="${p.val >= TARGET ? 'var(--em)' : p.val>0 ? 'white' : 'var(--mu)'}" />
+                        <text x="${p.x.toFixed(1)}" y="${H-5}" font-size="9" fill="${p.isToday?'var(--em)':'var(--mu)'}" text-anchor="middle">${p.lbl}</text>
+                        ${p.val > 0 ? `<text x="${p.x.toFixed(1)}" y="${(p.y-8).toFixed(1)}" font-size="9" fill="white" font-family="var(--mono)" text-anchor="middle" font-weight="900">${Math.round(p.val)}</text>` : ''}
+                    </g>
                 `).join('');
-                return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%">${grids}<path d="${pathD}" fill="none" stroke="var(--em)" stroke-width="2.5" />${dots}</svg>`;
+                return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;overflow:visible">${grids}${line}${dots}</svg>`;
             }, [meals, todayStr]);
+
+            // 【アナリティクス：本日・昨日・一昨日の3日間のみを厳密抽出】
+            const last3DaysMeals = useMemo(() => {
+                const getD = (offset) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - offset);
+                    return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+                };
+                const targets = [getD(0), getD(1), getD(2)];
+                return meals.filter(m => targets.includes(m.dateOnly));
+            }, [meals]);
 
             return (
                 <div style={{ maxWidth: 430, margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
                     {toast && (
                         <div style={{ position:'fixed', top:20, left:'50%', transform:'translateX(-50%)', background:'var(--em)', color:'#000', padding:'8px 24px', borderRadius:40, fontFamily:'var(--mono)', fontSize:10, fontWeight:900, zIndex:999, animation:'slideUp 0.4s forwards' }}>{toast}</div>
                     )}
-
                     <header style={{ padding: '20px 20px 10px', zIndex: 10 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 }}>
                             <div style={{ flex: 1 }}>
                                 <h1 style={{ fontFamily: 'var(--serif)', fontSize: 28, color: 'var(--em)', lineHeight: 1 }}>Meal OS</h1>
-                                <p style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginTop: 4 }}>PRECISION DYNAMIC v7.8.2</p>
+                                <p style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginTop: 4 }}>STRATEGY VALIDATED v7.9.2</p>
                             </div>
                             <button onClick={fetchData} disabled={syncing} style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--em)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                 <svg className={syncing ? 'animate-spin' : ''} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
                             </button>
                         </div>
-
                         {tab !== 'stats' && (
                             <div className="glass-card animate-fade" style={{ padding: '15px 20px', borderRadius: 24, position: 'relative', overflow: 'hidden' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
@@ -320,12 +325,11 @@
                                     <span style={{ fontFamily: 'var(--serif)', fontSize: 36, color: 'var(--tx)', lineHeight: 1 }}>{totalP.toFixed(1)}<span style={{ fontSize: 12, color: 'var(--mu)', marginLeft: 4 }}>g</span></span>
                                 </div>
                                 <div style={{ height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2, position: 'relative' }}>
-                                    <div style={{ height: '100%', background: 'var(--em-grad)', width: `${progress}%`, transition: 'width 1s ease-out', boxShadow: '0 0 12px var(--em-glow)' }} />
+                                    <div style={{ height: '100%', background: 'var(--em-grad)', width: `${progress}%`, transition: 'width 1s ease-out' }} />
                                 </div>
                             </div>
                         )}
                     </header>
-
                     <main className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '0 18px 100px' }}>
                         {tab === 'log' && (
                             <div className="animate-slide">
@@ -334,14 +338,12 @@
                                     <div style={{ fontFamily: 'var(--serif)', fontSize: 20 }}>{selDate.split('-')[1]}/{selDate.split('-')[2]}</div>
                                     <button onClick={() => { const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate()+1); if(d.toLocaleDateString('sv-SE') <= todayStr) setSelDate(d.toLocaleDateString('sv-SE')) }} style={{ color: selDate === todayStr ? 'transparent' : 'var(--mu)', background: 'none', border: 'none', cursor: 'pointer' }}>▶</button>
                                 </div>
-
                                 <section className="glass-card" style={{ padding: 20, borderRadius: 28, marginBottom: 20 }}>
                                     <div style={{ display: 'flex', gap: 6, marginBottom: 15 }}>
                                         {['朝','昼','夜','他'].map(t => (
                                             <button key={t} onClick={() => {setMealType(t); if(t==='朝') setShowMorningPrompt(true); else setShowMorningPrompt(false);}} style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: 'none', background: mealType === t ? 'var(--em)' : 'rgba(255,255,255,0.03)', color: mealType === t ? '#000' : 'var(--mu)', fontSize: 11, fontWeight: 900, cursor: 'pointer' }}>{t}</button>
                                         ))}
                                     </div>
-
                                     {showMorningPrompt && (
                                         <div style={{ background: 'rgba(190,242,100,0.05)', border: '1px dashed var(--em)', borderRadius: 16, padding: 15, marginBottom: 15, textAlign: 'center' }}>
                                             <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--em)', marginBottom: 10 }}>朝セット（45g）をレポしますか？</p>
@@ -351,9 +353,7 @@
                                             </div>
                                         </div>
                                     )}
-
                                     <input value={mainMenu} onChange={e => setMainMenu(e.target.value)} placeholder="Main Menu" style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 16, fontSize: 14, color: 'var(--tx)', outline: 'none', marginBottom: 15 }} />
-                                    
                                     <div style={{ marginBottom: 20 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
                                             <span style={{ fontSize: 8, color: 'var(--mu)', fontWeight: 700 }}>STRATEGIC WEIGHT</span>
@@ -365,10 +365,8 @@
                                             <button className="btn-sub" onClick={() => setProtein(p => Math.min(60, parseFloat((p + 0.5).toFixed(1))))}>+0.5</button>
                                         </div>
                                     </div>
-
                                     <button onClick={() => handleSave(mainMenu, protein, mealType)} className="btn-lime" style={{ width: '100%', padding: 18, borderRadius: 18, fontSize: 14 }}>STAY HEALTHY →</button>
                                 </section>
-
                                 {currentMeals.length === 0 ? (
                                     <div style={{ textAlign: 'center', padding: 40, opacity: 0.3, fontSize: 10, letterSpacing: '0.2em' }}>CLEAN DISCIPLINE (NO LOGS)</div>
                                 ) : currentMeals.map(m => (
@@ -378,7 +376,7 @@
                                                 <span style={{ fontSize: 8, background: 'var(--em)', color: '#000', padding: '2px 6px', borderRadius: 4, fontWeight: 900 }}>{m.type}</span>
                                                 <span style={{ fontFamily: 'var(--serif)', fontSize: 16 }}>{m.main}</span>
                                             </div>
-                                            <div style={{ fontSize: 7, color: 'var(--mu)', fontFamily: 'var(--mono)' }}>{m.timestamp?.split(/[ T]/)[1]?.slice(0, 5) || "RECORDED"} • Performance Data</div>
+                                            <div style={{ fontSize: 7, color: 'var(--mu)', fontFamily: 'var(--mono)' }}>{m.timestamp?.split(/[ T]/)[1]?.slice(0, 5)} • Validated</div>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
                                             <div style={{ fontFamily: 'var(--serif)', fontSize: 20, color: 'var(--em)' }}>{m.protein.toFixed(1)}<span style={{ fontSize: 9, marginLeft: 1 }}>g</span></div>
@@ -388,45 +386,30 @@
                                 ))}
                             </div>
                         )}
-
                         {tab === 'suggest' && (
                             <div className="animate-slide">
-                                <div style={{ display: 'flex', gap: 4, marginBottom: 10, background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 16 }}>
-                                    {[['all','ALL'],['muscle','筋肉'],['recovery','回復'],['antiaging','老化']].map(([v, l]) => (
-                                        <button key={v} onClick={() => setEffect(v)} style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', background: effect === v ? 'var(--em)' : 'transparent', color: effect === v ? '#000' : 'var(--mu)', fontSize: 10, fontWeight: 900, cursor: 'pointer' }}>{l}</button>
-                                    ))}
-                                </div>
-
-                                <button onClick={() => setShuffleSeed(s => s + 1)} style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: 'var(--em)', fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', marginBottom: 15, cursor: 'pointer' }}>SHUFFLE STRATEGY</button>
-
+                                <button onClick={() => setShuffleSeed(s => s + 1)} style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: 'var(--em)', fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', marginBottom: 15, cursor: 'pointer' }}>SHUFFLE STRATEGY</button>
                                 {gap <= 0 ? <div style={{ textAlign: 'center', padding: 60, fontFamily: 'var(--serif)', color: 'var(--em)', fontSize: 24 }}>Goal Reached ✓</div> : 
                                 masterMenus.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: 40, color: 'var(--mu)', fontSize: 11 }}>
-                                        マスターメニューを同期中...<br/>
-                                        (もし表示されない場合はシートの「menus」を確認してください)
-                                    </div>
+                                    <div style={{ textAlign: 'center', padding: 40, color: 'var(--mu)', fontSize: 11 }}>メニューを同期中...</div>
                                 ) : suggestions.map((opt, i) => (
                                     <div key={i} className="glass-card animate-slide" style={{ padding: 15, borderRadius: 22, marginBottom: 10, border: i === 0 ? '1px solid var(--em)' : '1px solid rgba(255,255,255,0.08)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                                             <div style={{ fontFamily: 'var(--serif)', fontSize: 18 }}>{opt.main}</div>
                                             <div style={{ fontFamily: 'var(--serif)', fontSize: 24, color: 'var(--em)' }}>{Number(opt.p).toFixed(1)}<span style={{ fontSize: 10, marginLeft: 2 }}>g</span></div>
                                         </div>
-                                        <div style={{ background: 'rgba(255,255,255,0.03)', borderLeft: '2px solid var(--em)', padding: '8px 12px', borderRadius: '0 10px 10px 0', fontSize: 10, color: 'var(--tx)', fontStyle: 'italic', marginBottom: 10 }}>
+                                        <div style={{ background: 'rgba(190,242,100,0.04)', borderLeft: '2px solid var(--em)', padding: '8px 12px', borderRadius: '0 10px 10px 0', fontSize: 10, color: 'var(--tx)', fontStyle: 'italic', marginBottom: 10 }}>
                                             "{getStrategicReason(opt.main, opt.p, gap)}"
-                                        </div>
-                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-                                            {(opt.tags || []).slice(0, 3).map(t => <span key={t} className="badge-tag" style={{ color: 'var(--em)', background: 'rgba(190,242,100,0.08)', border: '1px solid rgba(190,242,100,0.1)' }}>{t}</span>)}
                                         </div>
                                         <button onClick={() => { setMainMenu(opt.main); setProtein(opt.p); setMealType('夜'); setTab('log'); }} className="btn-lime" style={{ width: '100%', padding: '10px 0', borderRadius: 12, fontSize: 10, fontWeight: 900 }}>このメニューを選択 →</button>
                                     </div>
                                 ))}
                             </div>
                         )}
-
                         {tab === 'stats' && (
                             <div className="animate-slide">
                                 <div className="sticky-analysis">
-                                    <div className="glass-card" style={{ padding: 15, borderRadius: 24, background: 'rgba(255,255,255,0.01)' }}>
+                                    <div className="glass-card" style={{ padding: 15, borderRadius: 24 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--mu)', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 10 }}>
                                             <span>7-DAY TREND ANALYSIS</span>
                                             <span style={{ color: 'var(--yel)' }}>TARGET: 120g</span>
@@ -434,23 +417,19 @@
                                         <div style={{ height: 160 }} dangerouslySetInnerHTML={{ __html: chartSvg }} />
                                     </div>
                                 </div>
-
                                 <div className="glass-card" style={{ padding: 25, borderRadius: 28, borderLeft: '5px solid var(--em)', marginTop: 15, marginBottom: 20 }}>
-                                    <h3 style={{ fontFamily: 'var(--serif)', fontSize: 22, marginBottom: 5 }}>Weekly Analysis</h3>
-                                    <p style={{ fontSize: 12, lineHeight: 1.6, opacity: 0.8 }}>{totalP >= TARGET ? "完璧な規律です。身体のキレが思考の深さを加速させます。" : "あと少しのタンパク質が、明日の市場価値を形成します。効率的な補完を。"}</p>
+                                    <p style={{ fontSize: 12, lineHeight: 1.6, opacity: 0.8 }}>{totalP >= TARGET ? "完璧な規律です。身体のキレが思考の深さを加速させます。" : "目標値までの補完計画を自動生成しました。"}</p>
                                 </div>
-
-                                <p style={{ fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginBottom: 12 }}>LAST RECORDS (DATE VERIFICATION)</p>
-                                {meals.slice(0, 12).map((m, i) => (
+                                <p style={{ fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginBottom: 12 }}>LAST 3 DAYS RECORDS (STRICT SYNC)</p>
+                                {last3DaysMeals.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: 20, color: 'var(--mu)', fontSize: 10 }}>No activity found in the last 72H.</div>
+                                ) : last3DaysMeals.map((m, i) => (
                                     <div key={i} className="glass-card" style={{ padding: '12px 16px', borderRadius: 18, marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: m.dateOnly === todayStr ? 1 : 0.6 }}>
                                         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                                             <div style={{ fontSize: 7, background: m.dateOnly === todayStr ? 'var(--em)' : 'var(--mu)', color: '#000', padding: '3px 6px', borderRadius: 5, fontWeight: 900 }}>
                                                 {m.dateOnly.split('-').slice(1).join('/')}
                                             </div>
-                                            <div>
-                                                <div style={{ fontSize: 13, fontWeight: 700 }}>{m.main}</div>
-                                                <div style={{ fontSize: 7, color: 'var(--mu)', fontFamily: 'var(--mono)' }}>{m.type} • {m.timestamp.split(/[ T]/)[1]?.slice(0,5)}</div>
-                                            </div>
+                                            <div style={{ fontSize: 13, fontWeight: 700 }}>{m.main}</div>
                                         </div>
                                         <div style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--em)' }}>{m.protein.toFixed(1)}g</div>
                                     </div>
@@ -458,7 +437,6 @@
                             </div>
                         )}
                     </main>
-
                     <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto', height: 85, background: 'rgba(1,2,6,0.9)', backdropFilter: 'blur(45px)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', zIndex: 100 }}>
                         {[{ id: 'log', lbl: 'LOG', icon: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' }, { id: 'suggest', lbl: 'STRATEGY', icon: 'M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z' }, { id: 'stats', lbl: 'ANALYSIS', icon: 'M22 12h-4l-3 9L9 3l-3 9H2' }].map(t => (
                             <button key={t.id} onClick={() => setTab(t.id)} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: tab === t.id ? 'var(--em)' : 'var(--mu)', flex: 1, cursor: 'pointer' }}>
