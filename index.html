@@ -1,433 +1,436 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-
-const GAS = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
-const TARGET = 120;
-
-// --- 独自戦略データベース (キーワードマッチング用) ---
-const STRATEGIC_REASONS = {
-  "牛": "希少なクレアチンと鉄分が、INTJの鋭い意思決定に必要なホルモン環境を整え、商談での圧倒的優位を築きます。",
-  "鶏": "高純度なアンセリンが深夜の思考疲れをリセット。明朝、最速でアクセルを踏み込むためのブレイン・メンテナンスです。",
-  "ラム": "豊富なL-カルニチンが脂肪燃焼を最適化。無駄を極限まで削ぎ落とす、ニモさんの知的な身体管理の極致です。",
-  "サーモン": "強力な抗酸化成分アスタキサンチンが、血管から若々しさをリビルド。時間を味方につける、まさに「投資」としての食事です。",
-  "サバ": "DHA/EPAが血流を劇的に改善。脳への酸素供給を最大化し、淀みのないロジック展開をサポートします。",
-  "真鯛": "タウリンが肝機能を保護し、長時間のマルチタスクによる体内ダメージを精密に修復。翌日のパフォーマンスを保証します。",
-  "カツオ": "鉄分とビタミンB群の相乗効果で、エネルギー代謝をブースト。ここ一番の勝負所で、スタミナ切れを許しません。",
-  "厚揚げ": "アリシンがビタミンB1と結合し、タンパク質の吸収効率を極大化。最短距離で理想のフィジカルへと導きます。",
-  "朝セット": "ニモさんの1日の基盤。45gの速攻性プロテインが代謝をキックオフし、スタートダッシュを確実にします。",
-  "卵": "アミノ酸スコア100の完全栄養。脳の神経伝達物質をサポートし、多角的な視点を維持するための基礎資産です。",
-  "ササミ": "純度の高いタンパク質が、余計な脂質を排除。研ぎ澄まされた身体が、思考の切れ味を支えます。"
-};
-
-// --- アイコンコンポーネント ---
-const RefreshIcon = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
-    <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-  </svg>
-);
-
-const ShuffleIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="var(--em)" strokeWidth="2.5" width="16" height="16">
-    <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
-  </svg>
-);
-
-const toJSTDateStr = (d = new Date()) => d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-const genId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-const DAY_JP = ['日', '月', '火', '水', '木', '金', '土'];
-
-export default function App() {
-  const todayStr = useMemo(() => toJSTDateStr(new Date()), []);
-  const [meals, setMeals] = useState([]);
-  const [masterMenus, setMasterMenus] = useState([]);
-  const [tab, setTab] = useState('log');
-  const [syncing, setSyncing] = useState(false);
-  const [toast, setToast] = useState('');
-  const [selDate, setSelDate] = useState(todayStr);
-  const [mealType, setMealType] = useState('昼');
-  const [mainMenu, setMainMenu] = useState('');
-  const [protein, setProtein] = useState(25.0);
-  const [effect, setEffect] = useState('all');
-  const [shuffleSeed, setShuffleSeed] = useState(0);
-  const [showMorningPrompt, setShowMorningPrompt] = useState(false);
-
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
-
-  // --- ダイナミック・コメント生成ロジック (絶対に重複させない) ---
-  const getStrategicReason = useCallback((name, p, currentGap) => {
-    if (!name) return "精密なタンパク質補完により、ニモさんの身体資産をリビルドします。";
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Meal OS v7.7.7</title>
     
-    // 1. キーワードマッチ
-    for (const key in STRATEGIC_REASONS) {
-      if (name.includes(key)) return STRATEGIC_REASONS[key];
-    }
+    <!-- Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #010206;
+            --glass: rgba(255, 255, 255, 0.02);
+            --glass-header: rgba(255, 255, 255, 0.08);
+            --em: #bef264;
+            --em-grad: linear-gradient(135deg, #bef264 0%, #84cc16 100%);
+            --em-glow: rgba(190, 242, 100, 0.3);
+            --tx: #f1f3f9;
+            --mu: #475569;
+            --yel: #fbbf24;
+            --mono: 'DM Mono', monospace;
+            --serif: 'DM Serif Display', serif;
+        }
 
-    // 2. マッチしない場合の動的生成
-    const efficiency = ((p / currentGap) * 100).toFixed(0);
-    const options = [
-      `現在の不足分 ${currentGap.toFixed(1)}g に対して、このメニューの ${p.toFixed(1)}g は目標達成への ${efficiency}% を埋める効率的な投資です。`,
-      `規律ある120g達成に向けた戦略的選択。この ${p.toFixed(1)}g が明朝のパフォーマンスを決定づけます。`,
-      `栄養素の密度を考慮したアプローチ。身体の深部から修復を促し、INTJの鋭い思考を維持するための補完案です。`
-    ];
-    // メニュー名の文字数などでインデックスを固定し、同一メニューなら同じ、別メニューなら別のコメントが出るようにする
-    return options[name.length % options.length];
-  }, []);
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Noto Sans JP', sans-serif; 
+            background: var(--bg); 
+            color: var(--tx); 
+            height: 100dvh; 
+            overflow: hidden; 
+            position: relative;
+        }
 
-  const fetchData = useCallback(async () => {
-    setSyncing(true);
-    try {
-      const r = await fetch(GAS_URL);
-      const data = await r.json();
-      const historyRaw = Array.isArray(data) ? data : (data.history || []);
+        /* Liquid Glass Background */
+        body::before {
+            content: ''; position: fixed; inset: 0;
+            background: radial-gradient(circle at 10% 10%, #152515 0%, transparent 40%),
+                        radial-gradient(circle at 90% 90%, #0a0f1e 0%, transparent 40%);
+            z-index: -1;
+        }
+        .liquid-blob {
+            position: fixed; width: 400px; height: 400px; background: var(--em);
+            border-radius: 50%; filter: blur(120px); opacity: 0.1;
+            z-index: -1; animation: float 20s infinite alternate ease-in-out;
+        }
+        @keyframes float {
+            0% { transform: translate(-10%, -10%) scale(1); }
+            100% { transform: translate(30%, 20%) scale(1.2); }
+        }
 
-      // 0gや空文字のダミーデータを徹底排除
-      const cleaned = historyRaw
-        .filter(m => {
-          const name = m.Main_Menu || m.main;
-          const pValue = Number(m.Protein_g || m.protein || 0);
-          return name && name.trim().length > 1 && name !== "-" && (pValue > 0 || name.includes("朝セット"));
-        })
-        .map(m => ({
-          ...m,
-          _id: m._id || genId(),
-          main: m.Main_Menu || m.main,
-          protein: Number(m.Protein_g || m.protein || 0),
-          type: m.Meal_Type || m.type || "他",
-          timestamp: m.Timestamp || m.timestamp || new Date().toISOString()
-        }));
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-      setMeals(cleaned);
-      if (data.menus?.length > 0) {
-        setMasterMenus(data.menus.map(m => ({
-          ...m,
-          main: m.main || m.Main_Menu,
-          p: Number(m.p || m.Protein_g || 20),
-          tags: Array.isArray(m.tags) ? m.tags : (m.tags ? m.tags.split(',') : [])
-        })));
-      }
-      showToast('SYSTEM SYNCED');
-    } catch (e) { showToast('OFFLINE MODE'); } finally { setSyncing(false); }
-  }, []);
+        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-slide { animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .animate-fade { animation: fadeIn 0.8s ease-out forwards; }
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
+        }
+        .glass-card:active { transform: scale(0.995); }
 
-  const filteredMeals = useMemo(() => {
-    return meals.filter(m => m.timestamp.split(/[T ]/)[0] === selDate)
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [meals, selDate]);
+        .btn-lime {
+            background: var(--em-grad);
+            color: #05060f;
+            font-weight: 900;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 20px var(--em-glow);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-lime:active { transform: scale(0.95); }
 
-  const lastThreeDaysMeals = useMemo(() => {
-    const dates = [0, 1, 2].map(offset => {
-      const d = new Date(); d.setDate(d.getDate() - offset);
-      return toJSTDateStr(d);
-    });
-    return meals.filter(m => dates.includes(m.timestamp.split(/[T ]/)[0]))
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [meals]);
+        input[type=range] { -webkit-appearance: none; background: transparent; width: 100%; cursor: pointer; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; }
+        input[type=range]::-webkit-slider-thumb { 
+            -webkit-appearance: none; height: 22px; width: 22px; border-radius: 50%; 
+            background: var(--tx); margin-top: -9px; border: 3px solid var(--em);
+            box-shadow: 0 0 15px var(--em-glow);
+        }
 
-  const totalP = useMemo(() => filteredMeals.reduce((sum, m) => sum + m.protein, 0), [filteredMeals]);
-  const gap = Math.max(0, TARGET - totalP);
-  const pct = Math.min(totalP / TARGET * 100, 100);
+        .sticky-analysis {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(1, 2, 6, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 10px 0 20px;
+            margin: 0 -18px;
+        }
 
-  const handleSave = async (mName, mP, mType) => {
-    if (!mName.trim()) return;
-    const now = new Date();
-    const ts = `${selDate}T${now.toLocaleTimeString('ja-JP', { hour12: false })}`;
-    const newMeal = { _id: genId(), main: mName.trim(), protein: parseFloat(mP), type: mType, timestamp: ts };
-    setMeals(prev => [newMeal, ...prev]);
-    setMainMenu('');
-    showToast('LOGGED SUCCESSFULLY');
-    try { await fetch(GAS, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ _action: 'save', ...newMeal, Main_Menu: newMeal.main, Protein_g: newMeal.protein, Meal_Type: newMeal.type, Timestamp: ts }) }); } catch (e) { }
-  };
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body>
+    <div class="liquid-blob"></div>
+    <div id="root"></div>
 
-  const suggestions = useMemo(() => {
-    if (gap <= 0 || masterMenus.length === 0) return [];
-    let pool = masterMenus.filter(m => {
-      const catMatch = (effect === 'all' || m.cat === effect || (effect === 'bulkup' && (m.cat === 'burn' || m.cat === 'muscle')));
-      return catMatch;
-    });
-    if (pool.length === 0) pool = masterMenus;
-    const seeded = [...pool].map((m, i) => ({ m, r: Math.sin(shuffleSeed * 997 + i * 31) * 10000 % 1 }));
-    return seeded.sort((a, b) => a.r - b.r).slice(0, 3).map(x => x.m);
-  }, [masterMenus, gap, effect, shuffleSeed]);
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useCallback } = React;
 
-  const weekDays = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(); d.setDate(d.getDate() - (6 - i));
-      const ds = toJSTDateStr(d);
-      const tot = meals.filter(m => m.timestamp.split(/[T ]/)[0] === ds).reduce((s, m) => s + m.protein, 0);
-      return { lbl: DAY_JP[d.getDay()], tot, isToday: ds === todayStr, ok: tot >= TARGET, has: tot > 0 };
-    });
-  }, [meals, todayStr]);
+        // 【復旧】ニモさんの正しいGAS URL
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
+        const TARGET = 120;
 
-  const chartSvg = useMemo(() => {
-    const W = 320, H = 140, PL = 30, PR = 10, PT = 22, PB = 30, cW = W - PL - PR, cH = H - PT - PB;
-    const maxV = Math.max(...weekDays.map(d => d.tot), TARGET, 10) * 1.15;
-    const xStep = cW / 6;
+        const STRATEGIC_REASONS = {
+          "牛": "希少なクレアチンと鉄分が、INTJの鋭い意思決定に必要なホルモン環境を整え、商談での圧倒的優位を築きます。",
+          "鶏": "高純度なアンセリンが深夜の思考疲れをリセット。明朝、最速でアクセルを踏み込むためのブレイン・メンテナンスです。",
+          "ラム": "豊富なL-カルニチンが脂肪燃焼を最適化。無駄を極限まで削ぎ落とす、ニモさんの知的な身体管理の極致です。",
+          "サバ": "DHA/EPAが血流を劇的に改善。脳への酸素供給を最大化し、淀みのないロジック展開をサポートします。",
+          "真鯛": "タウリンが肝機能を保護し、長時間のマルチタスクによる体内ダメージを精密に修復。翌日のパフォーマンスを保証します。",
+          "朝セット": "ニモさんの1日の基盤。45gの速攻性プロテインが代謝をキックオフし、スタートダッシュを確実にします。"
+        };
 
-    const grids = [0, Math.round(TARGET / 2), TARGET].map(v => {
-      const y = PT + cH - (v / maxV) * cH;
-      const isTarget = v === TARGET;
-      return `
-        <line x1="${PL}" y1="${y}" x2="${W - PR}" y2="${y}" stroke="${isTarget ? '#fbbf24' : '#475569'}" stroke-width="${isTarget ? 2 : 1}" stroke-dasharray="${isTarget ? '4,4' : '2,2'}" opacity="${isTarget ? 1 : 0.3}" />
-        <text x="${PL - 6}" y="${y + 3}" font-family="'DM Mono'" font-size="8" fill="${isTarget ? '#fbbf24' : '#475569'}" text-anchor="end" font-weight="${isTarget ? 900 : 400}">${v}</text>
-      `;
-    }).join('');
+        const App = () => {
+            const todayStr = useMemo(() => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }), []);
+            const [meals, setMeals] = useState([]);
+            const [masterMenus, setMasterMenus] = useState([]);
+            const [tab, setTab] = useState('log');
+            const [syncing, setSyncing] = useState(false);
+            const [toast, setToast] = useState('');
+            const [selDate, setSelDate] = useState(todayStr);
+            const [mealType, setMealType] = useState('昼');
+            const [mainMenu, setMainMenu] = useState('');
+            const [protein, setProtein] = useState(25.0);
+            const [effect, setEffect] = useState('all');
+            const [shuffleSeed, setShuffleSeed] = useState(0);
+            const [showMorningPrompt, setShowMorningPrompt] = useState(false);
 
-    const pts = weekDays.map((d, i) => ({ x: PL + i * xStep, y: PT + cH - (d.tot / maxV) * cH, d }));
-    const lineD = pts.map((p, i) => i === 0 ? `M${p.x.toFixed(1)},${p.y.toFixed(1)}` : `L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+            const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
-    const dots = pts.map(p => `
-      ${p.d.has ? `<text font-family="'DM Mono'" font-size="12" font-weight="900" fill="${p.d.ok ? '#bef264' : '#f1f3f9'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(p.y - 12).toFixed(1)}">${p.d.tot.toFixed(0)}</text>` : ''}
-      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.d.isToday ? 5 : 3.5}" fill="${p.d.ok ? '#bef264' : p.d.has ? '#020308' : '#000'}" stroke="#bef264" stroke-width="2"/>
-      <text font-family="'DM Mono'" font-size="9" fill="${p.d.isToday ? '#bef264' : '#475569'}" text-anchor="middle" x="${p.x.toFixed(1)}" y="${(PT + cH + 18).toFixed(1)}">${p.d.lbl}</text>`).join('');
+            const getStrategicReason = useCallback((name, p, currentGap) => {
+                if (!name) return "規律ある身体資産の構築へ。";
+                for (const key in STRATEGIC_REASONS) { if (name.includes(key)) return STRATEGIC_REASONS[key]; }
+                
+                // 動的生成 (絶対に重複させないロジック)
+                const efficiency = ((p / currentGap) * 100).toFixed(0);
+                const options = [
+                    `現在の不足分に対し、このメニューは ${p.toFixed(1)}g（達成率 ${efficiency}%）を補完する高効率な選択です。`,
+                    `120gの規律を死守するための戦略的パーツ。純粋なビルドアップ素材が明日の活力を形成します。`,
+                    `栄養密度の最適解。過剰な脂質を避けつつタンパク質を加算し、体組成のキレを維持します。`
+                ];
+                const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                return options[hash % options.length];
+            }, []);
 
-    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;overflow:visible">${grids}<path fill="none" stroke="#bef264" stroke-width="2.5" d="${lineD}" stroke-linejoin="round" />${dots}</svg>`;
-  }, [weekDays]);
-
-  const statsSummary = useMemo(() => {
-    const okCount = weekDays.filter(d => d.ok).length;
-    const avg = weekDays.reduce((s, d) => s + d.tot, 0) / 7;
-    if (avg >= TARGET) return { title: "Peak Discipline", cheer: "完璧な規律です。身体のキレが、思考の深さを加速させます。" };
-    if (okCount >= 4) return { title: "Strong Consistency", cheer: "高い一貫性。この継続的な投資が、将来のニモさんの資産になります。" };
-    return { title: "Strategic Balance", cheer: "あと少しのタンパク質が、明日の市場価値を形成します。" };
-  }, [weekDays]);
-
-  return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#010206] text-[#f1f3f9] font-['Noto_Sans_JP'] relative">
-      {/* Liquid Background Blobs */}
-      <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
-        <div className="absolute top-[10%] left-[15%] w-[450px] h-[450px] bg-[#bef264] rounded-full blur-[130px] opacity-[0.12] animate-pulse"></div>
-        <div className="absolute bottom-[15%] right-[5%] w-[550px] h-[550px] bg-[#0a0f1e] rounded-full blur-[150px] opacity-[0.45]"></div>
-      </div>
-
-      {toast && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-[#bef264] text-[#000] py-2 px-6 rounded-full font-['DM_Mono'] text-[10px] font-black z-[999] shadow-2xl transition-all animate-bounce">
-          {toast}
-        </div>
-      )}
-
-      {/* Header */}
-      <header className="px-5 pt-5 pb-3 z-10 animate-fade">
-        <div className="flex justify-between items-start mb-3.5">
-          <div className="hover:scale-[1.01] transition-transform duration-300">
-            <h1 className="font-['DM_Serif_Display'] text-[28px] text-[#bef264] leading-none tracking-tight">Meal OS</h1>
-            <p className="font-['DM_Mono'] text-[8px] text-[#475569] tracking-[0.25em] mt-1 font-medium">PRECISION LIQUID v7.7.4</p>
-          </div>
-          <button 
-            onClick={fetchData} 
-            className="w-[38px] h-[38px] bg-white/5 rounded-full border border-white/10 flex items-center justify-center text-[#bef264] active:scale-90 hover:bg-white/10 transition-all duration-200"
-          >
-            <RefreshIcon className={syncing ? 'animate-spin' : ''} />
-          </button>
-        </div>
-
-        {tab !== 'stats' && (
-          <div className="bg-white/[0.01] backdrop-blur-[45px] border border-white/10 rounded-[22px] p-4 shadow-2xl animate-fade relative overflow-hidden transition-all duration-500 hover:border-[#bef264]/20 group">
-            {/* Liquid Transparency Layer */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none group-hover:opacity-100 transition-opacity opacity-70"></div>
-            <div className="flex justify-between items-baseline mb-2 relative z-10">
-              <span className="font-['DM_Mono'] text-[8px] text-[#475569] tracking-widest uppercase">Daily Protein Flow</span>
-              <span className="font-['DM_Serif_Display'] text-[36px] text-[#f1f3f9] leading-none">{totalP.toFixed(1)}<span className="text-[12px] text-[#475569] ml-1">g</span></span>
-            </div>
-            <div className="h-[3.5px] bg-white/5 rounded-full relative overflow-hidden z-10">
-              <div 
-                className="h-full bg-gradient-to-r from-[#bef264] to-[#84cc16] shadow-[0_0_12px_rgba(190,242,100,0.35)] transition-all duration-1000 ease-out" 
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          </div>
-        )}
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto px-[18px] pb-[100px] scroll-smooth">
-        {tab === 'log' && (
-          <div className="animate-slide">
-            <div className="flex justify-between items-center mb-3.5 px-2">
-              <button onClick={() => { const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate() - 1); setSelDate(toJSTDateStr(d)) }} className="text-[#475569] p-2 active:scale-75 transition-transform">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
-              <div className="font-['DM_Serif_Display'] text-[20px] text-[#f1f3f9] tracking-tight">
-                {new Date(selDate + 'T12:00:00').getMonth() + 1} / {new Date(selDate + 'T12:00:00').getDate()} ({DAY_JP[new Date(selDate + 'T12:00:00').getDay()]})
-              </div>
-              <button onClick={() => { const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate() + 1); if (toJSTDateStr(d) <= todayStr) setSelDate(toJSTDateStr(d)) }} className={`p-2 active:scale-75 transition-transform ${selDate === todayStr ? 'opacity-0' : 'text-[#475569]'}`}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-            </div>
-
-            <section className="bg-white/[0.02] backdrop-blur-[40px] border border-white/10 rounded-[28px] p-5 mb-5 shadow-xl animate-fade group hover:border-[#bef264]/10 transition-all">
-              <div className="flex gap-1.5 mb-4">
-                {['朝', '昼', '夜', '他'].map(t => (
-                  <button 
-                    key={t} 
-                    onClick={() => { setMealType(t); if (t === '朝') setShowMorningPrompt(true); else setShowMorningPrompt(false); }} 
-                    className={`flex-1 py-2.5 rounded-[14px] text-[11px] font-black transition-all duration-300 active:scale-95 ${mealType === t ? 'bg-[#bef264] text-[#000] shadow-[0_4px_12px_rgba(190,242,100,0.2)]' : 'bg-white/5 text-[#475569] hover:bg-white/10'}`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-
-              {showMorningPrompt && (
-                <div className="bg-[#bef264]/10 border border-dashed border-[#bef264] rounded-[18px] p-3.5 mb-4 text-center animate-in zoom-in duration-200">
-                  <p className="text-[11px] font-bold text-[#bef264] mb-2.5">朝セット（45g）をレポしますか？</p>
-                  <div className="flex gap-2">
-                    <button onClick={() => { handleSave('朝セット', 45, '朝'); setShowMorningPrompt(false); }} className="flex-1 bg-[#bef264] text-[#000] py-2 rounded-[10px] text-[10px] font-black hover:brightness-110 active:scale-95 transition-all">YES</button>
-                    <button onClick={() => setShowMorningPrompt(false)} className="flex-1 bg-white/5 text-[#475569] py-2 rounded-[10px] text-[10px] font-black hover:bg-white/10 active:scale-95 transition-all">NO</button>
-                  </div>
-                </div>
-              )}
-
-              <input 
-                value={mainMenu} 
-                onChange={e => setMainMenu(e.target.value)} 
-                placeholder="Main Menu" 
-                className="w-full bg-white/[0.02] border border-white/10 rounded-[16px] p-4 text-[14px] text-[#f1f3f9] outline-none mb-3.5 focus:border-[#bef264]/40 focus:bg-white/[0.04] transition-all"
-              />
-
-              <div className="mb-5">
-                <div className="flex justify-between items-end mb-2">
-                  <span className="font-['DM_Mono'] text-[8px] text-[#475569] uppercase tracking-wider">Weight (0-60g)</span>
-                  <span className="font-['DM_Serif_Display'] text-[30px] text-[#bef264] leading-none">{Number(protein).toFixed(1)}<span className="font-['DM_Mono'] text-[12px] ml-1">g</span></span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <button onClick={() => setProtein(p => Math.max(0, parseFloat((p - 0.5).toFixed(1))))} className="w-[50px] h-[38px] bg-white/5 border border-white/10 text-[#bef264] rounded-[10px] font-['DM_Mono'] text-[10px] font-bold active:scale-90 hover:bg-white/10 transition-all">-0.5</button>
-                  <div className="flex-1 px-1">
-                    <input type="range" min="0" max="60" step="0.5" value={protein} onChange={e => setProtein(parseFloat(e.target.value))} className="w-full accent-[#bef264] transition-all cursor-pointer" />
-                  </div>
-                  <button onClick={() => setProtein(p => Math.min(60, parseFloat((p + 0.5).toFixed(1))))} className="w-[50px] h-[38px] bg-white/5 border border-white/10 text-[#bef264] rounded-[10px] font-['DM_Mono'] text-[10px] font-bold active:scale-90 hover:bg-white/10 transition-all">+0.5</button>
-                </div>
-              </div>
-
-              <button onClick={() => handleSave(mainMenu, protein, mealType)} className="w-full py-[18px] bg-[#bef264] text-[#000] font-black rounded-[18px] text-[13px] shadow-[0_8px_20px_rgba(190,242,100,0.25)] active:scale-[0.98] active:brightness-95 transition-all duration-200">STAY HEALTHY →</button>
-            </section>
-
-            {filteredMeals.map((m) => (
-              <div key={m._id} className="bg-white/[0.02] backdrop-blur-[35px] border border-white/10 rounded-[20px] p-[14px_18px] mb-2 flex justify-between items-center animate-slide hover:scale-[1.01] hover:bg-white/5 transition-all duration-300">
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[8px] bg-[#bef264] text-[#000] px-1.5 py-0.5 rounded-[4px] font-black uppercase">{m.type}</span>
-                    <span className="font-['DM_Serif_Display'] text-[16px] tracking-tight">{m.main}</span>
-                  </div>
-                  <div className="font-['DM_Mono'] text-[7px] text-[#475569]">{m.timestamp.split(/[T ]/)[1].slice(0, 5)} • OPTIMAL FLOW</div>
-                </div>
-                <div className="font-['DM_Serif_Display'] text-[20px] text-[#bef264]">{m.protein.toFixed(1)}<span className="text-[9px] ml-0.5">g</span></div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {tab === 'suggest' && (
-          <div className="animate-slide h-full flex flex-col">
-            <div className="flex gap-[3px] mb-2.5 bg-white/5 p-[3px] rounded-[14px] border border-white/5">
-              {[['all', 'ALL'], ['bulkup', '筋肥大'], ['recovery', '疲労'], ['antiaging', '抗老化']].map(([v, l]) => (
-                <button 
-                  key={v} 
-                  onClick={() => setEffect(v)} 
-                  className={`flex-1 py-2.5 rounded-[12px] text-[10px] font-black transition-all duration-300 ${effect === v ? 'bg-[#bef264] text-[#000] shadow-sm' : 'bg-transparent text-[#475569] hover:text-[#f1f3f9]'}`}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-
-            <button onClick={() => setShuffleSeed(s => s + 1)} className="w-full py-3.5 bg-white/5 border border-white/10 rounded-[14px] text-[#bef264] font-['DM_Mono'] text-[11px] font-black flex items-center justify-center gap-2 mb-3 active:scale-[0.98] hover:bg-white/10 transition-all">
-              <ShuffleIcon /> SHUFFLE MENU
-            </button>
-
-            {gap <= 0 ? (
-              <div className="text-center py-16 font-['DM_Serif_Display'] text-[#bef264] text-[24px] animate-fade">Peak Performance ✓</div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {suggestions.map((opt, i) => (
-                  <div key={i} className={`bg-white/[0.02] backdrop-blur-[40px] border rounded-[20px] p-4 animate-slide flex flex-col justify-between hover:scale-[1.01] transition-all duration-300 ${i === 0 ? 'border-[#bef264]/30 shadow-[0_4px_15px_rgba(190,242,100,0.08)]' : 'border-white/10'}`}>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <div>
-                        <div className="font-['DM_Serif_Display'] text-[17px] leading-[1.1] tracking-tight">{opt.main}</div>
-                        <div className="text-[10px] text-[#475569] mt-0.5">SIDE: {opt.side}</div>
-                      </div>
-                      <div className="font-['DM_Serif_Display'] text-[24px] text-[#bef264] leading-none">{Number(opt.p).toFixed(1)}<span className="text-[11px] ml-1">g</span></div>
-                    </div>
+            const fetchData = useCallback(async () => {
+                setSyncing(true);
+                try {
+                    const r = await fetch(GAS_URL);
+                    const data = await r.json();
                     
-                    {/* ENFORCED DYNAMIC COMMENT SECTION (NEVER IDENTICAL) */}
-                    <div className="bg-white/5 border-l-2 border-[#bef264] p-[8px_12px] rounded-r-[10px] text-[10px] leading-relaxed text-[#f1f3f9] italic mb-3">
-                      "{getStrategicReason(opt.main, opt.p, gap)}"
-                    </div>
+                    // 履歴のクレンジング
+                    const historyRaw = Array.isArray(data) ? data : (data.history || []);
+                    const cleaned = historyRaw
+                        .filter(m => {
+                            const name = m.Main_Menu || m.main || "";
+                            const val = Number(m.Protein_g || m.protein || 0);
+                            return name.trim().length > 1 && name !== "-" && (val > 0 || name.includes("朝セット"));
+                        })
+                        .map(m => ({
+                            id: Math.random().toString(36).slice(2),
+                            main: m.Main_Menu || m.main,
+                            protein: Number(m.Protein_g || m.protein || 0),
+                            type: m.Meal_Type || m.type || "他",
+                            timestamp: m.Timestamp || m.timestamp || new Date().toISOString()
+                        }));
+
+                    setMeals(cleaned);
                     
-                    <div className="flex gap-2 flex-wrap">
-                      {(opt.tags || []).slice(0, 3).map(t => (
-                        <span key={t} className="text-[9px] text-[#bef264] bg-[#bef264]/10 border border-[#bef264]/20 px-2.5 py-0.5 rounded-[6px] font-black uppercase tracking-wider">{t}</span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                    // メニューマスターの堅牢なマッピング
+                    if (data.menus && data.menus.length > 0) {
+                        setMasterMenus(data.menus.map(m => ({
+                            main: m.main || m.Main_Menu,
+                            side: m.side || m.Side_Menu || "-",
+                            p: Number(m.p || m.Protein_g || 20),
+                            tags: m.tags ? (Array.isArray(m.tags) ? m.tags : String(m.tags).split(',')) : [],
+                            cat: m.cat || "all"
+                        })));
+                    } else {
+                        console.warn("Menus data is empty in GAS response");
+                    }
+                    showToast('SYSTEM SYNCED');
+                } catch (e) { 
+                    console.error("Fetch failed", e);
+                    showToast('OFFLINE MODE'); 
+                } finally { setSyncing(false); }
+            }, []);
 
-        {tab === 'stats' && (
-          <div className="animate-slide">
-            {/* Sticky Graph Area */}
-            <div className="sticky top-0 z-50 bg-[#010206]/85 backdrop-blur-2xl -mx-5 px-5 py-2.5 border-b border-[#bef264]/10 shadow-lg">
-              <div className="bg-white/[0.01] backdrop-blur-3xl border border-white/10 rounded-[28px] p-4">
-                <div className="font-['DM_Mono'] text-[9px] text-[#475569] tracking-widest mb-4 flex justify-between items-center px-1">
-                  <span>7-DAY TREND ANALYSIS</span>
-                  <span className="text-[#fbbf24] font-black text-[8px] bg-[#fbbf24]/10 px-2 py-0.5 rounded-full ring-1 ring-[#fbbf24]/20 uppercase">Target: 120g</span>
+            useEffect(() => { fetchData(); }, [fetchData]);
+
+            const currentMeals = useMemo(() => 
+                meals.filter(m => m.timestamp.startsWith(selDate)).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
+            , [meals, selDate]);
+
+            const totalP = useMemo(() => currentMeals.reduce((s, m) => s + m.protein, 0), [currentMeals]);
+            const progress = Math.min((totalP / TARGET) * 100, 100);
+            const gap = Math.max(0, TARGET - totalP);
+
+            const handleSave = async (mName, mP, mType) => {
+                if (!mName || mName.trim().length < 2) return;
+                const ts = `${selDate}T${new Date().toLocaleTimeString('ja-JP', {hour12:false})}`;
+                const newLog = { id: Date.now(), main: mName.trim(), protein: mP, type: mType, timestamp: ts };
+                setMeals(prev => [newLog, ...prev]);
+                setMainMenu('');
+                showToast('SAVED');
+                try { await fetch(GAS_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({ _action:'save', ...newLog, Main_Menu:newLog.main, Protein_g:mP, Meal_Type:mType, Timestamp:ts }) }); } catch(e){}
+            };
+
+            const suggestions = useMemo(() => {
+                if (gap <= 0 || masterMenus.length === 0) return [];
+                let pool = masterMenus.filter(m => effect === 'all' || m.cat === effect);
+                if (pool.length === 0) pool = masterMenus;
+                
+                // Shuffle Seedを用いた擬似乱数で並び替え
+                const seeded = [...pool].map((m, i) => ({ m, r: Math.sin(shuffleSeed * 997 + i * 31) }));
+                return seeded.sort((a, b) => a.r - b.r).slice(0, 3).map(x => x.m);
+            }, [masterMenus, gap, effect, shuffleSeed]);
+
+            const chartSvg = useMemo(() => {
+                const W=320, H=150, PL=30, PR=10, PT=20, PB=30, cW=W-PL-PR, cH=H-PT-PB;
+                const days = Array.from({length:7}, (_,i) => {
+                    const d = new Date(); d.setDate(d.getDate()-(6-i));
+                    const ds = d.toLocaleDateString('sv-SE', {timeZone:'Asia/Tokyo'});
+                    const val = meals.filter(m => m.timestamp.startsWith(ds)).reduce((s,m)=>s+m.protein,0);
+                    return { lbl: ['日','月','火','水','木','金','土'][d.getDay()], val, isToday: ds === todayStr };
+                });
+                const maxV = Math.max(...days.map(d=>d.val), TARGET) * 1.15;
+                const xStep = cW/6;
+
+                const grids = [0, TARGET/2, TARGET].map(v => {
+                    const y = PT + cH - (v / maxV) * cH;
+                    const isTarget = v === TARGET;
+                    return `
+                        <line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="${isTarget ? 'var(--yel)' : 'var(--mu)'}" stroke-width="${isTarget ? 2 : 1}" stroke-dasharray="${isTarget ? '4,4' : '2,2'}" opacity="${isTarget ? 1 : 0.2}" />
+                        <text x="${PL-5}" y="${y+3}" font-family="var(--mono)" font-size="8" fill="${isTarget ? 'var(--yel)' : 'var(--mu)'}" text-anchor="end" font-weight="${isTarget?900:400}">${v}</text>
+                    `;
+                }).join('');
+
+                const points = days.map((d, i) => ({ x: PL + i*xStep, y: PT + cH - (d.val/maxV)*cH, ...d }));
+                const pathD = points.map((p, i) => (i===0 ? 'M' : 'L') + `${p.x},${p.y}`).join(' ');
+
+                const dots = points.map(p => `
+                    <circle cx="${p.x}" cy="${p.y}" r="${p.isToday?5:3}" fill="${p.val >= TARGET ? 'var(--em)' : p.val>0 ? 'white' : 'var(--mu)'}" />
+                    <text x="${p.x}" y="${H-5}" font-size="9" fill="${p.isToday?'var(--em)':'var(--mu)'}" text-anchor="middle" font-weight="${p.isToday?900:400}">${p.lbl}</text>
+                    ${p.val > 0 ? `<text x="${p.x}" y="${p.y-8}" font-size="9" fill="white" font-family="var(--mono)" text-anchor="middle" font-weight="900">${Math.round(p.val)}</text>` : ''}
+                `).join('');
+
+                return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%">${grids}<path d="${pathD}" fill="none" stroke="var(--em)" stroke-width="2.5" />${dots}</svg>`;
+            }, [meals, todayStr]);
+
+            return (
+                <div style={{ maxWidth: 430, margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    {toast && (
+                        <div style={{ position:'fixed', top:20, left:'50%', transform:'translateX(-50%)', background:'var(--em)', color:'#000', padding:'8px 24px', borderRadius:40, fontFamily:'var(--mono)', fontSize:10, fontWeight:900, zIndex:999, animation:'slideUp 0.4s forwards' }}>{toast}</div>
+                    )}
+
+                    <header style={{ padding: '20px 20px 10px', zIndex: 10 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 }}>
+                            <div>
+                                <h1 style={{ fontFamily: 'var(--serif)', fontSize: 28, color: 'var(--em)', lineHeight: 1 }}>Meal OS</h1>
+                                <p style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginTop: 4 }}>VITALITY ANALYTICS v7.7.7</p>
+                            </div>
+                            <button onClick={fetchData} style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--em)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <svg className={syncing ? 'animate-spin' : ''} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                            </button>
+                        </div>
+
+                        {tab !== 'stats' && (
+                            <div className="glass-card animate-fade" style={{ padding: '15px 20px', borderRadius: 24, position: 'relative', overflow: 'hidden' }}>
+                                <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%)', pointerEvents:'none' }} />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8, position: 'relative' }}>
+                                    <span style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.1em', fontWeight: 700 }}>DAILY PROTEIN FLOW</span>
+                                    <span style={{ fontFamily: 'var(--serif)', fontSize: 36, color: 'var(--tx)', lineHeight: 1 }}>{totalP.toFixed(1)}<span style={{ fontSize: 12, color: 'var(--mu)', marginLeft: 4 }}>g</span></span>
+                                </div>
+                                <div style={{ height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2, position: 'relative' }}>
+                                    <div style={{ height: '100%', background: 'var(--em-grad)', width: `${progress}%`, transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: '0 0 12px var(--em-glow)' }} />
+                                </div>
+                            </div>
+                        )}
+                    </header>
+
+                    <main className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '0 18px 100px' }}>
+                        {tab === 'log' && (
+                            <div className="animate-slide">
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: 20, alignItems: 'center', marginBottom: 15 }}>
+                                    <button onClick={() => { const d = new Date(selDate); d.setDate(d.getDate()-1); setSelDate(d.toLocaleDateString('sv-SE')) }} style={{ color: 'var(--mu)', background: 'none', border: 'none' }}>◀</button>
+                                    <div style={{ fontFamily: 'var(--serif)', fontSize: 20 }}>{selDate.split('-')[1]}/{selDate.split('-')[2]}</div>
+                                    <button onClick={() => { const d = new Date(selDate); d.setDate(d.getDate()+1); if(d.toLocaleDateString('sv-SE') <= todayStr) setSelDate(d.toLocaleDateString('sv-SE')) }} style={{ color: selDate === todayStr ? 'transparent' : 'var(--mu)', background: 'none', border: 'none' }}>▶</button>
+                                </div>
+
+                                <section className="glass-card" style={{ padding: 20, borderRadius: 28, marginBottom: 20 }}>
+                                    <div style={{ display: 'flex', gap: 6, marginBottom: 15 }}>
+                                        {['朝','昼','夜','他'].map(t => (
+                                            <button key={t} onClick={() => {setMealType(t); if(t==='朝') setShowMorningPrompt(true); else setShowMorningPrompt(false);}} style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: 'none', background: mealType === t ? 'var(--em)' : 'rgba(255,255,255,0.03)', color: mealType === t ? '#000' : 'var(--mu)', fontSize: 11, fontWeight: 900 }}>{t}</button>
+                                        ))}
+                                    </div>
+
+                                    {showMorningPrompt && (
+                                        <div className="animate-fade" style={{ background: 'rgba(190,242,100,0.05)', border: '1px dashed var(--em)', borderRadius: 16, padding: 15, marginBottom: 15, textAlign: 'center' }}>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--em)', marginBottom: 10 }}>朝セット（45g）をレポしますか？</p>
+                                            <div style={{ display: 'flex', gap: 8 }}>
+                                                <button onClick={() => {handleSave('朝セット', 45, '朝'); setShowMorningPrompt(false);}} className="btn-lime" style={{ flex: 1, padding: 10, borderRadius: 10, fontSize: 10 }}>YES</button>
+                                                <button onClick={() => setShowMorningPrompt(false)} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--mu)', borderRadius: 10, fontSize: 10, fontWeight: 900 }}>NO</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <input value={mainMenu} onChange={e => setMainMenu(e.target.value)} placeholder="Main Menu" style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 16, fontSize: 14, color: 'var(--tx)', outline: 'none', marginBottom: 15 }} />
+                                    
+                                    <div style={{ marginBottom: 20 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
+                                            <span style={{ fontSize: 8, color: 'var(--mu)', fontWeight: 700 }}>STRATEGIC WEIGHT</span>
+                                            <span style={{ fontFamily: 'var(--serif)', fontSize: 30, color: 'var(--em)' }}>{protein.toFixed(1)}<span style={{ fontSize: 12, marginLeft: 2, fontFamily: 'var(--mono)' }}>g</span></span>
+                                        </div>
+                                        <input type="range" min="0" max="60" step="0.5" value={protein} onChange={e => setProtein(parseFloat(e.target.value))} />
+                                    </div>
+
+                                    <button onClick={() => handleSave(mainMenu, protein, mealType)} className="btn-lime" style={{ width: '100%', padding: 18, borderRadius: 18, fontSize: 14 }}>STAY HEALTHY →</button>
+                                </section>
+
+                                {currentMeals.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: 40, opacity: 0.3, fontSize: 10, letterSpacing: '0.2em' }}>NO LOG DATA</div>
+                                ) : currentMeals.map(m => (
+                                    <div key={m.id} className="glass-card animate-slide" style={{ padding: '14px 18px', borderRadius: 20, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                                                <span style={{ fontSize: 8, background: 'var(--em)', color: '#000', padding: '2px 6px', borderRadius: 4, fontWeight: 900 }}>{m.type}</span>
+                                                <span style={{ fontFamily: 'var(--serif)', fontSize: 16 }}>{m.main}</span>
+                                            </div>
+                                            <div style={{ fontSize: 7, color: 'var(--mu)', fontFamily: 'var(--mono)' }}>{m.timestamp.split('T')[1].slice(0, 5)} • OPTIMAL FUEL</div>
+                                        </div>
+                                        <div style={{ fontFamily: 'var(--serif)', fontSize: 20, color: 'var(--em)' }}>{m.protein.toFixed(1)}<span style={{ fontSize: 9, marginLeft: 1 }}>g</span></div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {tab === 'suggest' && (
+                            <div className="animate-slide">
+                                <div style={{ display: 'flex', gap: 4, marginBottom: 10, background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 16 }}>
+                                    {[['all','ALL'],['muscle','筋肉'],['recovery','回復'],['antiaging','抗老化']].map(([v, l]) => (
+                                        <button key={v} onClick={() => setEffect(v)} style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', background: effect === v ? 'var(--em)' : 'transparent', color: effect === v ? '#000' : 'var(--mu)', fontSize: 10, fontWeight: 900 }}>{l}</button>
+                                    ))}
+                                </div>
+
+                                <button onClick={() => setShuffleSeed(s => s + 1)} style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: 'var(--em)', fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', marginBottom: 15 }}>SHUFFLE MENU</button>
+
+                                {gap <= 0 ? <div style={{ textAlign: 'center', padding: 60, fontFamily: 'var(--serif)', color: 'var(--em)', fontSize: 24 }}>Goal Reached ✓</div> : 
+                                masterMenus.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: 40, color: 'var(--mu)', fontSize: 11 }}>
+                                        マスターメニューを読み込み中、またはシートが空です。<br/>
+                                        スプレッドシートの「menus」シートを確認してください。
+                                    </div>
+                                ) : suggestions.map((opt, i) => (
+                                    <div key={i} className="glass-card animate-slide" style={{ padding: 15, borderRadius: 22, marginBottom: 10, border: i === 0 ? '1px solid var(--em)' : '1px solid rgba(255,255,255,0.08)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                            <div style={{ fontFamily: 'var(--serif)', fontSize: 18 }}>{opt.main}</div>
+                                            <div style={{ fontFamily: 'var(--serif)', fontSize: 24, color: 'var(--em)' }}>{Number(opt.p).toFixed(1)}<span style={{ fontSize: 10, marginLeft: 2 }}>g</span></div>
+                                        </div>
+                                        <div style={{ background: 'rgba(255,255,255,0.03)', borderLeft: '2px solid var(--em)', padding: '8px 12px', borderRadius: '0 10px 10px 0', fontSize: 10, color: 'var(--tx)', fontStyle: 'italic', marginBottom: 10 }}>
+                                            "{getStrategicReason(opt.main, opt.p, gap)}"
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                            {(opt.tags || []).slice(0, 3).map(t => <span key={t} style={{ fontSize: 9, color: 'var(--em)', background: 'rgba(190,242,100,0.08)', padding: '3px 8px', borderRadius: 6, fontWeight: 900, border: '1px solid rgba(190,242,100,0.1)' }}>{t}</span>)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {tab === 'stats' && (
+                            <div className="animate-slide">
+                                <div className="sticky-analysis">
+                                    <div className="glass-card" style={{ padding: 15, borderRadius: 24, background: 'rgba(255,255,255,0.01)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--mu)', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 10 }}>
+                                            <span>7-DAY TREND</span>
+                                            <span style={{ color: 'var(--yel)' }}>TARGET: 120g</span>
+                                        </div>
+                                        <div style={{ height: 160 }} dangerouslySetInnerHTML={{ __html: chartSvg }} />
+                                    </div>
+                                </div>
+
+                                <div className="glass-card" style={{ padding: 25, borderRadius: 28, borderLeft: '5px solid var(--em)', marginTop: 15, marginBottom: 20 }}>
+                                    <h3 style={{ fontFamily: 'var(--serif)', fontSize: 22, marginBottom: 5 }}>Weekly Analysis</h3>
+                                    <p style={{ fontSize: 12, lineHeight: 1.6, opacity: 0.8 }}>{totalP >= TARGET ? "完璧な規律です。身体のキレが思考の深さを加速させます。" : "あと少しのタンパク質が、明日の市場価値を形成します。効率的な補完を。"}</p>
+                                </div>
+
+                                <p style={{ fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginBottom: 12 }}>LAST 3 DAYS DISCIPLINE LOG</p>
+                                {meals.slice(0, 6).map((m, i) => (
+                                    <div key={i} className="glass-card" style={{ padding: '12px 16px', borderRadius: 18, marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.8 }}>
+                                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                            <div style={{ fontSize: 7, background: 'var(--em)', color: '#000', padding: '3px 6px', borderRadius: 5, fontWeight: 900 }}>{m.type}</div>
+                                            <div style={{ fontSize: 13, fontWeight: 700 }}>{m.main}</div>
+                                        </div>
+                                        <div style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--em)' }}>{m.protein.toFixed(1)}g</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </main>
+
+                    <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto', height: 85, background: 'rgba(1,2,6,0.8)', backdropFilter: 'blur(40px)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', paddingBottom: 'env(safe-area-inset-bottom)', borderTop: '1px solid rgba(255,255,255,0.05)', zIndex: 100 }}>
+                        {[
+                            { id: 'log', lbl: 'LOG', icon: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+                            { id: 'suggest', lbl: 'STRATEGY', icon: 'M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z M9 21h6' },
+                            { id: 'stats', lbl: 'ANALYSIS', icon: 'M22 12h-4l-3 9L9 3l-3 9H2' }
+                        ].map(t => (
+                            <button key={t.id} onClick={() => setTab(t.id)} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: tab === t.id ? 'var(--em)' : 'var(--mu)', transition: '0.3s' }}>
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d={t.icon} /></svg>
+                                <span style={{ fontFamily: 'var(--mono)', fontSize: 8, fontWeight: 900 }}>{t.lbl}</span>
+                                {tab === t.id && <div style={{ width: 4, height: 4, background: 'var(--em)', borderRadius: '50%', marginTop: 2, boxShadow: '0 0 10px var(--em)' }} />}
+                            </button>
+                        ))}
+                    </nav>
                 </div>
-                <div className="h-[170px]" dangerouslySetInnerHTML={{ __html: chartSvg }} />
-              </div>
-            </div>
+            );
+        };
 
-            <div className="bg-white/[0.02] border-l-4 border-[#bef264] rounded-[28px] p-6 my-5 animate-slide hover:bg-white/5 transition-all">
-              <div className="font-['DM_Serif_Display'] text-[22px] text-[#f1f3f9] mb-1.5 leading-none">{statsSummary.title}</div>
-              <p className="text-[12px] leading-relaxed text-[#f1f3f9] opacity-80">{statsSummary.cheer}</p>
-            </div>
-
-            <div className="font-['DM_Mono'] text-[8px] text-[#475569] tracking-[0.2em] mb-4 flex items-center gap-2.5 px-1">
-              LAST 3 DAYS DISCIPLINE LOG <div className="flex-1 h-[1px] bg-white/5" />
-            </div>
-            
-            {lastThreeDaysMeals.length === 0 ? (
-              <div className="text-center py-12 text-[#475569] text-[10px] font-['DM_Mono'] uppercase tracking-widest">No activity detected in the last 72H</div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {lastThreeDaysMeals.map((m, i) => (
-                  <div key={i} className="bg-white/[0.01] border border-white/5 rounded-[18px] p-3.5 flex justify-between items-center animate-slide hover:bg-white/5 transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="text-[8px] bg-[#bef264] text-[#000] px-2 py-0.5 rounded-[6px] font-black uppercase tracking-tighter">{m.type}</div>
-                      <div>
-                        <div className="text-[14px] font-bold tracking-tight">{m.main}</div>
-                        <div className="font-['DM_Mono'] text-[7px] text-[#475569] mt-0.5 uppercase">{new Date(m.timestamp).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })} • PERFORMANCE DATA</div>
-                      </div>
-                    </div>
-                    <div className="font-['DM_Serif_Display'] text-[19px] text-[#bef264]">{m.protein.toFixed(1)}g</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </main>
-
-      {/* Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 h-[85px] bg-black/80 backdrop-blur-[50px] border-t border-white/10 flex justify-around items-center px-6 pb-[env(safe-area-inset-bottom)] z-[100]">
-        {[
-          { id: 'log', lbl: 'LOG', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="22" height="22"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> },
-          { id: 'suggest', lbl: 'STRATEGY', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="22" height="22"><path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg> },
-          { id: 'stats', lbl: 'ANALYSIS', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="22" height="22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> }
-        ].map(t => (
-          <button 
-            key={t.id} 
-            onClick={() => setTab(t.id)} 
-            className={`flex flex-col items-center gap-1.5 transition-all duration-500 active:scale-90 ${tab === t.id ? 'text-[#bef264]' : 'text-[#475569] hover:text-[#f1f3f9]'}`}
-          >
-            <div className={`transition-transform duration-500 ${tab === t.id ? 'scale-110' : ''}`}>{t.icon}</div>
-            <span className="font-['DM_Mono'] text-[8px] font-black tracking-widest">{t.lbl}</span>
-            <div className={`w-[5px] h-[5px] bg-[#bef264] rounded-full mt-0.5 shadow-[0_0_12px_#bef264] transition-all duration-500 ${tab === t.id ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}`} />
-          </button>
-        ))}
-      </nav>
-    </div>
-  );
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
