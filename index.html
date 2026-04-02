@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Meal OS v7.9.5</title>
+    <title>MEAL LOG v8.0.0</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -58,7 +58,6 @@
         .animate-fade { animation: fadeIn 0.8s ease-out forwards; }
         .chart-path { stroke-dasharray: 500; stroke-dashoffset: 500; animation: chart-draw 3.0s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 
-        /* Progress Bar Mini-Animation */
         .shimmer-layer {
             position: absolute; inset: 0;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
@@ -120,6 +119,13 @@
             margin: 0 -18px;
         }
 
+        /* スクロールエリアの設定 */
+        .scrollable-list {
+            overflow-y: auto;
+            max-height: calc(100vh - 450px);
+            padding-bottom: 20px;
+        }
+
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
 
@@ -162,6 +168,13 @@
                 return `${y}-${m}-${day}`;
             };
 
+            const getAutoMealType = () => {
+                const hour = new Date().getHours();
+                if (hour >= 4 && hour < 11) return "朝";
+                if (hour >= 11 && hour < 17) return "昼";
+                return "夜";
+            };
+
             const todayStr = useMemo(() => getJstDateString(new Date()), []);
             const [meals, setMeals] = useState([]);
             const [masterMenus, setMasterMenus] = useState([]);
@@ -169,7 +182,7 @@
             const [syncing, setSyncing] = useState(false);
             const [toast, setToast] = useState('');
             const [selDate, setSelDate] = useState(todayStr);
-            const [mealType, setMealType] = useState('昼');
+            const [mealType, setMealType] = useState(getAutoMealType());
             const [mainMenu, setMainMenu] = useState('');
             const [protein, setProtein] = useState(25.0);
             const [effect, setEffect] = useState('all');
@@ -214,9 +227,7 @@
                                 dateObj = new Date(isoTs);
                                 if (isNaN(dateObj.getTime())) dateObj = new Date();
                             } catch(e) { dateObj = new Date(); }
-                            
                             const datePart = getJstDateString(dateObj);
-
                             return {
                                 id: rawTs + "_" + (m.main || m.Main_Menu),
                                 main: m.main || m.Main_Menu,
@@ -233,7 +244,6 @@
                         setMasterMenus(data.menus.map(m => ({
                             main: m.main || m.Main_Menu || "Unknown",
                             p: Number(m.p || m.Protein_g || 20),
-                            side: m.side || m.Side_Menu || "-",
                             tags: m.tags ? (Array.isArray(m.tags) ? m.tags : String(m.tags).split(',')) : [],
                             cat: m.cat || "all"
                         })));
@@ -242,7 +252,10 @@
                 } catch (e) { showToast('OFFLINE MODE'); } finally { setSyncing(false); }
             }, []);
 
-            useEffect(() => { fetchData(); }, [fetchData]);
+            useEffect(() => { 
+                fetchData();
+                setMealType(getAutoMealType());
+            }, [fetchData]);
 
             const currentMeals = useMemo(() => meals.filter(m => m.dateOnly === selDate), [meals, selDate]);
             const totalP = useMemo(() => currentMeals.reduce((sum, m) => sum + m.protein, 0), [currentMeals]);
@@ -320,8 +333,7 @@
 
             const last3DaysMeals = useMemo(() => {
                 const getD = (offset) => {
-                    const d = new Date();
-                    d.setDate(d.getDate() - offset);
+                    const d = new Date(); d.setDate(d.getDate() - offset);
                     return getJstDateString(d);
                 };
                 const targets = [getD(0), getD(1), getD(2)];
@@ -336,8 +348,8 @@
                     <header style={{ padding: '20px 20px 10px', zIndex: 10 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 }}>
                             <div style={{ flex: 1 }}>
-                                <h1 style={{ fontFamily: 'var(--serif)', fontSize: 28, color: 'var(--em)', lineHeight: 1 }}>Meal OS</h1>
-                                <p style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginTop: 4 }}>FLUID FLOW v7.9.5</p>
+                                <h1 style={{ fontFamily: 'var(--serif)', fontSize: 28, color: 'var(--em)', lineHeight: 1 }}>MEAL LOG</h1>
+                                <p style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginTop: 4 }}>PRECISION TRACKER v8.0.0</p>
                             </div>
                             <button onClick={fetchData} disabled={syncing} style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--em)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                 <svg className={syncing ? 'animate-spin' : ''} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
@@ -358,7 +370,7 @@
                             </div>
                         )}
                     </header>
-                    <main className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '0 18px 100px' }}>
+                    <main className="no-scrollbar" style={{ flex: 1, overflowY: 'hidden', padding: '0 18px' }}>
                         {tab === 'log' && (
                             <div className="animate-slide">
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: 20, alignItems: 'center', marginBottom: 15 }}>
@@ -395,27 +407,29 @@
                                     </div>
                                     <button onClick={() => handleSave(mainMenu, protein, mealType)} className="btn-lime" style={{ width: '100%', padding: 18, borderRadius: 18, fontSize: 14 }}>STAY HEALTHY →</button>
                                 </section>
-                                {currentMeals.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: 40, opacity: 0.3, fontSize: 10, letterSpacing: '0.2em' }}>CLEAN DISCIPLINE (NO LOGS)</div>
-                                ) : currentMeals.map(m => (
-                                    <div key={m.id} className="glass-card animate-slide" style={{ padding: '14px 18px', borderRadius: 20, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                                                <span style={{ fontSize: 8, background: 'var(--em)', color: '#000', padding: '2px 6px', borderRadius: 4, fontWeight: 900 }}>{m.type}</span>
-                                                <span style={{ fontFamily: 'var(--serif)', fontSize: 16 }}>{m.main}</span>
+                                <div className="scrollable-list no-scrollbar">
+                                    {currentMeals.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: 40, opacity: 0.3, fontSize: 10, letterSpacing: '0.2em' }}>CLEAN DISCIPLINE (NO LOGS)</div>
+                                    ) : currentMeals.map(m => (
+                                        <div key={m.id} className="glass-card animate-slide" style={{ padding: '14px 18px', borderRadius: 20, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                                                    <span style={{ fontSize: 8, background: 'var(--em)', color: '#000', padding: '2px 6px', borderRadius: 4, fontWeight: 900 }}>{m.type}</span>
+                                                    <span style={{ fontFamily: 'var(--serif)', fontSize: 16 }}>{m.main}</span>
+                                                </div>
+                                                <div style={{ fontSize: 7, color: 'var(--mu)', fontFamily: 'var(--mono)' }}>{m.timestamp?.split(/[ T]/)[1]?.slice(0, 5)} • Validated</div>
                                             </div>
-                                            <div style={{ fontSize: 7, color: 'var(--mu)', fontFamily: 'var(--mono)' }}>{m.timestamp?.split(/[ T]/)[1]?.slice(0, 5)} • Validated</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                                                <div style={{ fontFamily: 'var(--serif)', fontSize: 20, color: 'var(--em)' }}>{m.protein.toFixed(1)}<span style={{ fontSize: 9, marginLeft: 1 }}>g</span></div>
+                                                <button onClick={() => handleDelete(m)} className="delete-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+                                            </div>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-                                            <div style={{ fontFamily: 'var(--serif)', fontSize: 20, color: 'var(--em)' }}>{m.protein.toFixed(1)}<span style={{ fontSize: 9, marginLeft: 1 }}>g</span></div>
-                                            <button onClick={() => handleDelete(m)} className="delete-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         )}
                         {tab === 'suggest' && (
-                            <div className="animate-slide">
+                            <div className="animate-slide scrollable-list no-scrollbar" style={{ maxHeight: 'calc(100vh - 200px)' }}>
                                 <button onClick={() => setShuffleSeed(s => s + 1)} style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: 'var(--em)', fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', marginBottom: 15, cursor: 'pointer' }}>SHUFFLE STRATEGY</button>
                                 {gap <= 0 ? <div style={{ textAlign: 'center', padding: 60, fontFamily: 'var(--serif)', color: 'var(--em)', fontSize: 24 }}>Goal Reached ✓</div> : 
                                 masterMenus.length === 0 ? (
@@ -430,7 +444,7 @@
                                             "{getStrategicReason(opt.main, opt.p, gap)}"
                                         </div>
                                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                            {opt.tags.map(tag => (
+                                            {(opt.tags || []).map(tag => (
                                                 <span key={tag} style={{ fontSize: 8, color: 'var(--em)', border: '1px solid var(--em)', padding: '2px 8px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase' }}>{tag}</span>
                                             ))}
                                         </div>
@@ -449,23 +463,25 @@
                                         <div style={{ height: 160 }} dangerouslySetInnerHTML={{ __html: chartSvg }} />
                                     </div>
                                 </div>
-                                <div className="glass-card" style={{ padding: 25, borderRadius: 28, borderLeft: '5px solid var(--em)', marginTop: 15, marginBottom: 20 }}>
-                                    <p style={{ fontSize: 12, lineHeight: 1.6, opacity: 0.8 }}>{totalP >= TARGET ? "完璧な規律です。身体のキレが思考の深さを加速させます。" : "目標値までの補完計画を自動生成しました。"}</p>
-                                </div>
-                                <p style={{ fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginBottom: 12 }}>LAST 3 DAYS RECORDS (STRICT SYNC)</p>
-                                {last3DaysMeals.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: 20, color: 'var(--mu)', fontSize: 10 }}>No activity found in the last 72H.</div>
-                                ) : last3DaysMeals.map((m, i) => (
-                                    <div key={i} className="glass-card" style={{ padding: '12px 16px', borderRadius: 18, marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: m.dateOnly === todayStr ? 1 : 0.6 }}>
-                                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                            <div style={{ fontSize: 7, background: m.dateOnly === todayStr ? 'var(--em)' : 'var(--mu)', color: '#000', padding: '3px 6px', borderRadius: 5, fontWeight: 900 }}>
-                                                {m.dateOnly.split('-').slice(1).join('/')}
-                                            </div>
-                                            <div style={{ fontSize: 13, fontWeight: 700 }}>{m.main}</div>
-                                        </div>
-                                        <div style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--em)' }}>{m.protein.toFixed(1)}g</div>
+                                <div className="scrollable-list no-scrollbar">
+                                    <div className="glass-card" style={{ padding: 25, borderRadius: 28, borderLeft: '5px solid var(--em)', marginTop: 15, marginBottom: 20 }}>
+                                        <p style={{ fontSize: 12, lineHeight: 1.6, opacity: 0.8 }}>{totalP >= TARGET ? "完璧な規律です。身体のキレが思考の深さを加速させます。" : "目標値までの補完計画を自動生成しました。"}</p>
                                     </div>
-                                ))}
+                                    <p style={{ fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginBottom: 12 }}>LAST 3 DAYS RECORDS (STRICT SYNC)</p>
+                                    {last3DaysMeals.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: 20, color: 'var(--mu)', fontSize: 10 }}>No activity found in the last 72H.</div>
+                                    ) : last3DaysMeals.map((m, i) => (
+                                        <div key={i} className="glass-card" style={{ padding: '12px 16px', borderRadius: 18, marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: m.dateOnly === todayStr ? 1 : 0.6 }}>
+                                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                                <div style={{ fontSize: 7, background: m.dateOnly === todayStr ? 'var(--em)' : 'var(--mu)', color: '#000', padding: '3px 6px', borderRadius: 5, fontWeight: 900 }}>
+                                                    {m.dateOnly.split('-').slice(1).join('/')}
+                                                </div>
+                                                <div style={{ fontSize: 13, fontWeight: 700 }}>{m.main}</div>
+                                            </div>
+                                            <div style={{ fontFamily: 'var(--serif)', fontSize: 18, color: 'var(--em)' }}>{m.protein.toFixed(1)}g</div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </main>
