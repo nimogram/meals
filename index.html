@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Meal OS v7.7.8</title>
+    <title>Meal OS v7.7.9</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -85,6 +85,20 @@
         }
         .btn-lime:active { transform: scale(0.95); }
 
+        .btn-sub {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--em);
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 900;
+            border-radius: 12px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-sub:active { transform: scale(0.9); background: rgba(255,255,255,0.1); }
+
         input[type=range] { -webkit-appearance: none; background: transparent; width: 100%; cursor: pointer; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; }
         input[type=range]::-webkit-slider-thumb { 
@@ -105,8 +119,13 @@
         .animate-spin { animation: spin 1s linear infinite; }
 
         .delete-btn {
-            opacity: 0;
+            opacity: 0.4;
             transition: opacity 0.3s;
+            background: none;
+            border: none;
+            color: var(--err);
+            cursor: pointer;
+            padding: 8px;
         }
         .glass-card:hover .delete-btn {
             opacity: 1;
@@ -169,22 +188,28 @@
                     const data = await r.json();
                     
                     const historyRaw = Array.isArray(data) ? data : (data.history || []);
-                    // 【厳格化】タイムスタンプが欠落している行は完全に無視する
+                    
+                    // 【改善】フィルタリングを柔軟にし、過去ログの取りこぼしを防ぐ
                     const cleaned = historyRaw
                         .filter(m => {
-                            const name = m.Main_Menu || m.main || "";
+                            const name = (m.Main_Menu || m.main || "").toString();
                             const val = Number(m.Protein_g || m.protein || 0);
                             const hasTs = m.Timestamp || m.timestamp;
-                            // 名前が短すぎる、またはタイムスタンプがない、または「-」のみの行は除外
-                            return name.trim().length > 1 && name !== "-" && hasTs && (val > 0 || name.includes("朝セット"));
+                            // 名前の有無と、プロテイン量または「朝セット」かどうかだけで判定
+                            return name.trim().length > 0 && name !== "-" && (val > 0 || name.includes("朝セット"));
                         })
-                        .map(m => ({
-                            id: m.Timestamp || m.timestamp || Math.random().toString(36).slice(2),
-                            main: m.Main_Menu || m.main,
-                            protein: Number(m.Protein_g || m.protein || 0),
-                            type: m.Meal_Type || m.type || "他",
-                            timestamp: m.Timestamp || m.timestamp
-                        }));
+                        .map(m => {
+                            const rawTs = m.Timestamp || m.timestamp || "";
+                            // タイムスタンプを正規化 (ハイフン区切りの日付を抽出)
+                            const normalizedTs = rawTs.toString().replace(/\//g, '-');
+                            return {
+                                id: normalizedTs || Math.random().toString(36).slice(2),
+                                main: m.Main_Menu || m.main,
+                                protein: Number(m.Protein_g || m.protein || 0),
+                                type: m.Meal_Type || m.type || "他",
+                                timestamp: normalizedTs
+                            };
+                        });
 
                     setMeals(cleaned);
                     
@@ -205,6 +230,7 @@
 
             useEffect(() => { fetchData(); }, [fetchData]);
 
+            // 本日のログ抽出も正規化して比較
             const currentMeals = useMemo(() => 
                 meals.filter(m => m.timestamp && m.timestamp.startsWith(selDate)).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
             , [meals, selDate]);
@@ -215,10 +241,10 @@
 
             const handleSave = async (mName, mP, mType) => {
                 if (!mName || mName.trim().length < 2) return;
-                const ts = `${selDate}T${new Date().toLocaleTimeString('ja-JP', {hour12:false})}`;
+                const now = new Date();
+                const ts = `${selDate}T${now.toLocaleTimeString('ja-JP', {hour12:false})}`;
                 const newLog = { main: mName.trim(), protein: mP, type: mType, timestamp: ts };
                 
-                // 楽観的UI更新
                 setMeals(prev => [{...newLog, id: ts}, ...prev]);
                 setMainMenu('');
                 showToast('SAVED');
@@ -229,7 +255,7 @@
                         mode:'no-cors', 
                         body: JSON.stringify({ _action:'save', ...newLog, Main_Menu:newLog.main, Protein_g:mP, Meal_Type:mType, Timestamp:ts }) 
                     }); 
-                    fetchData(); // サーバーと完全同期
+                    setTimeout(fetchData, 1000); // サーバーとの整合性を取るために再取得
                 } catch(e){ showToast('SYNC ERROR'); }
             };
 
@@ -267,7 +293,7 @@
                     const val = meals.filter(m => m.timestamp && m.timestamp.startsWith(ds)).reduce((s,m)=>s+m.protein,0);
                     return { lbl: ['日','月','火','水','木','金','土'][d.getDay()], val, isToday: ds === todayStr };
                 });
-                const maxV = Math.max(...days.map(d=>d.val), TARGET) * 1.15;
+                const maxV = Math.max(...days.map(d=>d.val), TARGET, 10) * 1.15;
                 const xStep = cW/6;
 
                 const grids = [0, TARGET/2, TARGET].map(v => {
@@ -298,12 +324,12 @@
                     )}
 
                     <header style={{ padding: '20px 20px 10px', zIndex: 10 }}>
-                        <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'flex-start', marginBottom: 15 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 }}>
                             <div style={{ flex: 1 }}>
                                 <h1 style={{ fontFamily: 'var(--serif)', fontSize: 28, color: 'var(--em)', lineHeight: 1 }}>Meal OS</h1>
-                                <p style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginTop: 4 }}>PRECISION LIQUID v7.7.8</p>
+                                <p style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginTop: 4 }}>PRECISION LIQUID v7.7.9</p>
                             </div>
-                            <button onClick={fetchData} disabled={syncing} style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--em)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <button onClick={fetchData} disabled={syncing} style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--em)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                 <svg className={syncing ? 'animate-spin' : ''} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
                             </button>
                         </div>
@@ -311,7 +337,7 @@
                         {tab !== 'stats' && (
                             <div className="glass-card animate-fade" style={{ padding: '15px 20px', borderRadius: 24, position: 'relative', overflow: 'hidden' }}>
                                 <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%)', pointerEvents:'none' }} />
-                                <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'baseline', marginBottom: 8, position: 'relative' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8, position: 'relative' }}>
                                     <span style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.1em', fontWeight: 700 }}>DAILY PROTEIN FLOW</span>
                                     <span style={{ fontFamily: 'var(--serif)', fontSize: 36, color: 'var(--tx)', lineHeight: 1 }}>{totalP.toFixed(1)}<span style={{ fontSize: 12, color: 'var(--mu)', marginLeft: 4 }}>g</span></span>
                                 </div>
@@ -326,15 +352,15 @@
                         {tab === 'log' && (
                             <div className="animate-slide">
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: 20, alignItems: 'center', marginBottom: 15 }}>
-                                    <button onClick={() => { const d = new Date(selDate); d.setDate(d.getDate()-1); setSelDate(d.toLocaleDateString('sv-SE')) }} style={{ color: 'var(--mu)', background: 'none', border: 'none' }}>◀</button>
+                                    <button onClick={() => { const d = new Date(selDate); d.setDate(d.getDate()-1); setSelDate(d.toLocaleDateString('sv-SE')) }} style={{ color: 'var(--mu)', background: 'none', border: 'none', cursor: 'pointer' }}>◀</button>
                                     <div style={{ fontFamily: 'var(--serif)', fontSize: 20 }}>{selDate.split('-')[1]}/{selDate.split('-')[2]}</div>
-                                    <button onClick={() => { const d = new Date(selDate); d.setDate(d.getDate()+1); if(d.toLocaleDateString('sv-SE') <= todayStr) setSelDate(d.toLocaleDateString('sv-SE')) }} style={{ color: selDate === todayStr ? 'transparent' : 'var(--mu)', background: 'none', border: 'none' }}>▶</button>
+                                    <button onClick={() => { const d = new Date(selDate); d.setDate(d.getDate()+1); if(d.toLocaleDateString('sv-SE') <= todayStr) setSelDate(d.toLocaleDateString('sv-SE')) }} style={{ color: selDate === todayStr ? 'transparent' : 'var(--mu)', background: 'none', border: 'none', cursor: 'pointer' }}>▶</button>
                                 </div>
 
                                 <section className="glass-card" style={{ padding: 20, borderRadius: 28, marginBottom: 20 }}>
                                     <div style={{ display: 'flex', gap: 6, marginBottom: 15 }}>
                                         {['朝','昼','夜','他'].map(t => (
-                                            <button key={t} onClick={() => {setMealType(t); if(t==='朝') setShowMorningPrompt(true); else setShowMorningPrompt(false);}} style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: 'none', background: mealType === t ? 'var(--em)' : 'rgba(255,255,255,0.03)', color: mealType === t ? '#000' : 'var(--mu)', fontSize: 11, fontWeight: 900 }}>{t}</button>
+                                            <button key={t} onClick={() => {setMealType(t); if(t==='朝') setShowMorningPrompt(true); else setShowMorningPrompt(false);}} style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: 'none', background: mealType === t ? 'var(--em)' : 'rgba(255,255,255,0.03)', color: mealType === t ? '#000' : 'var(--mu)', fontSize: 11, fontWeight: 900, cursor: 'pointer' }}>{t}</button>
                                         ))}
                                     </div>
 
@@ -343,7 +369,7 @@
                                             <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--em)', marginBottom: 10 }}>朝セット（45g）をレポしますか？</p>
                                             <div style={{ display: 'flex', gap: 8 }}>
                                                 <button onClick={() => {handleSave('朝セット', 45, '朝'); setShowMorningPrompt(false);}} className="btn-lime" style={{ flex: 1, padding: 10, borderRadius: 10, fontSize: 10 }}>YES</button>
-                                                <button onClick={() => setShowMorningPrompt(false)} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--mu)', borderRadius: 10, fontSize: 10, fontWeight: 900 }}>NO</button>
+                                                <button onClick={() => setShowMorningPrompt(false)} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--mu)', borderRadius: 10, fontSize: 10, fontWeight: 900, cursor: 'pointer' }}>NO</button>
                                             </div>
                                         </div>
                                     )}
@@ -351,30 +377,37 @@
                                     <input value={mainMenu} onChange={e => setMainMenu(e.target.value)} placeholder="Main Menu" style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 16, fontSize: 14, color: 'var(--tx)', outline: 'none', marginBottom: 15 }} />
                                     
                                     <div style={{ marginBottom: 20 }}>
-                                        <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
                                             <span style={{ fontSize: 8, color: 'var(--mu)', fontWeight: 700 }}>STRATEGIC WEIGHT</span>
                                             <span style={{ fontFamily: 'var(--serif)', fontSize: 30, color: 'var(--em)' }}>{protein.toFixed(1)}<span style={{ fontSize: 12, marginLeft: 2, fontFamily: 'var(--mono)' }}>g</span></span>
                                         </div>
-                                        <input type="range" min="0" max="60" step="0.5" value={protein} onChange={e => setProtein(parseFloat(e.target.value))} />
+                                        {/* 【復活】±0.5g 調整ボタン */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <button className="btn-sub" onClick={() => setProtein(p => Math.max(0, parseFloat((p - 0.5).toFixed(1))))}>-0.5</button>
+                                            <div style={{ flex: 1 }}>
+                                                <input type="range" min="0" max="60" step="0.5" value={protein} onChange={e => setProtein(parseFloat(e.target.value))} />
+                                            </div>
+                                            <button className="btn-sub" onClick={() => setProtein(p => Math.min(60, parseFloat((p + 0.5).toFixed(1))))}>+0.5</button>
+                                        </div>
                                     </div>
 
                                     <button onClick={() => handleSave(mainMenu, protein, mealType)} className="btn-lime" style={{ width: '100%', padding: 18, borderRadius: 18, fontSize: 14 }}>STAY HEALTHY →</button>
                                 </section>
 
                                 {currentMeals.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: 40, opacity: 0.3, fontSize: 10, letterSpacing: '0.2em' }}>CLEAN DISCIPLINE</div>
+                                    <div style={{ textAlign: 'center', padding: 40, opacity: 0.3, fontSize: 10, letterSpacing: '0.2em' }}>CLEAN DISCIPLINE (NO LOGS)</div>
                                 ) : currentMeals.map(m => (
-                                    <div key={m.id} className="glass-card animate-slide" style={{ padding: '14px 18px', borderRadius: 20, marginBottom: 8, display: 'flex', justifyBetween: 'space-between', alignItems: 'center' }}>
+                                    <div key={m.id} className="glass-card animate-slide" style={{ padding: '14px 18px', borderRadius: 20, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                                                 <span style={{ fontSize: 8, background: 'var(--em)', color: '#000', padding: '2px 6px', borderRadius: 4, fontWeight: 900 }}>{m.type}</span>
                                                 <span style={{ fontFamily: 'var(--serif)', fontSize: 16 }}>{m.main}</span>
                                             </div>
-                                            <div style={{ fontSize: 7, color: 'var(--mu)', fontFamily: 'var(--mono)' }}>{m.timestamp?.split('T')[1]?.slice(0, 5)} • PERFORMANCE DATA</div>
+                                            <div style={{ fontSize: 7, color: 'var(--mu)', fontFamily: 'var(--mono)' }}>{m.timestamp?.split('T')[1]?.slice(0, 5) || "RECORDED"} • PERFORMANCE DATA</div>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
                                             <div style={{ fontFamily: 'var(--serif)', fontSize: 20, color: 'var(--em)' }}>{m.protein.toFixed(1)}<span style={{ fontSize: 9, marginLeft: 1 }}>g</span></div>
-                                            <button onClick={() => handleDelete(m)} className="delete-btn" style={{ background: 'none', border: 'none', color: 'var(--err)', cursor: 'pointer', padding: 5 }}>
+                                            <button onClick={() => handleDelete(m)} className="delete-btn">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                                             </button>
                                         </div>
@@ -387,18 +420,18 @@
                             <div className="animate-slide">
                                 <div style={{ display: 'flex', gap: 4, marginBottom: 10, background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 16 }}>
                                     {[['all','ALL'],['muscle','筋肉'],['recovery','回復'],['antiaging','抗老化']].map(([v, l]) => (
-                                        <button key={v} onClick={() => setEffect(v)} style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', background: effect === v ? 'var(--em)' : 'transparent', color: effect === v ? '#000' : 'var(--mu)', fontSize: 10, fontWeight: 900 }}>{l}</button>
+                                        <button key={v} onClick={() => setEffect(v)} style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', background: effect === v ? 'var(--em)' : 'transparent', color: effect === v ? '#000' : 'var(--mu)', fontSize: 10, fontWeight: 900, cursor: 'pointer' }}>{l}</button>
                                     ))}
                                 </div>
 
-                                <button onClick={() => setShuffleSeed(s => s + 1)} style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: 'var(--em)', fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', marginBottom: 15 }}>SHUFFLE MENU</button>
+                                <button onClick={() => setShuffleSeed(s => s + 1)} style={{ width: '100%', padding: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, color: 'var(--em)', fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', marginBottom: 15, cursor: 'pointer' }}>SHUFFLE MENU</button>
 
                                 {gap <= 0 ? <div style={{ textAlign: 'center', padding: 60, fontFamily: 'var(--serif)', color: 'var(--em)', fontSize: 24 }}>Goal Reached ✓</div> : 
                                 masterMenus.length === 0 ? (
                                     <div style={{ textAlign: 'center', padding: 40, color: 'var(--mu)', fontSize: 11 }}>メニューを同期中...</div>
                                 ) : suggestions.map((opt, i) => (
                                     <div key={i} className="glass-card animate-slide" style={{ padding: 15, borderRadius: 22, marginBottom: 10, border: i === 0 ? '1px solid var(--em)' : '1px solid rgba(255,255,255,0.08)' }}>
-                                        <div style={{ display: 'flex', justifyBetween: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                                             <div style={{ fontFamily: 'var(--serif)', fontSize: 18 }}>{opt.main}</div>
                                             <div style={{ fontFamily: 'var(--serif)', fontSize: 24, color: 'var(--em)' }}>{Number(opt.p).toFixed(1)}<span style={{ fontSize: 10, marginLeft: 2 }}>g</span></div>
                                         </div>
@@ -408,6 +441,7 @@
                                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                             {(opt.tags || []).slice(0, 3).map(t => <span key={t} style={{ fontSize: 9, color: 'var(--em)', background: 'rgba(190,242,100,0.08)', padding: '3px 8px', borderRadius: 6, fontWeight: 900, border: '1px solid rgba(190,242,100,0.1)' }}>{t}</span>)}
                                         </div>
+                                        <button onClick={() => { setMainMenu(opt.main); setProtein(opt.p); setMealType('夜'); setTab('log'); }} className="btn-lime" style={{ width: '100%', padding: '10px 0', borderRadius: 12, fontSize: 10, marginTop: 10 }}>このメニューを選択</button>
                                     </div>
                                 ))}
                             </div>
@@ -417,7 +451,7 @@
                             <div className="animate-slide">
                                 <div className="sticky-analysis">
                                     <div className="glass-card" style={{ padding: 15, borderRadius: 24, background: 'rgba(255,255,255,0.01)' }}>
-                                        <div style={{ display: 'flex', justifyBetween: 'space-between', fontSize: 9, color: 'var(--mu)', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 10 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--mu)', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 10 }}>
                                             <span>7-DAY TREND ANALYSIS</span>
                                             <span style={{ color: 'var(--yel)' }}>TARGET: 120g</span>
                                         </div>
@@ -431,8 +465,8 @@
                                 </div>
 
                                 <p style={{ fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginBottom: 12 }}>LAST 72H LOGS</p>
-                                {meals.slice(0, 6).map((m, i) => (
-                                    <div key={i} className="glass-card" style={{ padding: '12px 16px', borderRadius: 18, marginBottom: 6, display: 'flex', justifyBetween: 'space-between', alignItems: 'center', opacity: 0.8 }}>
+                                {meals.slice(0, 10).map((m, i) => (
+                                    <div key={i} className="glass-card" style={{ padding: '12px 16px', borderRadius: 18, marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.8 }}>
                                         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                                             <div style={{ fontSize: 7, background: 'var(--em)', color: '#000', padding: '3px 6px', borderRadius: 5, fontWeight: 900 }}>{m.type}</div>
                                             <div style={{ fontSize: 13, fontWeight: 700 }}>{m.main}</div>
@@ -444,7 +478,7 @@
                         )}
                     </main>
 
-                    <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto', height: 85, background: 'rgba(1,2,6,0.85)', backdropFilter: 'blur(45px)', display: 'flex', justifyAround: 'space-around', alignItems: 'center', paddingBottom: 'env(safe-area-inset-bottom)', borderTop: '1px solid rgba(255,255,255,0.05)', zIndex: 100 }}>
+                    <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto', height: 85, background: 'rgba(1,2,6,0.85)', backdropFilter: 'blur(45px)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', paddingBottom: 'env(safe-area-inset-bottom)', borderTop: '1px solid rgba(255,255,255,0.05)', zIndex: 100 }}>
                         {[
                             { id: 'log', lbl: 'LOG', icon: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
                             { id: 'suggest', lbl: 'STRATEGY', icon: 'M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z M9 21h6' },
