@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Meal OS v7.9.2</title>
+    <title>Meal OS v7.9.4</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -137,7 +137,15 @@
         };
 
         const App = () => {
-            const todayStr = useMemo(() => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }), []);
+            const getJstDateString = (date) => {
+                const d = new Date(date.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            };
+
+            const todayStr = useMemo(() => getJstDateString(new Date()), []);
             const [meals, setMeals] = useState([]);
             const [masterMenus, setMasterMenus] = useState([]);
             const [tab, setTab] = useState('log');
@@ -185,13 +193,12 @@
                             const rawTs = (m.timestamp || m.Timestamp || "").toString();
                             let dateObj;
                             try {
-                                // 【解析強化】スペース区切りをT区切りに変換し、ブラウザ解析エラーを回避
                                 const isoTs = rawTs.replace(/\//g, '-').replace(' ', 'T');
                                 dateObj = new Date(isoTs);
                                 if (isNaN(dateObj.getTime())) dateObj = new Date();
                             } catch(e) { dateObj = new Date(); }
                             
-                            const datePart = dateObj.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+                            const datePart = getJstDateString(dateObj);
 
                             return {
                                 id: rawTs + "_" + (m.main || m.Main_Menu),
@@ -267,7 +274,7 @@
                 const W=320, H=150, PL=30, PR=10, PT=20, PB=30, cW=W-PL-PR, cH=H-PT-PB;
                 const days = Array.from({length:7}, (_,i) => {
                     const d = new Date(); d.setDate(d.getDate()-(6-i));
-                    const ds = d.toLocaleDateString('sv-SE', {timeZone:'Asia/Tokyo'});
+                    const ds = getJstDateString(d);
                     const val = meals.filter(m => m.dateOnly === ds).reduce((s,m)=>s+m.protein,0);
                     return { lbl: ['日','月','火','水','木','金','土'][d.getDay()], val, isToday: ds === todayStr };
                 });
@@ -282,22 +289,24 @@
                 const points = days.map((d, i) => ({ x: PL + i*xStep, y: PT + cH - (d.val/maxV)*cH, ...d }));
                 const pathD = points.map((p, i) => (i===0 ? 'M' : 'L') + `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
                 const line = `<path d="${pathD}" fill="none" stroke="var(--em)" stroke-width="2.5" class="chart-path" stroke-linejoin="round" />`;
-                const dots = points.map((p, i) => `
+                const dots = points.map((p, i) => {
+                    const isSuccess = p.val >= TARGET;
+                    return `
                     <g>
-                        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.isToday?5:3}" fill="${p.val >= TARGET ? 'var(--em)' : p.val>0 ? 'white' : 'var(--mu)'}" />
+                        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.isToday?5:3}" fill="${isSuccess ? 'var(--em)' : p.val>0 ? 'white' : 'var(--mu)'}" />
                         <text x="${p.x.toFixed(1)}" y="${H-5}" font-size="9" fill="${p.isToday?'var(--em)':'var(--mu)'}" text-anchor="middle">${p.lbl}</text>
-                        ${p.val > 0 ? `<text x="${p.x.toFixed(1)}" y="${(p.y-8).toFixed(1)}" font-size="9" fill="white" font-family="var(--mono)" text-anchor="middle" font-weight="900">${Math.round(p.val)}</text>` : ''}
+                        ${p.val > 0 ? `<text x="${p.x.toFixed(1)}" y="${(p.y - (isSuccess ? 12 : 8)).toFixed(1)}" font-size="${isSuccess ? '14' : '9'}" fill="${isSuccess ? 'var(--em)' : 'white'}" font-family="var(--mono)" text-anchor="middle" font-weight="900">${Math.round(p.val)}</text>` : ''}
                     </g>
-                `).join('');
+                `;}).join('');
                 return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;overflow:visible">${grids}${line}${dots}</svg>`;
             }, [meals, todayStr]);
 
-            // 【アナリティクス：本日・昨日・一昨日の3日間のみを厳密抽出】
+            // 【アナリティクス：履歴表示の確実なフィルタリング】
             const last3DaysMeals = useMemo(() => {
                 const getD = (offset) => {
                     const d = new Date();
                     d.setDate(d.getDate() - offset);
-                    return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+                    return getJstDateString(d);
                 };
                 const targets = [getD(0), getD(1), getD(2)];
                 return meals.filter(m => targets.includes(m.dateOnly));
@@ -312,7 +321,7 @@
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 }}>
                             <div style={{ flex: 1 }}>
                                 <h1 style={{ fontFamily: 'var(--serif)', fontSize: 28, color: 'var(--em)', lineHeight: 1 }}>Meal OS</h1>
-                                <p style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginTop: 4 }}>STRATEGY VALIDATED v7.9.2</p>
+                                <p style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--mu)', letterSpacing: '0.2em', marginTop: 4 }}>PRECISION SYNC v7.9.4</p>
                             </div>
                             <button onClick={fetchData} disabled={syncing} style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--em)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                 <svg className={syncing ? 'animate-spin' : ''} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
@@ -334,9 +343,9 @@
                         {tab === 'log' && (
                             <div className="animate-slide">
                                 <div style={{ display: 'flex', justifyContent: 'center', gap: 20, alignItems: 'center', marginBottom: 15 }}>
-                                    <button onClick={() => { const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate()-1); setSelDate(d.toLocaleDateString('sv-SE')) }} style={{ color: 'var(--mu)', background: 'none', border: 'none', cursor: 'pointer' }}>◀</button>
+                                    <button onClick={() => { const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate()-1); setSelDate(getJstDateString(d)) }} style={{ color: 'var(--mu)', background: 'none', border: 'none', cursor: 'pointer' }}>◀</button>
                                     <div style={{ fontFamily: 'var(--serif)', fontSize: 20 }}>{selDate.split('-')[1]}/{selDate.split('-')[2]}</div>
-                                    <button onClick={() => { const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate()+1); if(d.toLocaleDateString('sv-SE') <= todayStr) setSelDate(d.toLocaleDateString('sv-SE')) }} style={{ color: selDate === todayStr ? 'transparent' : 'var(--mu)', background: 'none', border: 'none', cursor: 'pointer' }}>▶</button>
+                                    <button onClick={() => { const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate()+1); if(getJstDateString(d) <= todayStr) setSelDate(getJstDateString(d)) }} style={{ color: selDate === todayStr ? 'transparent' : 'var(--mu)', background: 'none', border: 'none', cursor: 'pointer' }}>▶</button>
                                 </div>
                                 <section className="glass-card" style={{ padding: 20, borderRadius: 28, marginBottom: 20 }}>
                                     <div style={{ display: 'flex', gap: 6, marginBottom: 15 }}>
@@ -401,7 +410,11 @@
                                         <div style={{ background: 'rgba(190,242,100,0.04)', borderLeft: '2px solid var(--em)', padding: '8px 12px', borderRadius: '0 10px 10px 0', fontSize: 10, color: 'var(--tx)', fontStyle: 'italic', marginBottom: 10 }}>
                                             "{getStrategicReason(opt.main, opt.p, gap)}"
                                         </div>
-                                        <button onClick={() => { setMainMenu(opt.main); setProtein(opt.p); setMealType('夜'); setTab('log'); }} className="btn-lime" style={{ width: '100%', padding: '10px 0', borderRadius: 12, fontSize: 10, fontWeight: 900 }}>このメニューを選択 →</button>
+                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                            {opt.tags.map(tag => (
+                                                <span key={tag} style={{ fontSize: 8, color: 'var(--em)', border: '1px solid var(--em)', padding: '2px 8px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase' }}>{tag}</span>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
