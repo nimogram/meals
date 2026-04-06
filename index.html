@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>MEAL LOG v8.0.6</title>
+    <title>MEAL LOG v8.0.9</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -95,6 +95,13 @@
           "朝セット": "ニモさんの1日の基盤。45gの速攻性プロテインが代謝をキックオフし、スタートダッシュを確実にします。"
         };
 
+        // UI表示名とデータカテゴリの紐付け
+        const CATEGORY_MAP = {
+            '筋トレ': 'muscle',
+            '疲労回復': 'recovery',
+            '若返り': 'antiaging'
+        };
+
         const App = () => {
             const getJstDateString = (offset = 0) => {
                 const d = new Date();
@@ -156,12 +163,14 @@
                         })
                         .sort((a,b) => new Date(b.timestamp.replace(/\//g, '-')) - new Date(a.timestamp.replace(/\//g, '-')));
                     setMeals(cleanedLogs);
+
                     if (data.menus) {
                         setMasterMenus(data.menus.map(m => ({
                             main: m.main || m.Main_Menu || "Unknown",
                             p: Number(m.p || m.Protein_g || 20),
+                            side: m.side || "-",
                             tags: m.tags ? (Array.isArray(m.tags) ? m.tags : String(m.tags).split(',').map(t=>t.trim())) : [],
-                            cat: m.cat || "all"
+                            cat: (m.cat || m.Category || "all").toString().toLowerCase()
                         })));
                     }
                     showToast('SYSTEM SYNCED');
@@ -176,17 +185,23 @@
             const currentMeals = useMemo(() => meals.filter(m => m.dateOnly === selDate), [meals, selDate]);
             const totalP = useMemo(() => currentMeals.reduce((sum, m) => sum + m.protein, 0), [currentMeals]);
             const progress = Math.min((totalP / TARGET) * 100, 100);
-            const gap = Math.max(0, TARGET - totalP);
 
             const last3DaysMeals = useMemo(() => {
                 const targets = [getJstDateString(0), getJstDateString(1), getJstDateString(2)];
                 return meals.filter(m => targets.includes(m.dateOnly));
             }, [meals]);
 
+            // 【推奨エンジン修正：日本語/英語マッピングとタグ検索の統合】
             const suggestions = useMemo(() => {
+                if (masterMenus.length === 0) return [];
                 let pool = masterMenus;
                 if (effect !== 'all') {
-                    pool = masterMenus.filter(m => m.cat === effect || m.tags.includes(effect));
+                    const mappedCat = CATEGORY_MAP[effect] || effect.toLowerCase();
+                    pool = masterMenus.filter(m => 
+                        m.cat.includes(mappedCat) || 
+                        m.cat.includes(effect.toLowerCase()) ||
+                        (m.tags && m.tags.some(tag => tag.includes(effect) || tag.toLowerCase().includes(mappedCat)))
+                    );
                 }
                 const seeded = [...pool].map((m, i) => ({ m, r: Math.sin(shuffleSeed * 997 + i * 31) }));
                 return seeded.sort((a, b) => a.r - b.r).slice(0, 3).map(x => x.m);
@@ -259,11 +274,12 @@
                         <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-[#bef264] text-black px-6 py-2 rounded-full font-mono text-[10px] font-black z-[999] shadow-lg animate-bounce">{toast}</div>
                     )}
                     
+                    {/* Header - 329.png準拠 */}
                     <header className="p-5 pb-2 shrink-0">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h1 className="font-['DM_Serif_Display'] text-3xl text-[#bef264] leading-none">MEAL LOG</h1>
-                                <p className="font-mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase">Strategic Morning v8.0.6</p>
+                                <h1 className="font-['DM_Serif_Display'] text-3xl text-[#bef264] leading-none">Meal OS</h1>
+                                <p className="font-mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase">Strategic Selection v8.0.9</p>
                             </div>
                             <button onClick={fetchData} className={`w-9 h-9 bg-white/5 rounded-full border border-white/10 flex items-center justify-center text-[#bef264] ${syncing ? 'animate-spin' : ''}`}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
@@ -273,8 +289,8 @@
                         {tab !== 'stats' && (
                             <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 p-5 rounded-2xl relative overflow-hidden">
                                 <div className="flex justify-between items-center mb-4">
-                                    <span className="font-mono text-[8px] text-[#475569] font-bold tracking-widest uppercase">Daily Protein Flow</span>
-                                    <span className="font-mono text-3xl font-black text-[#f1f3f9] leading-none">{totalP.toFixed(1)}<span className="text-[10px] text-[#475569] ml-1">g</span></span>
+                                    <span className="font-mono text-[8px] text-[#475569] font-bold tracking-widest uppercase text-left">Daily Protein Flow</span>
+                                    <span className="font-mono text-3xl font-black text-[#f1f3f9] leading-none text-right">{totalP.toFixed(1)}<span className="text-[10px] text-[#475569] ml-1">g</span></span>
                                 </div>
                                 <div className="h-1 bg-white/5 rounded-full relative overflow-hidden">
                                     <div className="h-full bg-gradient-to-r from-[#bef264] to-[#84cc16] relative transition-all duration-1000" style={{ width: `${progress}%` }}>
@@ -290,7 +306,11 @@
                         {tab === 'log' && (
                             <div className="flex flex-col h-full animate-slide">
                                 <div className="flex justify-center gap-5 items-center mb-4 shrink-0">
-                                    <button onClick={() => { const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate()-1); setSelDate(getJstDateString(new Date().getDate() - d.getDate())) }} className="text-[#475569]">◀</button>
+                                    <button onClick={() => { 
+                                        const d = new Date(selDate + 'T12:00:00'); 
+                                        d.setDate(d.getDate()-1); 
+                                        setSelDate(getJstDateString(Math.floor((new Date() - d) / 86400000))); 
+                                    }} className="text-[#475569]">◀</button>
                                     <div className="font-serif text-xl">{selDate.split('-')[1]}/{selDate.split('-')[2]}</div>
                                     <button onClick={() => { if(selDate < todayStr) setSelDate(getJstDateString(0)) }} className={`text-[#475569] ${selDate === todayStr ? 'opacity-0' : ''}`}>▶</button>
                                 </div>
@@ -322,7 +342,7 @@
                                         </div>
                                     )}
 
-                                    <input value={mainMenu} onChange={e => setMainMenu(e.target.value)} placeholder="Main Menu" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-[#f1f3f9] outline-none mb-4 focus:border-[#bef264]/50 transition-colors" />
+                                    <input value={mainMenu} onChange={e => setMainMenu(e.target.value)} placeholder="Main Menu" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-[#f1f3f9] outline-none mb-4 focus:border-[#bef264]/50" />
                                     <div className="mb-5">
                                         <div className="flex justify-between items-end mb-2">
                                             <span className="text-[8px] text-[#475569] font-bold tracking-widest uppercase">Strategic Weight</span>
@@ -347,7 +367,7 @@
                                                     <span className="text-[8px] bg-[#bef264] text-black px-1.5 py-0.5 rounded font-black uppercase">{m.type}</span>
                                                     <span className="font-serif text-base">{m.main}</span>
                                                 </div>
-                                                <div className="text-[7px] text-[#475569] font-mono tracking-tighter uppercase">{m.timestamp.split(/[ T]/)[1]?.slice(0,5)} • Strategic Verified</div>
+                                                <div className="text-[7px] text-[#475569] font-mono tracking-tighter uppercase">{m.timestamp.split(/[ T]/)[1]?.slice(0,5)} • Verified</div>
                                             </div>
                                             <div className="font-serif text-xl text-[#bef264]">{m.protein.toFixed(1)}g</div>
                                         </div>
@@ -363,13 +383,15 @@
                                         {id:'all', lbl:'すべて'},
                                         {id:'疲労回復', lbl:'疲労回復'},
                                         {id:'筋トレ', lbl:'筋トレ'},
-                                        {id:'アンチエイジング', lbl:'若返り'}
+                                        {id:'若返り', lbl:'若返り'}
                                     ].map(cat => (
                                         <button key={cat.id} onClick={() => setEffect(cat.id)} className={`shrink-0 px-5 py-2.5 rounded-xl border border-white/10 font-black text-[10px] transition-all ${effect === cat.id ? 'bg-[#bef264] text-black shadow-[0_0_15px_rgba(190,242,100,0.2)]' : 'bg-white/5 text-[#475569]'}`}>{cat.lbl}</button>
                                     ))}
                                 </div>
                                 <div className="flex-1 overflow-y-auto no-scrollbar pb-24 space-y-3">
-                                    {suggestions.map((opt, i) => (
+                                    {suggestions.length === 0 ? (
+                                        <div className="text-center py-20 opacity-30 text-xs uppercase tracking-widest">No matching strategy found. (Syncing menus...)</div>
+                                    ) : suggestions.map((opt, i) => (
                                         <div key={i} className="bg-white/5 p-5 rounded-3xl border border-white/5 animate-slide">
                                             <div className="flex justify-between items-center mb-2">
                                                 <div className="font-serif text-lg">{opt.main}</div>
@@ -379,8 +401,8 @@
                                                 "{STRATEGIC_REASONS[Object.keys(STRATEGIC_REASONS).find(k => opt.main.includes(k))] || '規律ある身体資産の構築へ。'}"
                                             </div>
                                             <div className="flex gap-2 flex-wrap">
-                                                {opt.tags.map(tag => (
-                                                    <span key={tag} className="text-[8px] text-[#bef264] border border-[#bef264] px-2 py-0.5 rounded font-black uppercase">{tag}</span>
+                                                {(opt.tags || []).map(tag => (
+                                                    <span key={tag} className="text-[8px] text-[#bef264] border border-[#bef264] px-2 py-0.5 rounded font-black uppercase tracking-tight">{tag}</span>
                                                 ))}
                                             </div>
                                         </div>
@@ -416,6 +438,7 @@
                         )}
                     </main>
 
+                    {/* Navigation */}
                     <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto h-[85px] bg-[#010206]/90 backdrop-blur-3xl flex justify-around items-center border-t border-white/5 z-[100]">
                         {[
                             { id: 'log', lbl: 'LOG', icon: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
