@@ -57,7 +57,6 @@
         
         .setup-group { width: 100%; max-width: 300px; margin-bottom: 20px; }
         .setup-label { font-size: 10px; font-weight: 900; color: var(--muted); letter-spacing: 0.3em; margin-bottom: 10px; text-align: center; text-transform: uppercase; }
-        .mode-btns { display: flex; flex-direction: column; gap: 8px; width: 100%; }
         
         .setup-row { display: flex; gap: 8px; width: 100%; }
         .mode-btn {
@@ -135,7 +134,7 @@
             display: grid;
             grid-template-columns: repeat(var(--grid-size), 1fr);
             grid-template-rows: repeat(var(--grid-size), 1fr);
-            gap: 4px;
+            gap: 2px;
             width: 100%; max-width: 380px;
             aspect-ratio: 1;
         }
@@ -155,27 +154,26 @@
         
         .tile-side {
             position: absolute; inset: 0; backface-visibility: hidden;
-            border-radius: 6px; border: 1px solid rgba(255,255,255,.05);
+            border-radius: 4px; border: 1px solid rgba(255,255,255,.05);
             display: flex; align-items: center; justify-content: center;
         }
         .side-back { transform: rotateY(180deg); }
 
         .tile:active { transform: scale(0.9); }
-        .tile:hover .tile-side { border-color: rgba(255,255,255,0.2); }
         
         .tile.sel .tile-side {
             border-color: #fff !important;
-            box-shadow: 0 0 20px rgba(255,255,255,.4), inset 0 0 10px rgba(255,255,255,0.1);
+            box-shadow: 0 0 15px rgba(255,255,255,.4);
         }
 
-        .t-lbl { font-family: var(--M); font-size: 11px; color: rgba(255,255,255,.9); pointer-events: none; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.5); } 
+        .t-lbl { font-family: var(--M); font-size: 8px; color: rgba(255,255,255,.9); pointer-events: none; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.5); } 
 
         /* ── ANIMATIONS ── */
-        @keyframes pulse-rfp  { 0% { box-shadow:0 0 0px var(--gold); } 50% { box-shadow:0 0 15px var(--gold); } 100% { box-shadow:0 0 0px var(--gold); } }
-        @keyframes pulse-cxo  { 0% { box-shadow:0 0 0px var(--sky); border-width: 2px; } 50% { box-shadow:0 0 20px var(--sky); border-width: 2.5px; } 100% { box-shadow:0 0 0px var(--sky); border-width: 2px; } }
+        @keyframes pulse-rfp  { 0% { box-shadow:0 0 0px var(--gold); } 50% { box-shadow:0 0 10px var(--gold); } 100% { box-shadow:0 0 0px var(--gold); } }
+        @keyframes pulse-cxo  { 0% { box-shadow:0 0 0px var(--sky); border-width: 1.5px; } 50% { box-shadow:0 0 15px var(--sky); border-width: 2px; } 100% { box-shadow:0 0 0px var(--sky); border-width: 1.5px; } }
         
         .rfp-a .tile-side { animation: pulse-rfp 1.5s infinite; border-color: var(--gold) !important; }
-        .cxo-a .tile-side { animation: pulse-cxo 1.2s infinite; border-color: var(--sky) !important; border-width: 2px !important; }
+        .cxo-a .tile-side { animation: pulse-cxo 1.2s infinite; border-color: var(--sky) !important; border-width: 1.5px !important; }
 
         .bld-a .tile-inner { animation: rotate-flip 4.5s infinite cubic-bezier(0.45, 0, 0.55, 1); }
         @keyframes rotate-flip {
@@ -188,47 +186,48 @@
         /* ── SIDE PANEL ── */
         .sp {
             position: absolute; top: 0; right: 0; bottom: 0;
-            width: 80%;
-            background: rgba(6,12,25,0.7); 
+            width: 82%;
+            background: rgba(6,12,25,0.75); 
             backdrop-filter: blur(40px) saturate(1.8);
             border-left: 1px solid rgba(255,255,255,.15);
-            display: flex; flex-direction: column; gap: 8px;
-            padding: 16px 14px;
+            display: flex; flex-direction: column; gap: 4px;
+            padding: 12px 14px;
             z-index: 50;
             transform: translateX(100%);
             transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow: hidden;
+            overflow-y: auto; overflow-x: hidden;
             box-shadow: -10px 0 30px rgba(0,0,0,0.5);
         }
         .sp.open { transform: translateX(0); }
-        .sp-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
-        .sp-tag { font-size: 8px; font-weight: 900; letter-spacing: .4em; color: var(--emerald); text-transform: uppercase; }
-        .sp-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; }
-        .sp-name { font-family: var(--D); font-size: 24px; color: #fff; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .sp-full { font-size: 10px; color: #a0b0c5; line-height: 1.2; border-left: 3px solid var(--gold); padding-left: 8px; margin-bottom: 5px; }
-        .sp-stats { display: flex; gap: 6px; }
-        .sp-stat { flex: 1; background: rgba(255,255,255,.03); border: 1px solid var(--bdr); border-radius: 10px; padding: 6px; }
-        .sp-sl { font-size: 7px; font-weight: 800; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
-        .sp-sv { font-family: var(--D); font-size: 18px; color: #fff; } 
-        .sp-row { border-bottom: 1px solid var(--bdr); padding-bottom: 4px; margin-bottom: 2px; }
-        .sp-rl { font-size: 7px; font-weight: 800; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
-        .sp-rv { font-family: var(--D); font-size: 14px; color: var(--gold); letter-spacing: .05em; }
-        .sp-status { font-size: 11px; font-weight: 600; color: #fff; }
+        .sp::-webkit-scrollbar { width: 0; }
+        .sp-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1px; }
+        .sp-tag { font-size: 7px; font-weight: 900; letter-spacing: .4em; color: var(--emerald); text-transform: uppercase; }
+        .sp-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+        .sp-name { font-family: var(--D); font-size: 22px; color: #fff; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
+        .sp-full { font-size: 9px; color: #a0b0c5; line-height: 1.1; border-left: 2px solid var(--gold); padding-left: 6px; margin-bottom: 2px; }
+        .sp-stats { display: flex; gap: 4px; }
+        .sp-stat { flex: 1; background: rgba(255,255,255,.03); border: 1px solid var(--bdr); border-radius: 8px; padding: 4px; }
+        .sp-sl { font-size: 6px; font-weight: 800; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
+        .sp-sv { font-family: var(--D); font-size: 16px; color: #fff; line-height: 1; } 
+        .sp-row { border-bottom: 1px solid var(--bdr); padding-bottom: 2px; margin-bottom: 1px; }
+        .sp-rl { font-size: 6px; font-weight: 800; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
+        .sp-rv { font-family: var(--D); font-size: 13px; color: var(--gold); letter-spacing: .05em; line-height: 1; }
+        .sp-status { font-size: 10px; font-weight: 600; color: #fff; }
 
-        .sp-sec-title { font-size: 8px; font-weight: 900; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; margin-top: 6px; border-top: 1px solid var(--bdr); padding-top: 6px; }
-        .sp-btns { display: flex; flex-direction: column; gap: 6px; }
+        .sp-sec-title { font-size: 7px; font-weight: 900; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; margin-top: 2px; border-top: 1px solid var(--bdr); padding-top: 4px; }
+        .sp-btns { display: flex; flex-direction: column; gap: 4px; }
         .sp-btn {
             background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-            color: #fff; border-radius: 10px; padding: 8px;
-            font-family: var(--D); font-size: 14px; letter-spacing: .1em;
+            color: #fff; border-radius: 8px; padding: 6px;
+            font-family: var(--D); font-size: 13px; letter-spacing: .05em;
             cursor: pointer; transition: all 0.2s;
             text-transform: uppercase; width: 100%;
         }
         .sp-btn:hover:not(:disabled) { background: rgba(255,255,255,.15); }
-        .sp-btn.pri { background: rgba(0,214,143,.18); border-color: var(--emerald); color: var(--emerald); }
-        .sp-btn.alt { background: rgba(201,168,76,.12); border-color: var(--gold); color: var(--gold); }
-        .sp-btn.mkt { background: rgba(168,85,247,.12); border-color: var(--purple); color: var(--purple); }
-        .sp-btn:disabled { opacity: 0.15; cursor: not-allowed; }
+        .sp-btn.pri { background: rgba(0,214,143,.15); border-color: var(--emerald); color: var(--emerald); }
+        .sp-btn.alt { background: rgba(201,168,76,.1); border-color: var(--gold); color: var(--gold); }
+        .sp-btn.mkt { background: rgba(168,85,247,.1); border-color: var(--purple); color: var(--purple); }
+        .sp-btn:disabled { opacity: 0.1; cursor: not-allowed; }
 
         /* ── LOWER UI ── */
         .task-strip { flex: 0 0 50px; min-height: 50px; display: flex; align-items: center; gap: 8px; padding: 0 14px; overflow-x: auto; border-top: 1px solid var(--bdr); background: var(--bg); z-index: 10; }
@@ -299,16 +298,15 @@
     <div class="setup-group">
         <div class="setup-label">Territory Scale</div>
         <div class="setup-row">
-            <button class="mode-btn" id="size-6" onclick="selectSize(6)">6×6</button>
             <button class="mode-btn" id="size-8" onclick="selectSize(8)">8×8</button>
-            <button class="mode-btn sel" id="size-10" onclick="selectSize(10)">10×10</button>
+            <button class="mode-btn" id="size-10" onclick="selectSize(10)">10×10</button>
+            <button class="mode-btn sel" id="size-15" onclick="selectSize(15)">15×15</button>
         </div>
     </div>
     <div class="setup-group">
         <div class="setup-label">Market Complexity</div>
         <div class="setup-row">
-            <button class="mode-btn sel" id="diff-normal" onclick="selectDiff('Normal')">Normal</button>
-            <button class="mode-btn" id="diff-hard" onclick="selectDiff('Hard')">Hard Mode</button>
+            <button class="mode-btn sel" id="diff-hard">Elite / Hard Mode Only</button>
         </div>
     </div>
     <button class="mode-btn start-btn" onclick="startApp()">Initiate Mission</button>
@@ -351,7 +349,7 @@
             
             <div class="sp-sec-title">Sales Operations</div>
             <div class="sp-btns">
-                <div style="display:flex; gap:6px;">
+                <div style="display:flex; gap:4px;">
                     <button class="sp-btn" style="flex:1;" onclick="addTask('VISIT',5,'訪問')">Visit (-5)</button>
                     <button class="sp-btn" style="flex:1;" onclick="addTask('SURVEY',3,'調査')">Survey (-3)</button>
                 </div>
@@ -359,7 +357,7 @@
                 <button class="sp-btn" id="sp-spec-btn" onclick="addTask('SPECIN',12,'スペックイン')">Spec-in (-12)</button>
                 <button class="sp-btn alt" id="sp-cxo-btn" onclick="addTask('CXO',15,'トップ面談')">CXO Meeting (-15)</button>
                 
-                <div id="bid-area" style="display:flex; flex-direction:column; gap:6px;">
+                <div id="bid-area" style="display:flex; flex-direction:column; gap:4px;">
                     <button class="sp-btn pri" id="sp-genbid-btn" onclick="addTask('GEN_BID',10,'一般競争入札')" disabled>General Bid (-10)</button>
                     <button class="sp-btn pri" id="sp-propbid-btn" onclick="addTask('PROP_BID',10,'総合評価入札')" disabled>Proposal Bid (-10)</button>
                 </div>
@@ -367,7 +365,7 @@
 
             <div class="sp-sec-title">Intelligence</div>
             <div class="sp-btns">
-                <div style="display:flex; gap:6px;">
+                <div style="display:flex; gap:4px;">
                     <button class="sp-btn mkt" onclick="addTask('EVENT',15,'イベント開催',true)">Event (-15)</button>
                     <button class="sp-btn mkt" onclick="addTask('MAILNEWS',5,'NEWS',true)">News (-5)</button>
                 </div>
@@ -433,10 +431,7 @@ function createTone(freq, type, duration, vol, rampType = 'exp') {
 const SFX = {
     select: () => createTone(rnd(660, 30), 'sine', 0.1, 0.05),
     remove: () => createTone(rnd(440, 20), 'sine', 0.1, 0.05),
-    action: (type) => {
-        if(type==='VISIT') createTone(rnd(523,20),'sine',0.1,0.06);
-        else createTone(rnd(800,50),'sine',0.05,0.05);
-    },
+    action: (type) => createTone(rnd(800,50),'sine',0.05,0.05),
     exec: () => createTone(220, 'sawtooth', 0.3, 0.08),
     win: () => [523, 659, 784].forEach((f,i)=>setTimeout(()=>createTone(f, 'sine', 0.6, 0.1), i*100)),
     lost: () => createTone(196, 'sawtooth', 0.6, 0.1, 'linear'),
@@ -473,17 +468,16 @@ const CUSTOMER_POOL_BASE = [
 
 let state = {
     month:1, year: 26, mh:20, maxMh: 20, permanentMaxMhMod: 0, sales:0, displaySales: 0, selId:null, tasks:[], 
-    customers:[], grid:[], gridSize: 10, vendorList: [], difficulty: 'Normal', activeEvent: null, 
-    globalWrMod: 0, studyCostMod: 1.0, rivalAggroMod: 1.0, cxoDurationMod: 0, surveyBuff: 0, vendorKillers: []
+    customers:[], grid:[], gridSize: 15, vendorList: [], difficulty: 'Hard', activeEvent: null, 
+    globalWrMod: 0, studyCostMod: 1.0, rivalAggroMod: 1.4, cxoDurationMod: 0, surveyBuff: 0, vendorKillers: []
 };
-let setup = { size: 10, difficulty: 'Normal' };
+let setup = { size: 15, difficulty: 'Hard' };
 
 function selectSize(s) { SFX.select(); setup.size = s; document.querySelectorAll('[id^="size-"]').forEach(el => el.classList.remove('sel')); document.getElementById(`size-${s}`).classList.add('sel'); }
-function selectDiff(d) { SFX.select(); setup.difficulty = d; document.querySelectorAll('[id^="diff-"]').forEach(el => el.classList.remove('sel')); document.getElementById(`diff-${d.toLowerCase()}`).classList.add('sel'); }
 
 function startApp() {
     SFX.select(); state.gridSize = setup.size; state.difficulty = setup.difficulty;
-    state.vendorList = setup.size === 6 ? ['H','I','A','S'] : ['H','I','A','S','E','F'];
+    state.vendorList = ['H','I','A','S','E','F'];
     document.documentElement.style.setProperty('--grid-size', state.gridSize);
     document.getElementById('mode-select-ov').classList.add('hidden');
     document.getElementById('app').classList.add('visible');
@@ -491,13 +485,22 @@ function startApp() {
 }
 
 function init() {
-    state.customers = CUSTOMER_POOL_BASE.map(b => {
+    const totalArea = state.gridSize * state.gridSize;
+    const baseSum = 100;
+    let currentAllocated = 0;
+
+    state.customers = CUSTOMER_POOL_BASE.map((b, i) => {
         const vendor = state.vendorList[Math.floor(Math.random()*state.vendorList.length)];
+        let tCount = Math.floor(b.t * (totalArea / baseSum));
+        // 全マス埋めるために、最後の一社で残りを全調整
+        if (i === CUSTOMER_POOL_BASE.length - 1) tCount = totalArea - currentAllocated;
+        currentAllocated += tCount;
+
         return { 
-            ...b, tiles: b.t, budget: b.t * 10, vendor, prevVendor: vendor, 
+            ...b, tiles: tCount, budget: tCount * 10, vendor, prevVendor: vendor, 
             mo: Math.floor(Math.random()*45)+1, vc:0, specIn:false, cxoProtect:0, 
             intelRevealed:false, baseRapport: vendor === 'H' ? 40 : Math.floor(Math.random()*25)+10,
-            bidType: Math.random() < 0.5 ? 'GEN' : 'PROP' // 初期化時に入札タイプを決定
+            bidType: Math.random() < 0.5 ? 'GEN' : 'PROP'
         };
     });
     buildGrid(); triggerEvent(); render();
@@ -518,8 +521,8 @@ function buildGrid() {
 }
 
 function triggerEvent() {
-    state.globalWrMod = 0; state.studyCostMod = 1.0; state.rivalAggroMod = (state.difficulty === 'Hard' ? 1.4 : 1.0);
-    state.maxMh = (state.difficulty === 'Hard' ? 18 : 20) + state.permanentMaxMhMod;
+    state.globalWrMod = 0; state.studyCostMod = 1.0; state.rivalAggroMod = 1.4;
+    state.maxMh = 18 + state.permanentMaxMhMod;
     if (Math.random() < 0.3) {
         state.activeEvent = MARKET_EVENTS[Math.floor(Math.random() * MARKET_EVENTS.length)];
         state.activeEvent.effect(state);
@@ -565,8 +568,8 @@ function render() {
             const back = document.createElement('div'); back.className = 'tile-side side-back';
             front.style.backgroundColor = VENDORS[kn ? c.vendor : 'UNK'].bg;
             back.style.backgroundColor = VENDORS[kn ? c.prevVendor : 'UNK'].bg;
-            const sp = document.createElement('span'); sp.className='t-lbl'; sp.textContent=kn?Math.ceil(c.mo/12):'?';
-            front.appendChild(sp.cloneNode(true)); back.appendChild(sp.cloneNode(true));
+            const spVal = document.createElement('span'); spVal.className='t-lbl'; spVal.textContent=kn?Math.ceil(c.mo/12):'?';
+            front.appendChild(spVal.cloneNode(true)); back.appendChild(spVal.cloneNode(true));
             inner.appendChild(front); inner.appendChild(back); el.appendChild(inner);
             el.onclick=()=>{ SFX.select(); state.selId=c.id; render(); };
         } else { el.innerHTML = `<div class="tile-inner"><div class="tile-side" style="background:${VENDORS.NONE.bg}"></div></div>`; }
@@ -584,16 +587,11 @@ function render() {
         else if(c.mo>=48){ st.textContent='📄 RFP RELEASED'; st.style.color='var(--amber)'; }
         else{ st.textContent='ACTIVE / UTILIZED'; st.style.color=''; }
         
-        // 入札ボタン制御：RFP期間中かつ顧客ごとに決まった1つの入札方式のみ表示
         const isRfp = (kn && c.mo >= 48 && c.mo < 50);
-        const genBtn = document.getElementById('sp-genbid-btn');
-        const propBtn = document.getElementById('sp-propbid-btn');
-        
-        genBtn.classList.toggle('hidden', c.bidType !== 'GEN' || !isRfp);
-        propBtn.classList.toggle('hidden', c.bidType !== 'PROP' || !isRfp);
-        genBtn.disabled = !isRfp;
-        propBtn.disabled = !isRfp;
-
+        document.getElementById('sp-genbid-btn').classList.toggle('hidden', c.bidType !== 'GEN' || !isRfp);
+        document.getElementById('sp-propbid-btn').classList.toggle('hidden', c.bidType !== 'PROP' || !isRfp);
+        document.getElementById('sp-genbid-btn').disabled = !isRfp;
+        document.getElementById('sp-propbid-btn').disabled = !isRfp;
         document.getElementById('sp-spec-btn').disabled=(c.mo>=48 || c.specIn || getWR(c) < 70);
         document.getElementById('sp-cxo-btn').disabled=(getWR(c) < 70);
     } else sp.classList.remove('open');
@@ -618,7 +616,7 @@ function executeStrategy() {
     SFX.exec(); let tr = []; const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
     state.customers.forEach(c => {
         if (c.vendor !== 'H') {
-            c.baseRapport = Math.max(0, c.baseRapport - (state.difficulty === 'Hard' ? 3 : 1));
+            c.baseRapport = Math.max(0, c.baseRapport - 3);
             if (c.cxoProtect <= 0 && c.mo >= 45 && Math.random() < 0.1) {
                 c.baseRapport = Math.max(0, c.baseRapport - 10);
                 tr.push({ n: c.name, tx: '政治的空白期間を突かれ他社の食い込みを許しました。', clr: '#FF4D6D', vName:'SELF', vClr:'var(--emerald)', sat:'リスク顕在化' });
@@ -628,28 +626,28 @@ function executeStrategy() {
     state.tasks.forEach(t=>{
         if (t.global) {
             const parts = state.customers.filter(c => getWR(c) >= 30).sort(() => 0.5 - Math.random()).slice(0, t.type==='EVENT'?3:5);
-            if (parts.length) { parts.forEach(c => { c.baseRapport += t.type==='EVENT'?15:5; }); tr.push({n:t.label, tx:`全顧客の興味度が向上。`, clr: VENDORS.H.bg, vName: 'MARKETING', vClr: '#7a8fa8', sat: '底上げ' }); }
+            if (parts.length) { parts.forEach(c => { c.baseRapport += t.type==='EVENT'?15:5; }); tr.push({n:t.label, tx:`市場への影響力拡大。興味度が向上。`, clr: VENDORS.H.bg, vName: 'MARKETING', vClr: '#7a8fa8', sat: '底上げ' }); }
         } else {
             const c=state.customers.find(x=>x.id===t.cid);
-            if(t.type==='VISIT'){ c.vc++; tr.push({n:c.name, tx: "キーマン掌握。", clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'良好'}); }
-            else if(t.type==='STUDY'){ c.vc += 2; tr.push({n:c.name, tx: "技術勉強会実施。", clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'高評価'}); }
+            if(t.type==='VISIT'){ c.vc++; tr.push({n:c.name, tx: "キーマン掌握完了。", clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'良好'}); }
+            else if(t.type==='STUDY'){ c.vc += 2; tr.push({n:c.name, tx: "技術勉強会実施。自社仕様への信頼構築。", clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'高評価'}); }
             else if(t.type==='SURVEY'){ c.intelRevealed=true; c.baseRapport += state.surveyBuff; tr.push({n:c.name, tx: `市場調査完了。`, clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'精度向上'}); }
             else if(t.type==='SPECIN'){ c.specIn=true; tr.push({n:c.name, tx: "RFP仕様縛りに成功。", clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'独占'}); }
             else if(t.type==='CXO'){ c.cxoProtect = 4 + state.cxoDurationMod; tr.push({n:c.name, tx: `CXO合意形成。`, clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'鉄壁'}); }
             else if(t.type==='GEN_BID' || t.type==='PROP_BID'){
                 let win = false; let log = "";
-                if (c.specIn) { win = true; log = "【仕様縛り成功】不戦勝となりました。"; }
+                if (c.specIn) { win = true; log = "【仕様縛り成功】他社を排除し不戦勝。"; }
                 else {
-                    if (t.type === 'GEN_BID') { win = Math.random() * 100 < (state.difficulty === 'Hard' ? 25 : 40); log = win ? "【落札】価格競争を制しました。" : "【失注】価格で競り負けました。"; }
+                    if (t.type === 'GEN_BID') { win = Math.random() * 100 < 25; log = win ? "【落札】価格競争を制しました。" : "【失注】価格で競り負けました。"; }
                     else { win = Math.random() * 100 < getWR(c); log = win ? "【落札】提案品質が評価されました。" : "【失注】満足度が及びませんでした。"; }
                 }
                 if(win){ SFX.win(); c.prevVendor = c.vendor; c.vendor='H'; c.mo=55; state.sales+=c.budget; tr.push({n:c.name, tx: log, clr: VENDORS.H.bg, vName: 'SELF', vClr: VENDORS.H.bg, sat: "覇権奪還"}); }
-                else { SFX.lost(); if(state.difficulty === 'Hard') c.baseRapport = Math.max(0, c.baseRapport - 15); tr.push({n:c.name, tx: log, clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat: "再起必要"}); }
+                else { SFX.lost(); c.baseRapport = Math.max(0, c.baseRapport - 15); tr.push({n:c.name, tx: log, clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat: "再起必要"}); }
             }
         }
     });
     state.vendorList.filter(v => v !== 'H').forEach(rid => {
-        let rmh = (state.difficulty === 'Hard' ? 26 : 18) * state.rivalAggroMod; 
+        let rmh = 26 * state.rivalAggroMod; 
         while (rmh >= 6) {
             let targets = state.customers.filter(c => c.vendor !== rid && c.cxoProtect <= 0); targets.sort((a,b) => getWR(b, 'H') - getWR(a, 'H'));
             if (!targets.length) break; const tgt = targets[0];
@@ -659,7 +657,7 @@ function executeStrategy() {
     state.month++; state.tasks=[]; state.mh=state.maxMh; state.selId=null;
     state.customers.forEach(c=>{ c.mo=c.mo>=60?1:c.mo+1; if(c.cxoProtect>0) c.cxoProtect--; });
     const rl=document.getElementById('res-list'); rl.innerHTML='';
-    tr.forEach((r, i)=>{ setTimeout(() => { const d = document.createElement('div'); d.style.cssText=`padding:10px; border-bottom:1px solid #222; border-left:4px solid ${r.clr}; margin-bottom:5px; animation: slide-up 0.3s both;`; d.innerHTML=`<div style="color:${r.clr}; font-family:var(--D); font-size:14px;">${r.n} <span style="font-size:8px; color:#555;">EXISTING: ${r.vName}</span></div><div style="font-size:12px; color:#fff;">${r.tx}</div><div style="font-size:10px; color:#777;">RESULT: ${r.sat}</div>`; rl.appendChild(d); rl.scrollTop = rl.scrollHeight; }, i * 150); });
+    tr.forEach((r, i)=>{ setTimeout(() => { const d = document.createElement('div'); d.style.cssText=`padding:8px; border-bottom:1px solid #222; border-left:3px solid ${r.clr}; margin-bottom:4px; animation: slide-up 0.3s both;`; d.innerHTML=`<div style="color:${r.clr}; font-family:var(--D); font-size:13px;">${r.n} <span style="font-size:7px; color:#555;">EXISTING: ${r.vName}</span></div><div style="font-size:11px; color:#fff;">${r.tx}</div><div style="font-size:9px; color:#777;">RESULT: ${r.sat}</div>`; rl.appendChild(d); rl.scrollTop = rl.scrollHeight; }, i * 150); });
     setTimeout(() => { SFX.report(); document.getElementById('result-ov').classList.remove('hidden'); }, 300);
     render();
 }
