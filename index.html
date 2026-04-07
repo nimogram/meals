@@ -2,417 +2,692 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>MEAL LOG v8.1.1</title>
-    
-    <!-- Libraries -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>THE ENTERPRISE: 覇権奪還</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #010206;
-            --em: #bef264;
-            --em-grad: linear-gradient(135deg, #bef264 0%, #84cc16 100%);
-            --tx: #f1f3f9;
-            --mu: #475569;
+            --gold:    #C9A84C;
+            --emerald: #00D68F;
+            --rose:    #FF4D6D;
+            --sky:     #38BDF8;
+            --amber:   #F59E0B;
+            --purple:  #A855F7;
+            --bg:      #060A11;
+            --surf:    #0C1221;
+            --bdr:     rgba(255,255,255,0.07);
+            --muted:   #2a3a50;
+            --D: 'Bebas Neue', cursive;
+            --M: 'DM Mono', monospace;
+            --B: 'Outfit', sans-serif;
+            --grid-size: 10;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        html, body { height: 100%; overflow: hidden; background: var(--bg); }
+        body {
+            font-family: var(--B);
+            color: #7a8fa8;
+            display: flex; align-items: center; justify-content: center;
+        }
+        body::after {
+            content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9998;
+            background: repeating-linear-gradient(180deg, transparent 0px, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
+            opacity: 0.5;
         }
 
-        body { 
-            font-family: 'Noto Sans JP', sans-serif; 
-            background: var(--bg); 
-            color: var(--tx); 
-            height: 100dvh; 
-            overflow: hidden;
+        #app {
+            width: 100%; max-width: 430px;
+            height: 100dvh;
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
+            background: var(--bg);
+            opacity: 0; transition: opacity 0.8s ease-out;
+        }
+        #app.visible { opacity: 1; }
+
+        /* ── START OVERLAY ── */
+        #mode-select-ov {
+            position: fixed; inset: 0; z-index: 10000;
+            background: var(--bg); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px; text-align: center;
+        }
+        .mode-title { font-family: var(--D); font-size: 44px; color: #fff; letter-spacing: 0.15em; margin-bottom: 8px; text-shadow: 0 0 20px rgba(201,168,76,0.3); }
+        .mode-sub { font-size: 11px; color: var(--gold); margin-bottom: 30px; letter-spacing: 0.4em; font-weight: 900; }
+        
+        .setup-group { width: 100%; max-width: 300px; margin-bottom: 20px; }
+        .setup-label { font-size: 10px; font-weight: 900; color: var(--muted); letter-spacing: 0.3em; margin-bottom: 10px; text-align: center; text-transform: uppercase; }
+        .mode-btns { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+        
+        .setup-row { display: flex; gap: 8px; width: 100%; }
+        .mode-btn {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--bdr);
+            color: #fff; border-radius: 12px; padding: 14px;
+            font-family: var(--D); font-size: 16px; letter-spacing: 0.15em;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            flex: 1;
+        }
+        .mode-btn:hover { background: rgba(255,255,255,0.08); border-color: var(--gold); color: var(--gold); transform: translateY(-2px); }
+        .mode-btn.sel { background: var(--gold); color: var(--bg); border-color: var(--gold); }
+        .start-btn { 
+            margin-top: 20px; background: #fff; color: var(--bg); font-weight: 900; 
+            font-size: 20px; padding: 18px; width: 100%; max-width: 300px;
+        }
+
+        /* ── HEADER ── */
+        .hdr {
+            flex: 0 0 auto;
+            padding: 16px 18px 0;
+            background: var(--bg);
+            border-bottom: 1px solid var(--bdr);
+            z-index: 10;
+        }
+        .hdr-row { display: flex; justify-content: space-between; align-items: flex-end; }
+        .hdr-tag {
+            font-family: var(--D); font-size: 8px; letter-spacing: .65em;
+            color: var(--gold); line-height: 1; margin-bottom: 4px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .hdr-tag::before {
+            content: ''; width: 6px; height: 6px; border-radius: 50%;
+            background: var(--gold); flex-shrink: 0;
+            animation: blink 2s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1; transform: scale(1)} 50%{opacity:.2; transform: scale(0.8)} }
+        .hdr-phase { font-family: var(--D); font-size: 36px; color: #fff; line-height: 1; letter-spacing: .04em; }
+        .hdr-mh { text-align: right; padding-bottom: 3px; }
+        .hdr-mh-lbl { font-size: 7px; font-weight: 700; letter-spacing: .4em; color: var(--muted); text-transform: uppercase; margin-bottom: 1px; }
+        .hdr-mh-val { font-family: var(--D); font-size: 40px; color: var(--emerald); line-height: 1; transition: color 0.3s; }
+
+        .share-bar {
+            margin: 10px 0 0; height: 16px; display: flex; border-radius: 4px;
+            overflow: hidden; border: 1px solid var(--bdr);
+        }
+        .share-seg {
+            height: 100%; transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--D); font-size: 11px; color: rgba(255,255,255,.9); 
+            white-space: nowrap; overflow: hidden;
+            font-weight: 600;
+        }
+
+        /* ── EVENT BAR ── */
+        .event-banner {
+            flex: 0 0 34px; background: rgba(168,85,247,0.15); 
+            border-bottom: 1px solid var(--purple); display: flex; 
+            align-items: center; padding: 0 18px; gap: 10px;
+            animation: event-slide 0.5s both;
+        }
+        @keyframes event-slide { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: translateY(0); } }
+        .event-tag { font-family: var(--D); font-size: 10px; color: var(--purple); letter-spacing: 0.2em; border: 1px solid var(--purple); padding: 2px 6px; border-radius: 4px; }
+        .event-txt { font-size: 11px; color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* ── GRID AREA ── */
+        .grid-wrap {
+            flex: 1 1 0;
+            min-height: 0;
+            display: flex; align-items: center; justify-content: center;
+            padding: 10px 14px;
             position: relative;
+            overflow: hidden;
+        }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(var(--grid-size), 1fr);
+            grid-template-rows: repeat(var(--grid-size), 1fr);
+            gap: 4px;
+            width: 100%; max-width: 380px;
+            aspect-ratio: 1;
         }
 
-        body::before {
-            content: ''; position: fixed; inset: 0;
-            background: radial-gradient(circle at 10% 10%, #152515 0%, transparent 40%),
-                        radial-gradient(circle at 90% 90%, #0a0f1e 0%, transparent 40%);
-            z-index: -1;
+        /* ── TILE 3D ── */
+        .tile {
+            aspect-ratio: 1; perspective: 600px;
+            cursor: pointer; position: relative; user-select: none;
+            transition: transform 0.2s;
+        }
+        .tile-inner {
+            position: relative; width: 100%; height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .tile.sel .tile-inner { transform: scale(1.1); z-index: 5; }
+        
+        .tile-side {
+            position: absolute; inset: 0; backface-visibility: hidden;
+            border-radius: 6px; border: 1px solid rgba(255,255,255,.05);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .side-back { transform: rotateY(180deg); }
+
+        .tile:active { transform: scale(0.9); }
+        .tile:hover .tile-side { border-color: rgba(255,255,255,0.2); }
+        
+        .tile.sel .tile-side {
+            border-color: #fff !important;
+            box-shadow: 0 0 20px rgba(255,255,255,.4), inset 0 0 10px rgba(255,255,255,0.1);
         }
 
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .t-lbl { font-family: var(--M); font-size: 11px; color: rgba(255,255,255,.9); pointer-events: none; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.5); } 
 
-        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-        @keyframes pulse-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        /* ── ANIMATIONS ── */
+        @keyframes pulse-rfp  { 0% { box-shadow:0 0 0px var(--gold); } 50% { box-shadow:0 0 15px var(--gold); } 100% { box-shadow:0 0 0px var(--gold); } }
+        @keyframes pulse-cxo  { 0% { box-shadow:0 0 0px var(--sky); border-width: 2px; } 50% { box-shadow:0 0 20px var(--sky); border-width: 2.5px; } 100% { box-shadow:0 0 0px var(--sky); border-width: 2px; } }
+        
+        .rfp-a .tile-side { animation: pulse-rfp 1.5s infinite; border-color: var(--gold) !important; }
+        .cxo-a .tile-side { animation: pulse-cxo 1.2s infinite; border-color: var(--sky) !important; border-width: 2px !important; }
 
-        .shimmer-layer {
-            position: absolute; inset: 0;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-            animation: shimmer 2.5s infinite linear;
-        }
-        .glow-head {
-            position: absolute; top: -3px; right: -2px;
-            width: 8px; height: 8px;
-            background: var(--em);
-            border-radius: 50%;
-            box-shadow: 0 0 12px var(--em), 0 0 4px #fff;
-            animation: pulse-glow 2s infinite;
+        .bld-a .tile-inner { animation: rotate-flip 4.5s infinite cubic-bezier(0.45, 0, 0.55, 1); }
+        @keyframes rotate-flip {
+            0% { transform: rotateY(0deg); }
+            40% { transform: rotateY(180deg); }
+            60% { transform: rotateY(180deg); }
+            100% { transform: rotateY(360deg); }
         }
 
-        .animate-slide { animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-
-        input[type=range] { -webkit-appearance: none; background: transparent; cursor: pointer; }
-        input[type=range]::-webkit-slider-runnable-track { background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; }
-        input[type=range]::-webkit-slider-thumb { 
-            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; 
-            background: var(--em); margin-top: -10px; border: 2px solid var(--bg);
-            box-shadow: 0 0 15px rgba(190, 242, 100, 0.3);
+        /* ── SIDE PANEL ── */
+        .sp {
+            position: absolute; top: 0; right: 0; bottom: 0;
+            width: 80%;
+            background: rgba(6,12,25,0.7); 
+            backdrop-filter: blur(40px) saturate(1.8);
+            border-left: 1px solid rgba(255,255,255,.15);
+            display: flex; flex-direction: column; gap: 8px;
+            padding: 16px 14px;
+            z-index: 50;
+            transform: translateX(100%);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
         }
+        .sp.open { transform: translateX(0); }
+        .sp-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+        .sp-tag { font-size: 8px; font-weight: 900; letter-spacing: .4em; color: var(--emerald); text-transform: uppercase; }
+        .sp-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; }
+        .sp-name { font-family: var(--D); font-size: 24px; color: #fff; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sp-full { font-size: 10px; color: #a0b0c5; line-height: 1.2; border-left: 3px solid var(--gold); padding-left: 8px; margin-bottom: 5px; }
+        .sp-stats { display: flex; gap: 6px; }
+        .sp-stat { flex: 1; background: rgba(255,255,255,.03); border: 1px solid var(--bdr); border-radius: 10px; padding: 6px; }
+        .sp-sl { font-size: 7px; font-weight: 800; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
+        .sp-sv { font-family: var(--D); font-size: 18px; color: #fff; } 
+        .sp-row { border-bottom: 1px solid var(--bdr); padding-bottom: 4px; margin-bottom: 2px; }
+        .sp-rl { font-size: 7px; font-weight: 800; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
+        .sp-rv { font-family: var(--D); font-size: 14px; color: var(--gold); letter-spacing: .05em; }
+        .sp-status { font-size: 11px; font-weight: 600; color: #fff; }
 
-        .floating-shuffle {
-            position: fixed;
-            bottom: 110px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            background: var(--em-grad);
-            border-radius: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 24px rgba(190, 242, 100, 0.4);
-            z-index: 110;
+        .sp-sec-title { font-size: 8px; font-weight: 900; letter-spacing: .3em; color: var(--muted); text-transform: uppercase; margin-top: 6px; border-top: 1px solid var(--bdr); padding-top: 6px; }
+        .sp-btns { display: flex; flex-direction: column; gap: 6px; }
+        .sp-btn {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            color: #fff; border-radius: 10px; padding: 8px;
+            font-family: var(--D); font-size: 14px; letter-spacing: .1em;
+            cursor: pointer; transition: all 0.2s;
+            text-transform: uppercase; width: 100%;
         }
+        .sp-btn:hover:not(:disabled) { background: rgba(255,255,255,.15); }
+        .sp-btn.pri { background: rgba(0,214,143,.18); border-color: var(--emerald); color: var(--emerald); }
+        .sp-btn.alt { background: rgba(201,168,76,.12); border-color: var(--gold); color: var(--gold); }
+        .sp-btn.mkt { background: rgba(168,85,247,.12); border-color: var(--purple); color: var(--purple); }
+        .sp-btn:disabled { opacity: 0.15; cursor: not-allowed; }
+
+        /* ── LOWER UI ── */
+        .task-strip { flex: 0 0 50px; min-height: 50px; display: flex; align-items: center; gap: 8px; padding: 0 14px; overflow-x: auto; border-top: 1px solid var(--bdr); background: var(--bg); z-index: 10; }
+        .t-chip { 
+            flex-shrink: 0; display: flex; align-items: center; gap: 6px; 
+            background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); 
+            border-radius: 20px; padding: 4px 10px; font-size: 9px; font-weight: 700; color: #fff;
+        }
+        .t-chip-name { color: var(--emerald); font-family: var(--M); font-size: 8px; }
+        .t-chip-rm { background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 12px; }
+
+        .exec-btn { 
+            flex: 0 0 56px; min-height: 56px; border: none; border-top: 1px solid var(--bdr); 
+            background: rgba(255,255,255,.03); color: var(--muted); font-family: var(--D); font-size: 18px; letter-spacing: .4em; 
+            text-transform: uppercase; cursor: not-allowed; opacity: .4; transition: all 0.3s; z-index: 10; 
+        }
+        .exec-btn.on { background: #fff; color: var(--bg); cursor: pointer; opacity: 1; }
+
+        .log-area { flex: 0 0 36px; min-height: 36px; padding: 4px 18px; border-top: 1px solid var(--bdr); background: var(--bg); display: flex; align-items: center; }
+        .log-ln { font-family: var(--M); font-size: 8px; color: var(--muted); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .score-bar { flex: 0 0 50px; min-height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; border-top: 1px solid var(--bdr); background: var(--bg); z-index: 10; }
+        .score-v { font-family: var(--D); font-size: 30px; color: #fff; letter-spacing: 0.05em; }
+        .score-v span { font-size: 16px; color: var(--gold); }
+
+        /* ── OVERLAYS ── */
+        #result-ov, #final-modal, #perk-ov { 
+            position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; 
+            background: rgba(4,8,15,.7); backdrop-filter: blur(15px); z-index: 800; 
+        }
+        .res-box, .final-box, .perk-box { 
+            width: 93%; max-height: 85dvh; border: 1px solid rgba(255,255,255,.15); 
+            border-radius: 28px; background: rgba(12,18,33,.95); display: flex; flex-direction: column; overflow: hidden; 
+        }
+        .res-hdr { padding: 20px; border-bottom: 1px solid var(--bdr); text-align: center; }
+        .res-title { font-family: var(--D); font-size: 24px; letter-spacing: .5em; color: var(--gold); }
+        .res-list { flex: 1; overflow-y: auto; padding: 15px 20px; }
+        
+        .modal-btns-area { padding: 15px 20px 20px; background: rgba(12,18,33,0.95); border-top: 1px solid var(--bdr); display: flex; flex-direction: column; gap: 10px; }
+        .res-next, .final-btn, .perk-btn { 
+            height: 52px; border: none; background: #fff; color: var(--bg); 
+            font-family: var(--D); font-size: 18px; letter-spacing: .4em; 
+            text-transform: uppercase; cursor: pointer; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .final-btn.alt { background: rgba(0,214,143,0.1); border: 1px solid var(--emerald); color: var(--emerald); }
+
+        .perk-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--bdr); color: #fff; flex-direction: column; height: auto; padding: 12px; align-items: flex-start; text-align: left; }
+        .perk-name { font-family: var(--D); font-size: 18px; color: var(--gold); margin-bottom: 2px; }
+        .perk-desc { font-size: 10px; color: #7a8fa8; }
+
+        .final-scroll-content { flex: 1; overflow-y: auto; padding: 20px; text-align: center; }
+        .final-score { font-family: var(--D); font-size: 64px; color: var(--emerald); margin: 10px 0 20px; }
+        
+        .rank-wrap { margin-bottom: 20px; display: flex; flex-direction: column; gap: 6px; }
+        .rank-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: rgba(255,255,255,0.04); border-radius: 12px; }
+        .rank-name { font-family: var(--D); font-size: 18px; }
+        .rank-val { font-family: var(--M); font-size: 14px; font-weight: 700; color: #fff; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo, useCallback } = React;
+<div id="mode-select-ov">
+    <div class="mode-title">Operation Scoping</div>
+    <div class="mode-sub">CONFIGURE MISSION PARAMETERS</div>
+    <div class="setup-group">
+        <div class="setup-label">Territory Scale</div>
+        <div class="setup-row">
+            <button class="mode-btn" id="size-6" onclick="selectSize(6)">6×6</button>
+            <button class="mode-btn" id="size-8" onclick="selectSize(8)">8×8</button>
+            <button class="mode-btn sel" id="size-10" onclick="selectSize(10)">10×10</button>
+        </div>
+    </div>
+    <div class="setup-group">
+        <div class="setup-label">Market Complexity</div>
+        <div class="setup-row">
+            <button class="mode-btn sel" id="diff-normal" onclick="selectDiff('Normal')">Normal</button>
+            <button class="mode-btn" id="diff-hard" onclick="selectDiff('Hard')">Hard Mode</button>
+        </div>
+    </div>
+    <button class="mode-btn start-btn" onclick="startApp()">Initiate Mission</button>
+</div>
 
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
-        const TARGET = 120;
+<div id="app">
+    <header class="hdr">
+        <div class="hdr-row">
+            <div>
+                <div class="hdr-tag">TACTICAL COMMAND</div>
+                <div class="hdr-phase" id="phase-disp">FY26M1</div>
+            </div>
+            <div class="hdr-mh">
+                <div class="hdr-mh-lbl">RESOURCE MH</div>
+                <div class="hdr-mh-val" id="mh-disp">20</div>
+            </div>
+        </div>
+        <div class="share-bar" id="share-bar"></div>
+    </header>
 
-        // 【最重要】日付文字列を常に日本時間基準で生成・変換する関数
-        const getJstDateString = (input = new Date()) => {
-            const date = (typeof input === 'string') ? new Date(input.replace(/-/g, '/').replace('T', ' ')) : input;
-            return new Intl.DateTimeFormat('sv-SE', {
-                timeZone: 'Asia/Tokyo',
-                year: 'numeric', month: '2-digit', day: '2-digit'
-            }).format(date);
-        };
+    <div id="event-banner" class="event-banner hidden">
+        <span class="event-tag" id="event-tag">EVENT</span>
+        <span class="event-txt" id="event-txt">ACTIVE MARKET FLUCTUATION...</span>
+    </div>
 
-        const App = () => {
-            const todayStr = useMemo(() => getJstDateString(), []);
-            const [meals, setMeals] = useState([]);
-            const [masterMenus, setMasterMenus] = useState([]);
-            const [tab, setTab] = useState('log');
-            const [syncing, setSyncing] = useState(false);
-            const [toast, setToast] = useState('');
-            const [selDate, setSelDate] = useState(todayStr);
-            const [mealType, setMealType] = useState('昼');
-            const [mainMenu, setMainMenu] = useState('');
-            const [protein, setProtein] = useState(25.0);
-            const [effect, setEffect] = useState('all');
-            const [shuffleSeed, setShuffleSeed] = useState(0);
-            const [showMorningPrompt, setShowMorningPrompt] = useState(false);
-
-            const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
-
-            const fetchData = useCallback(async () => {
-                setSyncing(true);
-                try {
-                    const r = await fetch(`${GAS_URL}?cache=${Date.now()}`);
-                    const data = await r.json();
-                    const historyRaw = Array.isArray(data) ? data : (data.history || []);
-                    
-                    const cleanedLogs = historyRaw
-                        .filter(m => {
-                            const name = (m.main || m.Main_Menu || "").toString().trim();
-                            const val = Number(m.protein || m.Protein_g || 0);
-                            return name.length > 1 && name !== "-" && (val > 0 || name.includes("朝セット"));
-                        })
-                        .map(m => {
-                            const rawTs = (m.timestamp || m.Timestamp || "").toString();
-                            // 文字列を直接分割せず、Dateオブジェクトを経由してJSTの日付を取得する
-                            const normDate = getJstDateString(rawTs);
-                            
-                            return {
-                                id: rawTs + "_" + (m.main || m.Main_Menu),
-                                main: m.main || m.Main_Menu,
-                                protein: Number(m.protein || m.Protein_g || 0),
-                                type: m.type || m.Meal_Type || "他",
-                                timestamp: rawTs,
-                                dateOnly: normDate
-                            };
-                        });
-                    setMeals(cleanedLogs);
-
-                    if (data.menus) {
-                        setMasterMenus(data.menus.map(m => ({
-                            main: m.main || m.Main_Menu || "Unknown",
-                            p: Number(m.p || m.Protein_g || 20),
-                            tags: m.tags ? (Array.isArray(m.tags) ? m.tags : String(m.tags).split(',').map(t=>t.trim())) : [],
-                            cat: (m.cat || m.Category || "all").toString().toLowerCase()
-                        })));
-                    }
-                    showToast('SYSTEM SYNCED');
-                } catch (e) { showToast('OFFLINE MODE'); } finally { setSyncing(false); }
-            }, []);
-
-            useEffect(() => { 
-                fetchData(); 
-                const jstHour = parseInt(new Intl.DateTimeFormat('ja-JP', { hour: 'numeric', hour12: false, timeZone: 'Asia/Tokyo' }).format(new Date()));
-                if (jstHour >= 4 && jstHour < 11) {
-                    setMealType('朝');
-                    setShowMorningPrompt(true);
-                }
-            }, [fetchData]);
-
-            const currentMeals = useMemo(() => meals.filter(m => m.dateOnly === selDate), [meals, selDate]);
-            const totalP = useMemo(() => currentMeals.reduce((sum, m) => sum + m.protein, 0), [currentMeals]);
-            const progress = Math.min((totalP / TARGET) * 100, 100);
-
-            const handleSave = async (mName, mP, mType) => {
-                if (!mName || mName.trim().length < 2) return;
-                const d = new Date();
-                const jstNow = new Intl.DateTimeFormat('ja-JP', { 
-                    timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit',
-                    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-                }).format(d).replace(/\//g, '-').replace(' ', 'T');
-                
-                const newMeal = { id: jstNow + "_" + mName, main: mName.trim(), protein: mP, type: mType, timestamp: jstNow, dateOnly: todayStr };
-                setMeals(prev => [newMeal, ...prev]);
-                showToast('SAVING...');
-                
-                try { 
-                    await fetch(GAS_URL, { 
-                        method:'POST', 
-                        mode:'no-cors', 
-                        body: JSON.stringify({ _action:'save', main: mName.trim(), protein: mP, type: mType, timestamp: jstNow }) 
-                    }); 
-                    setMainMenu('');
-                    setTimeout(fetchData, 800);
-                } catch(e){ showToast('SYNC ERROR'); }
-            };
-
-            const chartSvg = useMemo(() => {
-                const W=320, H=150, PL=30, PR=10, PT=20, PB=30, cW=W-PL-PR, cH=H-PT-PB;
-                const days = Array.from({length:7}, (_,i) => {
-                    const d = new Date(); d.setDate(d.getDate() - (6-i));
-                    const ds = getJstDateString(d);
-                    const val = meals.filter(m => m.dateOnly === ds).reduce((s,m)=>s+m.protein,0);
-                    return { lbl: ['日','月','火','水','木','金','土'][d.getDay()], val, isToday: ds === todayStr };
-                });
-                const maxV = Math.max(...days.map(d=>d.val), TARGET, 10) * 1.15;
-                const xStep = cW/6;
-                const pts = days.map((d, i) => ({ x: PL + i*xStep, y: PT + cH - (d.val/maxV)*cH, ...d }));
-                const pathD = pts.map((p, i) => (i===0 ? 'M' : 'L') + `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-                
-                return (
-                    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%', height:'100%', overflow:'visible'}}>
-                        {[0, TARGET/2, TARGET].map(v => {
-                            const y = PT + cH - (v / maxV) * cH;
-                            return (
-                                <g key={v}>
-                                    <line x1={PL} y1={y} x2={W-PR} y2={y} stroke={v === TARGET ? '#fbbf24' : '#475569'} strokeWidth={v === TARGET ? 2 : 1} strokeDasharray="4,4" opacity="0.3" />
-                                    <text x={PL-5} y={y+3} fontFamily="'DM Mono'" fontSize="8" fill="#475569" textAnchor="end">{v}</text>
-                                </g>
-                            );
-                        })}
-                        <path d={pathD} fill="none" stroke="#bef264" strokeWidth="2.5" strokeLinejoin="round" />
-                        {pts.map((p, i) => (
-                            <g key={i}>
-                                <circle cx={p.x} cy={p.y} r={p.isToday ? 5 : 3} fill={p.val >= TARGET ? '#bef264' : p.val > 0 ? 'white' : '#475569'} />
-                                <text x={p.x} y={H-5} fontSize="9" fill={p.isToday ? '#bef264' : '#475569'} textAnchor="middle">{p.lbl}</text>
-                                {p.val > 0 && <text x={p.x} y={p.y - 10} fontSize="10" fill="white" fontFamily="'DM Mono'" textAnchor="middle" fontWeight="900">{Math.round(p.val)}</text>}
-                            </g>
-                        ))}
-                    </svg>
-                );
-            }, [meals, todayStr]);
-
-            return (
-                <div className="flex flex-col h-screen max-w-[430px] mx-auto overflow-hidden">
-                    {toast && (
-                        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-[#bef264] text-black px-6 py-2 rounded-full font-mono text-[10px] font-black z-[999] shadow-lg animate-bounce text-center">{toast}</div>
-                    )}
-
-                    {tab === 'suggest' && (
-                        <button className="floating-shuffle active:scale-90 transition-transform" onClick={() => setShuffleSeed(s => s + 1)}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-                        </button>
-                    )}
-                    
-                    <header className="p-5 pb-2 shrink-0">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h1 className="font-['DM_Serif_Display'] text-3xl text-[#bef264] leading-none">MEAL LOG</h1>
-                                <p className="font-mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase text-left">v8.1.1 JST Precision Restored</p>
-                            </div>
-                            <button onClick={fetchData} className={`w-9 h-9 bg-white/5 rounded-full border border-white/10 flex items-center justify-center text-[#bef264] ${syncing ? 'animate-spin' : ''}`}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
-                            </button>
-                        </div>
-
-                        <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 p-5 rounded-2xl relative overflow-hidden">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="font-mono text-[8px] text-[#475569] font-bold tracking-widest uppercase text-left">DAILY PROTEIN FLOW</span>
-                                <span className="font-mono text-3xl font-black text-[#f1f3f9] leading-none text-right">{totalP.toFixed(1)}<span className="text-[10px] text-[#475569] ml-1">g</span></span>
-                            </div>
-                            <div className="h-1 bg-white/5 rounded-full relative overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-[#bef264] to-[#84cc16] transition-all duration-1000" style={{ width: `${progress}%` }}>
-                                    <div className="shimmer-layer"></div>
-                                    <div className="glow-head"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </header>
-
-                    <main className="flex-1 overflow-hidden px-4 flex flex-col">
-                        {tab === 'log' && (
-                            <div className="flex flex-col h-full animate-slide">
-                                <div className="flex justify-center gap-5 items-center mb-4 shrink-0">
-                                    <button onClick={() => { 
-                                        const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate()-1);
-                                        setSelDate(getJstDateString(d));
-                                    }} className="text-[#475569] p-2">◀</button>
-                                    <div className="font-serif text-xl">{selDate.split('-')[1]}/{selDate.split('-')[2]}</div>
-                                    <button onClick={() => { if(selDate < todayStr) setSelDate(todayStr) }} className={`text-[#475569] p-2 ${selDate === todayStr ? 'opacity-0' : ''}`}>▶</button>
-                                </div>
-
-                                <section className="bg-white/5 p-5 rounded-3xl mb-5 shrink-0">
-                                    <div className="flex gap-2 mb-4">
-                                        {['朝','昼','夜','他'].map(t => (
-                                            <button key={t} onClick={() => { setMealType(t); setShowMorningPrompt(t === '朝'); }} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mealType === t ? 'bg-[#bef264] text-black shadow-[0_0_15px_rgba(190,242,100,0.3)]' : 'bg-white/5 text-[#475569]'}`}>{t}</button>
-                                        ))}
-                                    </div>
-
-                                    {showMorningPrompt && selDate === todayStr && (
-                                        <div className="bg-[#bef264]/10 border border-dashed border-[#bef264] rounded-2xl p-4 mb-4 text-center animate-slide">
-                                            <p className="text-[11px] font-bold text-[#bef264] mb-3">朝セット（23g）をレポしますか？</p>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => { handleSave('朝セット（プロテインと豆乳コーヒー）', 23, '朝'); setShowMorningPrompt(false); }} className="flex-1 bg-[#bef264] text-black py-2 rounded-xl text-[10px] font-black active:scale-95 transition-all">YES</button>
-                                                <button onClick={() => setShowMorningPrompt(false)} className="flex-1 bg-white/5 text-[#475569] py-2 rounded-xl text-[10px] font-black active:scale-95 transition-all">NO</button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <input value={mainMenu} onChange={e => setMainMenu(e.target.value)} placeholder="Main Menu" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-[#f1f3f9] outline-none mb-4 focus:border-[#bef264]/50" />
-                                    <div className="mb-5">
-                                        <div className="flex justify-between items-end mb-2">
-                                            <span className="text-[8px] text-[#475569] font-bold tracking-widest uppercase text-left">Strategic Weight</span>
-                                            <span className="font-serif text-3xl text-[#bef264] text-right">{protein.toFixed(1)}<span className="text-xs ml-1">g</span></span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <button onClick={() => setProtein(p => Math.max(0, p - 0.5))} className="px-3 py-2 bg-white/5 border border-white/10 text-[#bef264] rounded-xl font-mono text-xs font-black active:scale-90 transition-transform">-0.5</button>
-                                            <input type="range" min="0" max="60" step="0.5" value={protein} onChange={e => setProtein(parseFloat(e.target.value))} className="flex-1" />
-                                            <button onClick={() => setProtein(p => Math.min(60, p + 0.5))} className="px-3 py-2 bg-white/5 border border-white/10 text-[#bef264] rounded-xl font-mono text-xs font-black active:scale-90 transition-transform">+0.5</button>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => handleSave(mainMenu, protein, mealType)} className="w-full py-4 bg-gradient-to-r from-[#bef264] to-[#84cc16] text-black font-black rounded-2xl shadow-xl active:scale-[0.98] transition-all">STAY HEALTHY →</button>
-                                </section>
-
-                                <div className="flex-1 overflow-y-auto no-scrollbar pb-24 space-y-2">
-                                    {currentMeals.length === 0 ? (
-                                        <div className="text-center py-10 opacity-30 text-[10px] tracking-widest uppercase text-[#475569]">No Strategic Records Found</div>
-                                    ) : currentMeals.map(m => (
-                                        <div key={m.id} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex justify-between items-center animate-slide">
-                                            <div>
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <span className="text-[8px] bg-[#bef264] text-black px-1.5 py-0.5 rounded font-black uppercase">{m.type}</span>
-                                                    <span className="font-serif text-base">{m.main}</span>
-                                                </div>
-                                                <div className="text-[7px] text-[#475569] font-mono tracking-tighter uppercase">{m.timestamp.split(/[ T]/)[1]?.slice(0,5)} • Verified</div>
-                                            </div>
-                                            <div className="font-serif text-xl text-[#bef264]">{m.protein.toFixed(1)}g</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {tab === 'suggest' && (
-                            <div className="flex flex-col h-full animate-slide">
-                                <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 shrink-0">
-                                    {['すべて','疲労回復','筋トレ','若返り'].map(cat => (
-                                        <button key={cat} onClick={() => setEffect(cat === 'すべて' ? 'all' : cat)} className={`shrink-0 px-5 py-2.5 rounded-xl border border-white/10 font-black text-[10px] transition-all ${effect === (cat === 'すべて' ? 'all' : cat) ? 'bg-[#bef264] text-black' : 'bg-white/5 text-[#475569]'}`}>{cat}</button>
-                                    ))}
-                                </div>
-                                <div className="flex-1 overflow-y-auto no-scrollbar pb-24 space-y-3">
-                                    {masterMenus.filter(m => effect === 'all' || m.cat.includes(effect.toLowerCase())).slice(0, 3).map((opt, i) => (
-                                        <div key={i} className="bg-white/5 p-5 rounded-3xl border border-white/5">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <div className="font-serif text-lg">{opt.main}</div>
-                                                <div className="font-serif text-2xl text-[#bef264]">{opt.p}g</div>
-                                            </div>
-                                            <div className="bg-[#bef264]/5 border-l-2 border-[#bef264] p-3 rounded-r-lg text-[10px] italic mb-3 opacity-80 leading-relaxed text-[#f1f3f9]">
-                                                規律ある身体資産の構築へ。
-                                            </div>
-                                            <div className="flex gap-2 flex-wrap">
-                                                {(opt.tags || []).map(tag => (
-                                                    <span key={tag} className="text-[8px] text-[#bef264] border border-[#bef264] px-2 py-0.5 rounded font-black uppercase tracking-tight">{tag}</span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {tab === 'stats' && (
-                            <div className="flex flex-col h-full animate-slide">
-                                <div className="bg-white/5 p-5 rounded-3xl mb-4 shrink-0">
-                                    <div className="font-mono text-[9px] text-[#475569] tracking-widest mb-3 uppercase flex justify-between px-1">
-                                        <span>7-Day Trend Analysis</span>
-                                        <span className="text-[#fbbf24]">Target: 120g</span>
-                                    </div>
-                                    <div className="h-40">{chartSvg}</div>
-                                </div>
-                                <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
-                                    <p className="text-[8px] text-[#475569] tracking-widest mb-3 uppercase px-1">Last 3 Days Discipline</p>
-                                    {[0, 1, 2].map(offset => {
-                                        const ds = getJstDateString(new Date(Date.now() - offset * 86400000));
-                                        const dayMeals = meals.filter(m => m.dateOnly === ds);
-                                        if (dayMeals.length === 0) return null;
-                                        return dayMeals.map((m, i) => (
-                                            <div key={m.id} className={`bg-white/5 p-4 rounded-2xl mb-2 flex justify-between items-center ${m.dateOnly === todayStr ? 'opacity-100' : 'opacity-60'}`}>
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`text-[7px] px-2 py-1 rounded font-black ${m.dateOnly === todayStr ? 'bg-[#bef264] text-black shadow-[0_0_8px_rgba(190,242,100,0.3)]' : 'bg-[#475569] text-black'}`}>
-                                                        {m.dateOnly.split('-').slice(1).join('/')}
-                                                    </div>
-                                                    <div className="text-sm font-bold">{m.main}</div>
-                                                </div>
-                                                <div className="font-serif text-lg text-[#bef264]">{m.protein.toFixed(1)}g</div>
-                                            </div>
-                                        ));
-                                    })}
-                                </div>
-                            </div>
-                        )}
-                    </main>
-
-                    <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto h-[85px] bg-[#010206]/90 backdrop-blur-3xl flex justify-around items-center border-t border-white/5 z-[100]">
-                        {[
-                            { id: 'log', lbl: 'LOG', icon: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
-                            { id: 'suggest', lbl: 'STRATEGY', icon: 'M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z' },
-                            { id: 'stats', lbl: 'ANALYSIS', icon: 'M22 12h-4l-3 9L9 3l-3 9H2' }
-                        ].map(t => (
-                            <button key={t.id} onClick={() => setTab(t.id)} className={`flex-1 flex flex-col items-center gap-1.5 transition-all duration-300 px-6 ${tab === t.id ? 'text-[#bef264]' : 'text-[#475569] hover:text-[#dde0ea]'}`}>
-                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d={t.icon} /></svg>
-                                <span className="font-mono text-[8px] font-black">{t.lbl}</span>
-                                {tab === t.id && <div className="w-1 h-1 bg-[#bef264] rounded-full shadow-[0_0_10px_#bef264] mt-1" />}
-                            </button>
-                        ))}
-                    </nav>
+    <section class="grid-wrap">
+        <div id="grid"></div>
+        <aside class="sp" id="sp">
+            <div class="sp-hdr"><span class="sp-tag">Tactical Detail</span><button class="sp-close" id="sp-close">✕</button></div>
+            <div class="sp-name" id="sp-name">—</div>
+            <div class="sp-full" id="sp-full">領域システム情報を確認中...</div>
+            <div class="sp-stats">
+                <div class="sp-stat"><div class="sp-sl">Visit</div><div class="sp-sv" id="sp-vc">0</div></div>
+                <div class="sp-stat"><div class="sp-sl">Tiles</div><div class="sp-sv" id="sp-tiles">0</div></div>
+                <div class="sp-stat"><div class="sp-sl">Win Prob.</div><div class="sp-sv" id="sp-win">0%</div></div>
+            </div>
+            <div class="sp-row"><div class="sp-rl">Current Provider</div><div class="sp-rv" id="sp-vendor">—</div></div>
+            <div class="sp-row"><div class="sp-rl">Strategic Value</div><div class="sp-rv" id="sp-budget">¥0M</div></div>
+            <div class="sp-row"><div class="sp-rl">Phase</div><div class="sp-status" id="sp-status">—</div></div>
+            
+            <div class="sp-sec-title">Sales Operations</div>
+            <div class="sp-btns">
+                <div style="display:flex; gap:6px;">
+                    <button class="sp-btn" style="flex:1;" onclick="addTask('VISIT',5,'訪問')">Visit (-5)</button>
+                    <button class="sp-btn" style="flex:1;" onclick="addTask('SURVEY',3,'調査')">Survey (-3)</button>
                 </div>
-            );
-        };
+                <button class="sp-btn" onclick="addTask('STUDY',8,'勉強会')">Technical Study (-8)</button>
+                <button class="sp-btn" id="sp-spec-btn" onclick="addTask('SPECIN',12,'スペックイン')">Spec-in (-12)</button>
+                <button class="sp-btn alt" id="sp-cxo-btn" onclick="addTask('CXO',15,'トップ面談')">CXO Meeting (-15)</button>
+                
+                <div id="bid-area" style="display:flex; flex-direction:column; gap:6px;">
+                    <button class="sp-btn pri" id="sp-genbid-btn" onclick="addTask('GEN_BID',10,'一般競争入札')" disabled>General Bid (-10)</button>
+                    <button class="sp-btn pri" id="sp-propbid-btn" onclick="addTask('PROP_BID',10,'総合評価入札')" disabled>Proposal Bid (-10)</button>
+                </div>
+            </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+            <div class="sp-sec-title">Intelligence</div>
+            <div class="sp-btns">
+                <div style="display:flex; gap:6px;">
+                    <button class="sp-btn mkt" onclick="addTask('EVENT',15,'イベント開催',true)">Event (-15)</button>
+                    <button class="sp-btn mkt" onclick="addTask('MAILNEWS',5,'NEWS',true)">News (-5)</button>
+                </div>
+            </div>
+        </aside>
+    </section>
+
+    <div class="task-strip" id="task-strip"></div>
+    <button class="exec-btn" id="exec-btn" disabled onclick="executeStrategy()">Launch Mission</button>
+    <div class="log-area"><div class="log-ln" id="log-ln">SYSTEM READY... STANDBY FOR COMMAND.</div></div>
+
+    <footer class="score-bar">
+        <div class="score-v" id="score-v">¥0<span>M</span></div>
+    </footer>
+</div>
+
+<div id="result-ov" class="hidden">
+    <div class="res-box">
+        <div class="res-hdr"><span class="res-title">TENDER RESULT</span></div>
+        <div class="res-list" id="res-list"></div>
+        <div class="modal-btns-area">
+            <button class="res-next" onclick="closeResult()">Acknowledge ›</button>
+        </div>
+    </div>
+</div>
+
+<div id="perk-ov" class="hidden">
+    <div class="perk-box">
+        <div class="res-hdr"><span class="res-title">STRATEGIC UPGRADE</span></div>
+        <div class="res-list" id="perk-list" style="display:flex; flex-direction:column; gap:10px; padding:20px;"></div>
+    </div>
+</div>
+
+<div id="final-modal" class="hidden">
+    <div class="final-box">
+        <div class="res-hdr"><span class="res-title">ANNUAL RESULT</span></div>
+        <div class="final-scroll-content">
+            <div class="final-score" id="final-score">¥0M</div>
+            <div class="rank-wrap" id="vendor-ranking"></div>
+        </div>
+        <div class="modal-btns-area">
+            <button class="final-btn alt" onclick="preparePerks()">Initiate Next Year</button>
+            <button class="final-btn" onclick="resetGame()">System Reset</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- AUDIO ENGINE ---
+let audioCtx = null;
+const rnd = (base, range) => base + (Math.random() * range * 2 - range);
+function createTone(freq, type, duration, vol, rampType = 'exp') {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    if (rampType === 'exp') gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    else gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + duration);
+}
+const SFX = {
+    select: () => createTone(rnd(660, 30), 'sine', 0.1, 0.05),
+    remove: () => createTone(rnd(440, 20), 'sine', 0.1, 0.05),
+    action: (type) => {
+        if(type==='VISIT') createTone(rnd(523,20),'sine',0.1,0.06);
+        else createTone(rnd(800,50),'sine',0.05,0.05);
+    },
+    exec: () => createTone(220, 'sawtooth', 0.3, 0.08),
+    win: () => [523, 659, 784].forEach((f,i)=>setTimeout(()=>createTone(f, 'sine', 0.6, 0.1), i*100)),
+    lost: () => createTone(196, 'sawtooth', 0.6, 0.1, 'linear'),
+    score: () => createTone(1200, 'sine', 0.05, 0.03),
+    report: () => createTone(440, 'triangle', 0.4, 0.1),
+    error: () => createTone(110, 'square', 0.2, 0.1)
+};
+
+// --- GAME STATE ---
+const VENDORS = {
+    H: { name:'H社(SELF)', bg:'#00D68F' }, I: { name:'D社', bg:'#60A5FA' },
+    A: { name:'A社', bg:'#7C3AED' }, S: { name:'S社', bg:'#B45309' },
+    E: { name:'E社', bg:'#DB2777' }, F: { name:'F社', bg:'#0891B2' }, 
+    NONE:{ name:'未開拓', bg:'#060A11' }, UNK: { name:'情報未取得', bg:'#111926' },
+};
+const MARKET_EVENTS = [
+    { id: 'RECESSION', name: '経済不況', desc: '全予算-20%', effect: (s) => { s.customers.forEach(c => c.budget = Math.max(10, Math.floor(c.budget * 0.8))); } },
+    { id: 'AI_BOOM', name: 'AIブーム', desc: '勉強会コスト半減', effect: (s) => { s.studyCostMod = 0.5; } },
+    { id: 'DX_PUSH', name: 'DX推進令', desc: 'RFP前倒し', effect: (s) => { s.customers.forEach(c => c.mo = Math.min(50, c.mo + 1)); } },
+    { id: 'FISCAL_END', name: '年度末商戦', desc: '受注率+15%', effect: (s) => { s.globalWrMod = 15; } },
+];
+const PERKS = [
+    { id: 'EFFICIENCY', name: '業務効率化', desc: 'MH上限+2', apply: (s) => { s.permanentMaxMhMod += 2; } },
+    { id: 'POLITICS', name: 'エグゼパス', desc: 'CXO継続+2', apply: (s) => { s.cxoDurationMod += 2; } },
+    { id: 'MARKET_DEEP', name: '深層諜報', desc: '調査で勝率+5%', apply: (s) => { s.surveyBuff = 5; } },
+];
+const CUSTOMER_POOL_BASE = [
+    { id:101, name:'北海テクノロジー', t:15 }, { id:102, name:'札幌ロジ', t:14 },
+    { id:201, name:'エゾ・ネット', t:14 }, { id:202, name:'道央システム', t:8 },
+    { id:401, name:'北海道教育', t:14 }, { id:501, name:'北日本通商', t:11 },
+    { id:701, name:'北海アグリ', t:8 }, { id:901, name:'札幌セキュ', t:6 },
+    { id:1001,name:'道央流通', t:6 }, { id:1201,name:'北海道プラント', t:4 },
+];
+
+let state = {
+    month:1, year: 26, mh:20, maxMh: 20, permanentMaxMhMod: 0, sales:0, displaySales: 0, selId:null, tasks:[], 
+    customers:[], grid:[], gridSize: 10, vendorList: [], difficulty: 'Normal', activeEvent: null, 
+    globalWrMod: 0, studyCostMod: 1.0, rivalAggroMod: 1.0, cxoDurationMod: 0, surveyBuff: 0, vendorKillers: []
+};
+let setup = { size: 10, difficulty: 'Normal' };
+
+function selectSize(s) { SFX.select(); setup.size = s; document.querySelectorAll('[id^="size-"]').forEach(el => el.classList.remove('sel')); document.getElementById(`size-${s}`).classList.add('sel'); }
+function selectDiff(d) { SFX.select(); setup.difficulty = d; document.querySelectorAll('[id^="diff-"]').forEach(el => el.classList.remove('sel')); document.getElementById(`diff-${d.toLowerCase()}`).classList.add('sel'); }
+
+function startApp() {
+    SFX.select(); state.gridSize = setup.size; state.difficulty = setup.difficulty;
+    state.vendorList = setup.size === 6 ? ['H','I','A','S'] : ['H','I','A','S','E','F'];
+    document.documentElement.style.setProperty('--grid-size', state.gridSize);
+    document.getElementById('mode-select-ov').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    init();
+}
+
+function init() {
+    state.customers = CUSTOMER_POOL_BASE.map(b => {
+        const vendor = state.vendorList[Math.floor(Math.random()*state.vendorList.length)];
+        return { 
+            ...b, tiles: b.t, budget: b.t * 10, vendor, prevVendor: vendor, 
+            mo: Math.floor(Math.random()*45)+1, vc:0, specIn:false, cxoProtect:0, 
+            intelRevealed:false, baseRapport: vendor === 'H' ? 40 : Math.floor(Math.random()*25)+10,
+            bidType: Math.random() < 0.5 ? 'GEN' : 'PROP' // 初期化時に入札タイプを決定
+        };
+    });
+    buildGrid(); triggerEvent(); render();
+}
+
+function buildGrid() {
+    const size = state.gridSize; const totalCells = size * size; const grid = Array(totalCells).fill(null);
+    const shuffled = [...state.customers].sort(() => Math.random() - 0.5);
+    shuffled.forEach(c => {
+        let placed = 0; while (placed < c.tiles) {
+            let options = [], empties = [];
+            for (let i = 0; i < totalCells; i++) { if (grid[i] === null) { empties.push(i); const row = Math.floor(i / size), col = i % size; const ns = [col > 0 ? i-1 : -1, col < size-1 ? i+1 : -1, row > 0 ? i-size : -1, row < size-1 ? i+size : -1]; if (ns.some(n => n !== -1 && grid[n]?.cid === c.id)) options.push(i); } }
+            let target = (placed === 0 || options.length === 0) ? empties[Math.floor(Math.random() * empties.length)] : options[Math.floor(Math.random() * options.length)];
+            if (target !== undefined) { grid[target] = { cid: c.id }; placed++; } else break;
+        }
+    });
+    state.grid = grid;
+}
+
+function triggerEvent() {
+    state.globalWrMod = 0; state.studyCostMod = 1.0; state.rivalAggroMod = (state.difficulty === 'Hard' ? 1.4 : 1.0);
+    state.maxMh = (state.difficulty === 'Hard' ? 18 : 20) + state.permanentMaxMhMod;
+    if (Math.random() < 0.3) {
+        state.activeEvent = MARKET_EVENTS[Math.floor(Math.random() * MARKET_EVENTS.length)];
+        state.activeEvent.effect(state);
+        document.getElementById('event-banner').classList.remove('hidden');
+        document.getElementById('event-txt').textContent = `${state.activeEvent.name}: ${state.activeEvent.desc}`;
+    } else {
+        state.activeEvent = null; document.getElementById('event-banner').classList.add('hidden');
+    }
+}
+
+function getWR(c, vId = 'H') {
+    if (!c) return 0;
+    let r = (vId === 'H') ? (c.baseRapport || 5) : 15;
+    if (vId === 'H') r += (c.vc * 5) + state.globalWrMod;
+    if (c.vendor === vId) r += (vId === 'H') ? 50 : 35;
+    if (c.mo >= 48 && c.mo < 50) r += 35; else if (c.mo >= 50) r -= 20;
+    if (vId === 'H' && c.specIn) r += 25;
+    state.tasks.filter(t=>t.cid===c.id).forEach(t=>{ if(t.type==='VISIT') r+=5; if(t.type==='STUDY') r+=10; if(t.type==='CXO') r+=40; });
+    return Math.min(99, Math.max(5, Math.round(r)));
+}
+
+function render() {
+    const displayMonth = state.month > 12 ? 12 : state.month;
+    document.getElementById('phase-disp').textContent = `FY${state.year}M${displayMonth}`;
+    document.getElementById('mh-disp').textContent = state.mh;
+    if (state.displaySales < state.sales) { state.displaySales += Math.ceil((state.sales - state.displaySales) / 10); SFX.score(); } else { state.displaySales = state.sales; }
+    document.getElementById('score-v').innerHTML = `¥${state.displaySales}<span>M</span>`;
+
+    const bar = document.getElementById('share-bar'); bar.innerHTML='';
+    const s={}; state.vendorList.forEach(v => s[v] = 0);
+    state.customers.forEach(c=>{ s[c.vendor]+=c.budget; });
+    const total = Object.values(s).reduce((a,b)=>a+b,0)||1;
+    state.vendorList.forEach(v=>{ const p=(s[v]/total)*100; if(p>0){ const d=document.createElement('div'); d.className='share-seg'; d.style.cssText=`width:${p}%;background:${VENDORS[v].bg}`; d.textContent=p>10?Math.round(p)+'%':''; bar.appendChild(d); } });
+
+    const gEl = document.getElementById('grid'); gEl.innerHTML='';
+    state.grid.forEach(t=>{
+        const el = document.createElement('div'); el.className = 'tile';
+        if (t && t.cid) {
+            const c=state.customers.find(x=>x.id===t.cid); const kn=c.vc>0||c.vendor==='H'; const selected = state.selId === c.id;
+            el.className = `tile ${selected ? 'sel' : ''} ${c.cxoProtect > 0 ? 'cxo-a' : ''} ${kn && c.mo >= 48 && c.mo < 50 ? 'rfp-a' : ''} ${kn && c.mo >= 50 ? 'bld-a' : ''}`;
+            const inner = document.createElement('div'); inner.className = 'tile-inner';
+            const front = document.createElement('div'); front.className = 'tile-side side-front';
+            const back = document.createElement('div'); back.className = 'tile-side side-back';
+            front.style.backgroundColor = VENDORS[kn ? c.vendor : 'UNK'].bg;
+            back.style.backgroundColor = VENDORS[kn ? c.prevVendor : 'UNK'].bg;
+            const sp = document.createElement('span'); sp.className='t-lbl'; sp.textContent=kn?Math.ceil(c.mo/12):'?';
+            front.appendChild(sp.cloneNode(true)); back.appendChild(sp.cloneNode(true));
+            inner.appendChild(front); inner.appendChild(back); el.appendChild(inner);
+            el.onclick=()=>{ SFX.select(); state.selId=c.id; render(); };
+        } else { el.innerHTML = `<div class="tile-inner"><div class="tile-side" style="background:${VENDORS.NONE.bg}"></div></div>`; }
+        gEl.appendChild(el);
+    });
+
+    const sp=document.getElementById('sp');
+    if (state.selId) {
+        const c=state.customers.find(x=>x.id===state.selId); sp.classList.add('open');
+        document.getElementById('sp-name').textContent=c.name; document.getElementById('sp-vc').textContent=c.vc; document.getElementById('sp-tiles').textContent=c.tiles; document.getElementById('sp-win').textContent=`${getWR(c)}%`; document.getElementById('sp-budget').textContent = `¥${c.budget}M`;
+        const kn=c.vc>0||c.vendor==='H'; document.getElementById('sp-vendor').textContent= (kn || c.intelRevealed) ? VENDORS[c.vendor].name : '？';
+        const st=document.getElementById('sp-status');
+        if(c.cxoProtect>0){ st.textContent=`🛡 CXO SECURE (${c.cxoProtect} Mo)`; st.style.color='var(--sky)'; }
+        else if(c.mo>=50){ st.textContent='OPERATION / STEADY'; st.style.color=''; }
+        else if(c.mo>=48){ st.textContent='📄 RFP RELEASED'; st.style.color='var(--amber)'; }
+        else{ st.textContent='ACTIVE / UTILIZED'; st.style.color=''; }
+        
+        // 入札ボタン制御：RFP期間中かつ顧客ごとに決まった1つの入札方式のみ表示
+        const isRfp = (kn && c.mo >= 48 && c.mo < 50);
+        const genBtn = document.getElementById('sp-genbid-btn');
+        const propBtn = document.getElementById('sp-propbid-btn');
+        
+        genBtn.classList.toggle('hidden', c.bidType !== 'GEN' || !isRfp);
+        propBtn.classList.toggle('hidden', c.bidType !== 'PROP' || !isRfp);
+        genBtn.disabled = !isRfp;
+        propBtn.disabled = !isRfp;
+
+        document.getElementById('sp-spec-btn').disabled=(c.mo>=48 || c.specIn || getWR(c) < 70);
+        document.getElementById('sp-cxo-btn').disabled=(getWR(c) < 70);
+    } else sp.classList.remove('open');
+
+    const ts=document.getElementById('task-strip'); ts.innerHTML='';
+    state.tasks.forEach((t,i)=>{ const c=document.createElement('div'); c.className='t-chip'; c.innerHTML=`<span class="t-chip-name">${t.global?'MKT':t.cname}</span><span>${t.label}</span><button class="t-chip-rm" onclick="removeTask(${i})">✕</button>`; ts.appendChild(c); });
+    document.getElementById('exec-btn').disabled=state.tasks.length===0; document.getElementById('exec-btn').className='exec-btn'+(state.tasks.length?' on':'');
+}
+
+function addTask(type,cost,label,isGlobal=false) {
+    if(!isGlobal && !state.selId) { SFX.error(); return; }
+    let finalCost = (type === 'STUDY') ? Math.floor(cost * state.studyCostMod) : cost;
+    if(state.mh < finalCost) { SFX.error(); return; }
+    SFX.action(type);
+    if (isGlobal) state.tasks.push({cid:null, cname:'GLOBAL', type, cost:finalCost, label, global:true});
+    else { const c=state.customers.find(x=>x.id===state.selId); state.tasks.push({cid:c.id, cname:c.name, type, cost:finalCost, label, global:false}); }
+    state.mh -= finalCost; state.selId = null; render();
+}
+function removeTask(i) { SFX.remove(); state.mh+=state.tasks[i].cost; state.tasks.splice(i,1); render(); }
+
+function executeStrategy() {
+    SFX.exec(); let tr = []; const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    state.customers.forEach(c => {
+        if (c.vendor !== 'H') {
+            c.baseRapport = Math.max(0, c.baseRapport - (state.difficulty === 'Hard' ? 3 : 1));
+            if (c.cxoProtect <= 0 && c.mo >= 45 && Math.random() < 0.1) {
+                c.baseRapport = Math.max(0, c.baseRapport - 10);
+                tr.push({ n: c.name, tx: '政治的空白期間を突かれ他社の食い込みを許しました。', clr: '#FF4D6D', vName:'SELF', vClr:'var(--emerald)', sat:'リスク顕在化' });
+            }
+        }
+    });
+    state.tasks.forEach(t=>{
+        if (t.global) {
+            const parts = state.customers.filter(c => getWR(c) >= 30).sort(() => 0.5 - Math.random()).slice(0, t.type==='EVENT'?3:5);
+            if (parts.length) { parts.forEach(c => { c.baseRapport += t.type==='EVENT'?15:5; }); tr.push({n:t.label, tx:`全顧客の興味度が向上。`, clr: VENDORS.H.bg, vName: 'MARKETING', vClr: '#7a8fa8', sat: '底上げ' }); }
+        } else {
+            const c=state.customers.find(x=>x.id===t.cid);
+            if(t.type==='VISIT'){ c.vc++; tr.push({n:c.name, tx: "キーマン掌握。", clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'良好'}); }
+            else if(t.type==='STUDY'){ c.vc += 2; tr.push({n:c.name, tx: "技術勉強会実施。", clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'高評価'}); }
+            else if(t.type==='SURVEY'){ c.intelRevealed=true; c.baseRapport += state.surveyBuff; tr.push({n:c.name, tx: `市場調査完了。`, clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'精度向上'}); }
+            else if(t.type==='SPECIN'){ c.specIn=true; tr.push({n:c.name, tx: "RFP仕様縛りに成功。", clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'独占'}); }
+            else if(t.type==='CXO'){ c.cxoProtect = 4 + state.cxoDurationMod; tr.push({n:c.name, tx: `CXO合意形成。`, clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat:'鉄壁'}); }
+            else if(t.type==='GEN_BID' || t.type==='PROP_BID'){
+                let win = false; let log = "";
+                if (c.specIn) { win = true; log = "【仕様縛り成功】不戦勝となりました。"; }
+                else {
+                    if (t.type === 'GEN_BID') { win = Math.random() * 100 < (state.difficulty === 'Hard' ? 25 : 40); log = win ? "【落札】価格競争を制しました。" : "【失注】価格で競り負けました。"; }
+                    else { win = Math.random() * 100 < getWR(c); log = win ? "【落札】提案品質が評価されました。" : "【失注】満足度が及びませんでした。"; }
+                }
+                if(win){ SFX.win(); c.prevVendor = c.vendor; c.vendor='H'; c.mo=55; state.sales+=c.budget; tr.push({n:c.name, tx: log, clr: VENDORS.H.bg, vName: 'SELF', vClr: VENDORS.H.bg, sat: "覇権奪還"}); }
+                else { SFX.lost(); if(state.difficulty === 'Hard') c.baseRapport = Math.max(0, c.baseRapport - 15); tr.push({n:c.name, tx: log, clr: VENDORS.H.bg, vName: VENDORS[c.vendor].name, vClr: VENDORS[c.vendor].bg, sat: "再起必要"}); }
+            }
+        }
+    });
+    state.vendorList.filter(v => v !== 'H').forEach(rid => {
+        let rmh = (state.difficulty === 'Hard' ? 26 : 18) * state.rivalAggroMod; 
+        while (rmh >= 6) {
+            let targets = state.customers.filter(c => c.vendor !== rid && c.cxoProtect <= 0); targets.sort((a,b) => getWR(b, 'H') - getWR(a, 'H'));
+            if (!targets.length) break; const tgt = targets[0];
+            if (rmh >= 12 && getWR(tgt, rid) >= 70) { rmh -= 12; if (Math.random() < (tgt.mo >= 48 ? 0.4 : 0.15)) { const oldV = VENDORS[tgt.vendor]; tgt.prevVendor = tgt.vendor; tgt.vendor = rid; tgt.mo = 1; tgt.vc = 0; tgt.specIn = false; tr.push({ n: tgt.name, tx: `【急報】他社によるリプレイス。`, clr: VENDORS[rid].bg, vName: oldV.name, vClr: oldV.bg, sat: `戦略的強襲` }); } } else rmh -= 6;
+        }
+    });
+    state.month++; state.tasks=[]; state.mh=state.maxMh; state.selId=null;
+    state.customers.forEach(c=>{ c.mo=c.mo>=60?1:c.mo+1; if(c.cxoProtect>0) c.cxoProtect--; });
+    const rl=document.getElementById('res-list'); rl.innerHTML='';
+    tr.forEach((r, i)=>{ setTimeout(() => { const d = document.createElement('div'); d.style.cssText=`padding:10px; border-bottom:1px solid #222; border-left:4px solid ${r.clr}; margin-bottom:5px; animation: slide-up 0.3s both;`; d.innerHTML=`<div style="color:${r.clr}; font-family:var(--D); font-size:14px;">${r.n} <span style="font-size:8px; color:#555;">EXISTING: ${r.vName}</span></div><div style="font-size:12px; color:#fff;">${r.tx}</div><div style="font-size:10px; color:#777;">RESULT: ${r.sat}</div>`; rl.appendChild(d); rl.scrollTop = rl.scrollHeight; }, i * 150); });
+    setTimeout(() => { SFX.report(); document.getElementById('result-ov').classList.remove('hidden'); }, 300);
+    render();
+}
+
+function closeResult() { 
+    SFX.select(); document.getElementById('result-ov').classList.add('hidden'); 
+    if(state.month > 12) { 
+        const ranking = state.vendorList.map(v => ({ id: v, name: VENDORS[v].name, total: state.customers.filter(c => c.vendor === v).reduce((a, b) => a + b.budget, 0), color: VENDORS[v].bg })).sort((a, b) => b.total - a.total);
+        const rw = document.getElementById('vendor-ranking'); rw.innerHTML = '<div style="font-family:var(--D);font-size:14px;color:var(--gold);margin-bottom:10px;">MARKET PERFORMANCE RANKING</div>';
+        ranking.forEach((r, idx) => rw.innerHTML += `<div class="rank-row"><span class="rank-name" style="color:${r.color}">${idx+1}. ${r.name}</span><span class="rank-val">¥${r.total}M</span></div>`);
+        document.getElementById('final-score').textContent=`¥${state.sales}M`; document.getElementById('final-modal').classList.remove('hidden'); 
+    } else { triggerEvent(); }
+}
+function preparePerks() {
+    SFX.win(); document.getElementById('final-modal').classList.add('hidden');
+    const list = document.getElementById('perk-list'); list.innerHTML = '';
+    const candidates = [...PERKS].sort(() => 0.5 - Math.random()).slice(0, 3);
+    candidates.forEach(p => {
+        const b = document.createElement('button'); b.className = 'perk-btn';
+        b.innerHTML = `<div class="perk-name">${p.name}</div><div class="perk-desc">${p.desc}</div>`;
+        b.onclick = () => { SFX.select(); p.apply(state); document.getElementById('perk-ov').classList.add('hidden'); continueGame(); };
+        list.appendChild(b);
+    });
+    document.getElementById('perk-ov').classList.remove('hidden');
+}
+function continueGame() { state.month = 1; state.year++; state.tasks = []; state.mh = state.maxMh; triggerEvent(); render(); }
+function resetGame() { SFX.select(); location.reload(); }
+document.getElementById('sp-close').onclick=()=>{ SFX.select(); state.selId=null; render(); };
+</script>
 </body>
 </html>
