@@ -17,15 +17,10 @@
     <style>
         :root {
             --bg: #010206;
-            --glass: rgba(255, 255, 255, 0.02);
             --em: #bef264;
             --em-grad: linear-gradient(135deg, #bef264 0%, #84cc16 100%);
-            --em-glow: rgba(190, 242, 100, 0.3);
             --tx: #f1f3f9;
             --mu: #475569;
-            --yel: #fbbf24;
-            --mono: 'DM Mono', monospace;
-            --serif: 'DM Serif Display', serif;
         }
 
         body { 
@@ -50,8 +45,6 @@
         @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
         @keyframes pulse-glow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes chart-draw { from { stroke-dashoffset: 500; } to { stroke-dashoffset: 0; } }
-        @keyframes spin-once { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .shimmer-layer {
             position: absolute; inset: 0;
@@ -68,14 +61,13 @@
         }
 
         .animate-slide { animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .chart-path { stroke-dasharray: 500; stroke-dashoffset: 500; animation: chart-draw 3.0s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-        .spin-icon { animation: spin-once 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
 
         input[type=range] { -webkit-appearance: none; background: transparent; cursor: pointer; }
         input[type=range]::-webkit-slider-runnable-track { background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; }
         input[type=range]::-webkit-slider-thumb { 
-            -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; 
-            background: var(--em); margin-top: -7px; box-shadow: 0 0 10px var(--em-glow);
+            -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; 
+            background: var(--em); margin-top: -10px; border: 2px solid var(--bg);
+            box-shadow: 0 0 15px rgba(190, 242, 100, 0.3);
         }
 
         .floating-shuffle {
@@ -89,13 +81,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 8px 24px rgba(190, 242, 100, 0.4), 0 0 0 1px rgba(255,255,255,0.2);
+            box-shadow: 0 8px 24px rgba(190, 242, 100, 0.4);
             z-index: 110;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.2s, opacity 0.3s;
         }
-        .floating-shuffle:active { transform: scale(0.9) rotate(-15deg); }
     </style>
 </head>
 <body>
@@ -107,53 +95,29 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
         const TARGET = 120;
 
-        const STRATEGIC_REASONS = {
-          "牛": "希少なクレアチンと鉄分が、INTJの鋭い意思決定に必要なホルモン環境を整え、商談での圧倒的優位を築きます。",
-          "鶏": "高純度なアンセリンが深夜の思考疲れをリセット。明朝、最速でアクセルを踏み込むためのブレイン・メンテナンスです。",
-          "ラム": "豊富なL-カルニチンが脂肪燃焼を最適化。無駄を極限まで削ぎ落とす、ニモさんの知的な身体管理の極致です。",
-          "サバ": "DHA/EPAが血流を劇的に改善。脳への酸素供給を最大化し、淀みのないロジック展開をサポートします。",
-          "真鯛": "タウリンが肝機能を保護し、長時間のマルチタスクによる体内ダメージを精密に修復。翌日のパフォーマンスを保証します。",
-          "朝セット": "ニモさんの1日の基盤。23gのプロテインと豆乳コーヒーが代謝をキックオフし、スタートダッシュを確実にします。"
-        };
-
-        const CATEGORY_MAP = {
-            '筋トレ': 'muscle',
-            '疲労回復': 'recovery',
-            '若返り': 'antiaging'
+        // 【最重要】日付文字列を常に日本時間基準で生成・変換する関数
+        const getJstDateString = (input = new Date()) => {
+            const date = (typeof input === 'string') ? new Date(input.replace(/-/g, '/').replace('T', ' ')) : input;
+            return new Intl.DateTimeFormat('sv-SE', {
+                timeZone: 'Asia/Tokyo',
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(date);
         };
 
         const App = () => {
-            const getJstDateString = (offset = 0) => {
-                const d = new Date();
-                d.setDate(d.getDate() - offset);
-                const jstD = new Date(d.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
-                const y = jstD.getFullYear();
-                const m = String(jstD.getMonth() + 1).padStart(2, '0');
-                const day = String(jstD.getDate()).padStart(2, '0');
-                return `${y}-${m}-${day}`;
-            };
-
-            const getAutoMealType = () => {
-                const hour = new Date().getHours();
-                if (hour >= 4 && hour < 11) return "朝";
-                if (hour >= 11 && hour < 17) return "昼";
-                return "夜";
-            };
-
-            const todayStr = useMemo(() => getJstDateString(0), []);
+            const todayStr = useMemo(() => getJstDateString(), []);
             const [meals, setMeals] = useState([]);
             const [masterMenus, setMasterMenus] = useState([]);
             const [tab, setTab] = useState('log');
             const [syncing, setSyncing] = useState(false);
             const [toast, setToast] = useState('');
             const [selDate, setSelDate] = useState(todayStr);
-            const [mealType, setMealType] = useState(getAutoMealType());
+            const [mealType, setMealType] = useState('昼');
             const [mainMenu, setMainMenu] = useState('');
             const [protein, setProtein] = useState(25.0);
             const [effect, setEffect] = useState('all');
             const [shuffleSeed, setShuffleSeed] = useState(0);
-            const [showMorningPrompt, setShowMorningPrompt] = useState(getAutoMealType() === '朝');
-            const [isSpinning, setIsSpinning] = useState(false);
+            const [showMorningPrompt, setShowMorningPrompt] = useState(false);
 
             const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
@@ -172,14 +136,16 @@
                         })
                         .map(m => {
                             const rawTs = (m.timestamp || m.Timestamp || "").toString();
-                            const dateOnly = rawTs.split(/[ T]/)[0].replace(/\//g, '-');
+                            // 文字列を直接分割せず、Dateオブジェクトを経由してJSTの日付を取得する
+                            const normDate = getJstDateString(rawTs);
+                            
                             return {
                                 id: rawTs + "_" + (m.main || m.Main_Menu),
                                 main: m.main || m.Main_Menu,
                                 protein: Number(m.protein || m.Protein_g || 0),
                                 type: m.type || m.Meal_Type || "他",
                                 timestamp: rawTs,
-                                dateOnly: dateOnly
+                                dateOnly: normDate
                             };
                         });
                     setMeals(cleanedLogs);
@@ -188,7 +154,6 @@
                         setMasterMenus(data.menus.map(m => ({
                             main: m.main || m.Main_Menu || "Unknown",
                             p: Number(m.p || m.Protein_g || 20),
-                            side: m.side || "-",
                             tags: m.tags ? (Array.isArray(m.tags) ? m.tags : String(m.tags).split(',').map(t=>t.trim())) : [],
                             cat: (m.cat || m.Category || "all").toString().toLowerCase()
                         })));
@@ -199,50 +164,34 @@
 
             useEffect(() => { 
                 fetchData(); 
-                setMealType(getAutoMealType());
+                const jstHour = parseInt(new Intl.DateTimeFormat('ja-JP', { hour: 'numeric', hour12: false, timeZone: 'Asia/Tokyo' }).format(new Date()));
+                if (jstHour >= 4 && jstHour < 11) {
+                    setMealType('朝');
+                    setShowMorningPrompt(true);
+                }
             }, [fetchData]);
 
             const currentMeals = useMemo(() => meals.filter(m => m.dateOnly === selDate), [meals, selDate]);
             const totalP = useMemo(() => currentMeals.reduce((sum, m) => sum + m.protein, 0), [currentMeals]);
             const progress = Math.min((totalP / TARGET) * 100, 100);
 
-            const last3DaysMeals = useMemo(() => {
-                const targets = [getJstDateString(0), getJstDateString(1), getJstDateString(2)];
-                return meals.filter(m => targets.includes(m.dateOnly))
-                           .sort((a,b) => new Date(b.timestamp.replace(/\//g, '-')) - new Date(a.timestamp.replace(/\//g, '-')));
-            }, [meals]);
-
-            const suggestions = useMemo(() => {
-                if (masterMenus.length === 0) return [];
-                let pool = masterMenus;
-                if (effect !== 'all') {
-                    const mappedCat = CATEGORY_MAP[effect] || effect.toLowerCase();
-                    pool = masterMenus.filter(m => 
-                        m.cat.includes(mappedCat) || 
-                        m.cat.includes(effect.toLowerCase()) ||
-                        (m.tags && m.tags.some(tag => tag.includes(effect) || tag.toLowerCase().includes(mappedCat)))
-                    );
-                }
-                const seeded = [...pool].map((m, i) => ({ m, r: Math.sin(shuffleSeed * 997 + i * 31) }));
-                return seeded.sort((a, b) => a.r - b.r).slice(0, 3).map(x => x.m);
-            }, [masterMenus, effect, shuffleSeed]);
-
-            const handleShuffle = () => {
-                setShuffleSeed(s => s + 1);
-                setIsSpinning(true);
-                setTimeout(() => setIsSpinning(false), 600);
-            };
-
             const handleSave = async (mName, mP, mType) => {
                 if (!mName || mName.trim().length < 2) return;
-                const now = new Date();
-                const ts = `${selDate} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+                const d = new Date();
+                const jstNow = new Intl.DateTimeFormat('ja-JP', { 
+                    timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+                }).format(d).replace(/\//g, '-').replace(' ', 'T');
+                
+                const newMeal = { id: jstNow + "_" + mName, main: mName.trim(), protein: mP, type: mType, timestamp: jstNow, dateOnly: todayStr };
+                setMeals(prev => [newMeal, ...prev]);
                 showToast('SAVING...');
+                
                 try { 
                     await fetch(GAS_URL, { 
                         method:'POST', 
                         mode:'no-cors', 
-                        body: JSON.stringify({ _action:'save', main: mName.trim(), protein: mP, type: mType, timestamp: ts }) 
+                        body: JSON.stringify({ _action:'save', main: mName.trim(), protein: mP, type: mType, timestamp: jstNow }) 
                     }); 
                     setMainMenu('');
                     setTimeout(fetchData, 800);
@@ -252,44 +201,35 @@
             const chartSvg = useMemo(() => {
                 const W=320, H=150, PL=30, PR=10, PT=20, PB=30, cW=W-PL-PR, cH=H-PT-PB;
                 const days = Array.from({length:7}, (_,i) => {
-                    const ds = getJstDateString(6-i);
-                    const d = new Date(ds);
+                    const d = new Date(); d.setDate(d.getDate() - (6-i));
+                    const ds = getJstDateString(d);
                     const val = meals.filter(m => m.dateOnly === ds).reduce((s,m)=>s+m.protein,0);
                     return { lbl: ['日','月','火','水','木','金','土'][d.getDay()], val, isToday: ds === todayStr };
                 });
                 const maxV = Math.max(...days.map(d=>d.val), TARGET, 10) * 1.15;
                 const xStep = cW/6;
-                const grids = [0, TARGET/2, TARGET].map(v => {
-                    const y = PT + cH - (v / maxV) * cH;
-                    const isTarget = v === TARGET;
-                    return (
-                        <g key={v}>
-                            <line x1={PL} y1={y} x2={W-PR} y2={y} stroke={isTarget ? '#fbbf24' : '#475569'} strokeWidth={isTarget ? 2 : 1} strokeDasharray={isTarget ? '4,4' : '2,2'} opacity={isTarget ? 0.8 : 0.2} />
-                            <text x={PL-5} y={y+3} fontFamily="'DM Mono'" fontSize="8" fill={isTarget ? '#fbbf24' : '#475569'} textAnchor="end">{v}</text>
-                        </g>
-                    );
-                });
-                const points = days.map((d, i) => ({ x: PL + i*xStep, y: PT + cH - (d.val/maxV)*cH, ...d }));
-                const pathD = points.map((p, i) => (i===0 ? 'M' : 'L') + `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+                const pts = days.map((d, i) => ({ x: PL + i*xStep, y: PT + cH - (d.val/maxV)*cH, ...d }));
+                const pathD = pts.map((p, i) => (i===0 ? 'M' : 'L') + `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
                 
                 return (
                     <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%', height:'100%', overflow:'visible'}}>
-                        {grids}
-                        <path d={pathD} fill="none" stroke="#bef264" strokeWidth="2.5" className="chart-path" strokeLinejoin="round" />
-                        {points.map((p, i) => {
-                            const isSuccess = p.val >= TARGET;
+                        {[0, TARGET/2, TARGET].map(v => {
+                            const y = PT + cH - (v / maxV) * cH;
                             return (
-                                <g key={i}>
-                                    <circle cx={p.x} cy={p.y} r={p.isToday ? 5 : 3} fill={isSuccess ? '#bef264' : p.val > 0 ? 'white' : '#475569'} />
-                                    <text x={p.x} y={H-5} fontSize="9" fill={p.isToday ? '#bef264' : '#475569'} textAnchor="middle">{p.lbl}</text>
-                                    {p.val > 0 && (
-                                        <text x={p.x} y={p.y - (isSuccess ? 12 : 8)} fontSize={isSuccess ? "14" : "9"} fill={isSuccess ? "#bef264" : "white"} fontFamily="'DM Mono'" textAnchor="middle" fontWeight="900">
-                                            {Math.round(p.val)}
-                                        </text>
-                                    )}
+                                <g key={v}>
+                                    <line x1={PL} y1={y} x2={W-PR} y2={y} stroke={v === TARGET ? '#fbbf24' : '#475569'} strokeWidth={v === TARGET ? 2 : 1} strokeDasharray="4,4" opacity="0.3" />
+                                    <text x={PL-5} y={y+3} fontFamily="'DM Mono'" fontSize="8" fill="#475569" textAnchor="end">{v}</text>
                                 </g>
                             );
                         })}
+                        <path d={pathD} fill="none" stroke="#bef264" strokeWidth="2.5" strokeLinejoin="round" />
+                        {pts.map((p, i) => (
+                            <g key={i}>
+                                <circle cx={p.x} cy={p.y} r={p.isToday ? 5 : 3} fill={p.val >= TARGET ? '#bef264' : p.val > 0 ? 'white' : '#475569'} />
+                                <text x={p.x} y={H-5} fontSize="9" fill={p.isToday ? '#bef264' : '#475569'} textAnchor="middle">{p.lbl}</text>
+                                {p.val > 0 && <text x={p.x} y={p.y - 10} fontSize="10" fill="white" fontFamily="'DM Mono'" textAnchor="middle" fontWeight="900">{Math.round(p.val)}</text>}
+                            </g>
+                        ))}
                     </svg>
                 );
             }, [meals, todayStr]);
@@ -297,47 +237,38 @@
             return (
                 <div className="flex flex-col h-screen max-w-[430px] mx-auto overflow-hidden">
                     {toast && (
-                        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-[#bef264] text-black px-6 py-2 rounded-full font-mono text-[10px] font-black z-[999] shadow-lg animate-bounce">{toast}</div>
+                        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-[#bef264] text-black px-6 py-2 rounded-full font-mono text-[10px] font-black z-[999] shadow-lg animate-bounce text-center">{toast}</div>
                     )}
 
-                    {/* 最前面シャッフルボタン (浮遊アクションボタン) */}
                     {tab === 'suggest' && (
-                        <button className="floating-shuffle" onClick={handleShuffle}>
-                            <svg className={isSpinning ? 'spin-icon' : ''} width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="16 3 21 3 21 8"></polyline>
-                                <line x1="4" y1="20" x2="21" y2="3"></line>
-                                <polyline points="21 16 21 21 16 21"></polyline>
-                                <line x1="15" y1="15" x2="21" y2="21"></line>
-                            </svg>
+                        <button className="floating-shuffle active:scale-90 transition-transform" onClick={() => setShuffleSeed(s => s + 1)}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
                         </button>
                     )}
                     
-                    {/* Header - 329.png準拠 */}
                     <header className="p-5 pb-2 shrink-0">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h1 className="font-['DM_Serif_Display'] text-3xl text-[#bef264] leading-none">Meal OS</h1>
-                                <p className="font-mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase">Routine Optimized v8.1.1</p>
+                                <h1 className="font-['DM_Serif_Display'] text-3xl text-[#bef264] leading-none">MEAL LOG</h1>
+                                <p className="font-mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase text-left">v8.1.1 JST Precision Restored</p>
                             </div>
                             <button onClick={fetchData} className={`w-9 h-9 bg-white/5 rounded-full border border-white/10 flex items-center justify-center text-[#bef264] ${syncing ? 'animate-spin' : ''}`}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
                             </button>
                         </div>
 
-                        {tab !== 'stats' && (
-                            <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 p-5 rounded-2xl relative overflow-hidden">
-                                <div className="flex justify-between items-center mb-4">
-                                    <span className="font-mono text-[8px] text-[#475569] font-bold tracking-widest uppercase text-left">Daily Protein Flow</span>
-                                    <span className="font-mono text-3xl font-black text-[#f1f3f9] leading-none text-right">{totalP.toFixed(1)}<span className="text-[10px] text-[#475569] ml-1">g</span></span>
-                                </div>
-                                <div className="h-1 bg-white/5 rounded-full relative overflow-hidden">
-                                    <div className="h-full bg-gradient-to-r from-[#bef264] to-[#84cc16] relative transition-all duration-1000" style={{ width: `${progress}%` }}>
-                                        <div className="shimmer-layer"></div>
-                                        <div className="glow-head"></div>
-                                    </div>
+                        <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 p-5 rounded-2xl relative overflow-hidden">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="font-mono text-[8px] text-[#475569] font-bold tracking-widest uppercase text-left">DAILY PROTEIN FLOW</span>
+                                <span className="font-mono text-3xl font-black text-[#f1f3f9] leading-none text-right">{totalP.toFixed(1)}<span className="text-[10px] text-[#475569] ml-1">g</span></span>
+                            </div>
+                            <div className="h-1 bg-white/5 rounded-full relative overflow-hidden">
+                                <div className="h-full bg-gradient-to-r from-[#bef264] to-[#84cc16] transition-all duration-1000" style={{ width: `${progress}%` }}>
+                                    <div className="shimmer-layer"></div>
+                                    <div className="glow-head"></div>
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </header>
 
                     <main className="flex-1 overflow-hidden px-4 flex flex-col">
@@ -345,36 +276,25 @@
                             <div className="flex flex-col h-full animate-slide">
                                 <div className="flex justify-center gap-5 items-center mb-4 shrink-0">
                                     <button onClick={() => { 
-                                        const d = new Date(selDate + 'T12:00:00'); 
-                                        d.setDate(d.getDate()-1); 
-                                        setSelDate(getJstDateString(Math.floor((new Date() - d) / 86400000))); 
-                                    }} className="text-[#475569]">◀</button>
+                                        const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate()-1);
+                                        setSelDate(getJstDateString(d));
+                                    }} className="text-[#475569] p-2">◀</button>
                                     <div className="font-serif text-xl">{selDate.split('-')[1]}/{selDate.split('-')[2]}</div>
-                                    <button onClick={() => { if(selDate < todayStr) setSelDate(getJstDateString(0)) }} className={`text-[#475569] ${selDate === todayStr ? 'opacity-0' : ''}`}>▶</button>
+                                    <button onClick={() => { if(selDate < todayStr) setSelDate(todayStr) }} className={`text-[#475569] p-2 ${selDate === todayStr ? 'opacity-0' : ''}`}>▶</button>
                                 </div>
 
                                 <section className="bg-white/5 p-5 rounded-3xl mb-5 shrink-0">
                                     <div className="flex gap-2 mb-4">
                                         {['朝','昼','夜','他'].map(t => (
-                                            <button 
-                                                key={t} 
-                                                onClick={() => {
-                                                    setMealType(t);
-                                                    if(t === '朝') setShowMorningPrompt(true);
-                                                    else setShowMorningPrompt(false);
-                                                }} 
-                                                className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mealType === t ? 'bg-[#bef264] text-black shadow-[0_0_15px_rgba(190,242,100,0.3)]' : 'bg-white/5 text-[#475569]'}`}
-                                            >
-                                                {t}
-                                            </button>
+                                            <button key={t} onClick={() => { setMealType(t); setShowMorningPrompt(t === '朝'); }} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mealType === t ? 'bg-[#bef264] text-black shadow-[0_0_15px_rgba(190,242,100,0.3)]' : 'bg-white/5 text-[#475569]'}`}>{t}</button>
                                         ))}
                                     </div>
 
-                                    {showMorningPrompt && (
+                                    {showMorningPrompt && selDate === todayStr && (
                                         <div className="bg-[#bef264]/10 border border-dashed border-[#bef264] rounded-2xl p-4 mb-4 text-center animate-slide">
                                             <p className="text-[11px] font-bold text-[#bef264] mb-3">朝セット（23g）をレポしますか？</p>
                                             <div className="flex gap-2">
-                                                <button onClick={() => { handleSave('朝セット', 23, '朝'); setShowMorningPrompt(false); }} className="flex-1 bg-[#bef264] text-black py-2 rounded-xl text-[10px] font-black active:scale-95 transition-all">YES</button>
+                                                <button onClick={() => { handleSave('朝セット（プロテインと豆乳コーヒー）', 23, '朝'); setShowMorningPrompt(false); }} className="flex-1 bg-[#bef264] text-black py-2 rounded-xl text-[10px] font-black active:scale-95 transition-all">YES</button>
                                                 <button onClick={() => setShowMorningPrompt(false)} className="flex-1 bg-white/5 text-[#475569] py-2 rounded-xl text-[10px] font-black active:scale-95 transition-all">NO</button>
                                             </div>
                                         </div>
@@ -383,8 +303,8 @@
                                     <input value={mainMenu} onChange={e => setMainMenu(e.target.value)} placeholder="Main Menu" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-[#f1f3f9] outline-none mb-4 focus:border-[#bef264]/50" />
                                     <div className="mb-5">
                                         <div className="flex justify-between items-end mb-2">
-                                            <span className="text-[8px] text-[#475569] font-bold tracking-widest uppercase">Strategic Weight</span>
-                                            <span className="font-serif text-3xl text-[#bef264]">{protein.toFixed(1)}<span className="text-xs ml-1">g</span></span>
+                                            <span className="text-[8px] text-[#475569] font-bold tracking-widest uppercase text-left">Strategic Weight</span>
+                                            <span className="font-serif text-3xl text-[#bef264] text-right">{protein.toFixed(1)}<span className="text-xs ml-1">g</span></span>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <button onClick={() => setProtein(p => Math.max(0, p - 0.5))} className="px-3 py-2 bg-white/5 border border-white/10 text-[#bef264] rounded-xl font-mono text-xs font-black active:scale-90 transition-transform">-0.5</button>
@@ -417,26 +337,19 @@
                         {tab === 'suggest' && (
                             <div className="flex flex-col h-full animate-slide">
                                 <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 shrink-0">
-                                    {[
-                                        {id:'all', lbl:'すべて'},
-                                        {id:'疲労回復', lbl:'疲労回復'},
-                                        {id:'筋トレ', lbl:'筋トレ'},
-                                        {id:'若返り', lbl:'若返り'}
-                                    ].map(cat => (
-                                        <button key={cat.id} onClick={() => setEffect(cat.id)} className={`shrink-0 px-5 py-2.5 rounded-xl border border-white/10 font-black text-[10px] transition-all ${effect === cat.id ? 'bg-[#bef264] text-black shadow-[0_0_15px_rgba(190,242,100,0.2)]' : 'bg-white/5 text-[#475569]'}`}>{cat.lbl}</button>
+                                    {['すべて','疲労回復','筋トレ','若返り'].map(cat => (
+                                        <button key={cat} onClick={() => setEffect(cat === 'すべて' ? 'all' : cat)} className={`shrink-0 px-5 py-2.5 rounded-xl border border-white/10 font-black text-[10px] transition-all ${effect === (cat === 'すべて' ? 'all' : cat) ? 'bg-[#bef264] text-black' : 'bg-white/5 text-[#475569]'}`}>{cat}</button>
                                     ))}
                                 </div>
                                 <div className="flex-1 overflow-y-auto no-scrollbar pb-24 space-y-3">
-                                    {suggestions.length === 0 ? (
-                                        <div className="text-center py-20 opacity-30 text-xs uppercase tracking-widest">No matching strategy found.</div>
-                                    ) : suggestions.map((opt, i) => (
-                                        <div key={i} className="bg-white/5 p-5 rounded-3xl border border-white/5 animate-slide">
+                                    {masterMenus.filter(m => effect === 'all' || m.cat.includes(effect.toLowerCase())).slice(0, 3).map((opt, i) => (
+                                        <div key={i} className="bg-white/5 p-5 rounded-3xl border border-white/5">
                                             <div className="flex justify-between items-center mb-2">
                                                 <div className="font-serif text-lg">{opt.main}</div>
                                                 <div className="font-serif text-2xl text-[#bef264]">{opt.p}g</div>
                                             </div>
                                             <div className="bg-[#bef264]/5 border-l-2 border-[#bef264] p-3 rounded-r-lg text-[10px] italic mb-3 opacity-80 leading-relaxed text-[#f1f3f9]">
-                                                "{STRATEGIC_REASONS[Object.keys(STRATEGIC_REASONS).find(k => opt.main.includes(k))] || '規律ある身体資産の構築へ。'}"
+                                                規律ある身体資産の構築へ。
                                             </div>
                                             <div className="flex gap-2 flex-wrap">
                                                 {(opt.tags || []).map(tag => (
@@ -452,25 +365,30 @@
                         {tab === 'stats' && (
                             <div className="flex flex-col h-full animate-slide">
                                 <div className="bg-white/5 p-5 rounded-3xl mb-4 shrink-0">
-                                    <div className="flex justify-between text-[9px] text-[#475569] font-bold tracking-widest mb-3 uppercase">
+                                    <div className="font-mono text-[9px] text-[#475569] tracking-widest mb-3 uppercase flex justify-between px-1">
                                         <span>7-Day Trend Analysis</span>
                                         <span className="text-[#fbbf24]">Target: 120g</span>
                                     </div>
                                     <div className="h-40">{chartSvg}</div>
                                 </div>
                                 <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
-                                    <p className="text-[8px] text-[#475569] tracking-widest mb-3 uppercase">Last 3 Days Records</p>
-                                    {last3DaysMeals.map((m, i) => (
-                                        <div key={i} className={`bg-white/5 p-4 rounded-2xl mb-2 flex justify-between items-center ${m.dateOnly === todayStr ? 'opacity-100' : 'opacity-60'}`}>
-                                            <div className="flex items-center gap-3">
-                                                <div className={`text-[7px] px-2 py-1 rounded font-black ${m.dateOnly === todayStr ? 'bg-[#bef264] text-black shadow-[0_0_8px_rgba(190,242,100,0.3)]' : 'bg-[#475569] text-black'}`}>
-                                                    {m.dateOnly.split('-').slice(1).join('/')}
+                                    <p className="text-[8px] text-[#475569] tracking-widest mb-3 uppercase px-1">Last 3 Days Discipline</p>
+                                    {[0, 1, 2].map(offset => {
+                                        const ds = getJstDateString(new Date(Date.now() - offset * 86400000));
+                                        const dayMeals = meals.filter(m => m.dateOnly === ds);
+                                        if (dayMeals.length === 0) return null;
+                                        return dayMeals.map((m, i) => (
+                                            <div key={m.id} className={`bg-white/5 p-4 rounded-2xl mb-2 flex justify-between items-center ${m.dateOnly === todayStr ? 'opacity-100' : 'opacity-60'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`text-[7px] px-2 py-1 rounded font-black ${m.dateOnly === todayStr ? 'bg-[#bef264] text-black shadow-[0_0_8px_rgba(190,242,100,0.3)]' : 'bg-[#475569] text-black'}`}>
+                                                        {m.dateOnly.split('-').slice(1).join('/')}
+                                                    </div>
+                                                    <div className="text-sm font-bold">{m.main}</div>
                                                 </div>
-                                                <div className="text-sm font-bold">{m.main}</div>
+                                                <div className="font-serif text-lg text-[#bef264]">{m.protein.toFixed(1)}g</div>
                                             </div>
-                                            <div className="font-serif text-lg text-[#bef264]">{m.protein.toFixed(1)}g</div>
-                                        </div>
-                                    ))}
+                                        ));
+                                    })}
                                 </div>
                             </div>
                         )}
@@ -482,10 +400,10 @@
                             { id: 'suggest', lbl: 'STRATEGY', icon: 'M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z' },
                             { id: 'stats', lbl: 'ANALYSIS', icon: 'M22 12h-4l-3 9L9 3l-3 9H2' }
                         ].map(t => (
-                            <button key={t.id} onClick={() => setTab(t.id)} className={`flex-1 flex flex-col items-center gap-1.5 transition-all duration-300 ${tab === t.id ? 'text-[#bef264]' : 'text-[#475569]'}`}>
+                            <button key={t.id} onClick={() => setTab(t.id)} className={`flex-1 flex flex-col items-center gap-1.5 transition-all duration-300 px-6 ${tab === t.id ? 'text-[#bef264]' : 'text-[#475569] hover:text-[#dde0ea]'}`}>
                                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d={t.icon} /></svg>
                                 <span className="font-mono text-[8px] font-black">{t.lbl}</span>
-                                {tab === t.id && <div className="w-1 h-1 bg-[#bef264] rounded-full shadow-[0_0_10px_#bef264]" />}
+                                {tab === t.id && <div className="w-1 h-1 bg-[#bef264] rounded-full shadow-[0_0_10px_#bef264] mt-1" />}
                             </button>
                         ))}
                     </nav>
