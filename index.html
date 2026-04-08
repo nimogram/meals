@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>MEAL LOG v8.1.3</title>
+    <title>MEAL LOG v8.1.4</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -95,7 +96,7 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
         const TARGET = 120;
 
-        // 1. 共通の日付処理関数 (JSTの YYYY-MM-DD 文字列を生成)
+        // JST基準の日付文字列取得
         const getJstDateString = (date = new Date()) => {
             return new Intl.DateTimeFormat('sv-SE', {
                 timeZone: 'Asia/Tokyo',
@@ -103,7 +104,7 @@
             }).format(date);
         };
 
-        // 2. タイムスタンプ生成
+        // JST基準のタイムスタンプ生成
         const getJstTimestamp = (date = new Date()) => {
             const parts = new Intl.DateTimeFormat('ja-JP', {
                 timeZone: 'Asia/Tokyo',
@@ -147,8 +148,6 @@
                         })
                         .map(m => {
                             const rawTs = (m.timestamp || m.Timestamp || "").toString();
-                            
-                            // 文字列ベースの正規化 (JST YYYY-MM-DD を抽出)
                             const datePart = rawTs.split(/[ T]/)[0].replace(/\//g, '-');
                             const p = datePart.split('-');
                             const normDate = p.length === 3 ? `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}` : datePart;
@@ -178,14 +177,24 @@
 
             useEffect(() => { 
                 fetchData(); 
-                const jstHour = parseInt(new Intl.DateTimeFormat('ja-JP', { hour: 'numeric', hour12: false, timeZone: 'Asia/Tokyo' }).format(new Date()));
+                
+                // --- 時間帯による自動切り替えロジック ---
+                const jstHour = parseInt(new Intl.DateTimeFormat('ja-JP', { 
+                    hour: 'numeric', hour12: false, timeZone: 'Asia/Tokyo' 
+                }).format(new Date()));
+                
                 if (jstHour >= 4 && jstHour < 11) {
                     setMealType('朝');
                     setShowMorningPrompt(true);
+                } else if (jstHour >= 11 && jstHour < 17) {
+                    setMealType('昼');
+                    setShowMorningPrompt(false);
+                } else {
+                    setMealType('夜');
+                    setShowMorningPrompt(false);
                 }
             }, [fetchData]);
 
-            // 選択された日付（selDate）と一致するものを確実に抽出
             const currentMeals = useMemo(() => meals.filter(m => m.dateOnly === selDate), [meals, selDate]);
             const totalP = useMemo(() => currentMeals.reduce((sum, m) => sum + m.protein, 0), [currentMeals]);
             const progress = Math.min((totalP / TARGET) * 100, 100);
@@ -196,7 +205,6 @@
                 const jstTimestamp = getJstTimestamp();
                 const jstDate = getJstDateString();
                 
-                // ローカルステートには即座に反映 (dateOnlyを明示的にセット)
                 const newMeal = { 
                     id: jstTimestamp + "_" + mName, 
                     main: mName.trim(), 
@@ -256,7 +264,6 @@
                 );
             }, [meals, todayStr]);
 
-            // 推奨メニューのフィルタリング (v8.1.1 修正反映済み)
             const suggestions = useMemo(() => {
                 if (masterMenus.length === 0) return [];
                 let pool = masterMenus;
@@ -281,11 +288,11 @@
                         </button>
                     )}
                     
-                    <header className="p-5 pb-2 shrink-0">
+                    <header className="p-5 pb-2 shrink-0 text-left">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h1 className="font-['DM_Serif_Display'] text-3xl text-[#bef264] leading-none text-left">MEAL LOG</h1>
-                                <p className="font-mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase text-left">v8.1.3 Precision Restored</p>
+                                <h1 className="font-['DM_Serif_Display'] text-3xl text-[#bef264] leading-none">MEAL LOG</h1>
+                                <p className="font-mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase">v8.1.4 Smart Time Logic</p>
                             </div>
                             <button onClick={fetchData} className={`w-9 h-9 bg-white/5 rounded-full border border-white/10 flex items-center justify-center text-[#bef264] ${syncing ? 'animate-spin' : ''}`}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
@@ -294,8 +301,8 @@
 
                         <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 p-5 rounded-2xl relative overflow-hidden">
                             <div className="flex justify-between items-center mb-4">
-                                <span className="font-mono text-[8px] text-[#475569] font-bold tracking-widest uppercase text-left">DAILY PROTEIN FLOW</span>
-                                <span className="font-mono text-3xl font-black text-[#f1f3f9] leading-none text-right">{totalP.toFixed(1)}<span className="text-[10px] text-[#475569] ml-1">g</span></span>
+                                <span className="font-mono text-[8px] text-[#475569] font-bold tracking-widest uppercase">DAILY PROTEIN FLOW</span>
+                                <span className="font-mono text-3xl font-black text-[#f1f3f9] leading-none">{totalP.toFixed(1)}<span className="text-[10px] text-[#475569] ml-1">g</span></span>
                             </div>
                             <div className="h-1 bg-white/5 rounded-full relative overflow-hidden">
                                 <div className="h-full bg-gradient-to-r from-[#bef264] to-[#84cc16] transition-all duration-1000" style={{ width: `${progress}%` }}>
@@ -340,13 +347,13 @@
                                     <input value={mainMenu} onChange={e => setMainMenu(e.target.value)} placeholder="Main Menu" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-[#f1f3f9] outline-none mb-4 focus:border-[#bef264]/50" />
                                     <div className="mb-5 text-left">
                                         <div className="flex justify-between items-end mb-2">
-                                            <span className="text-[8px] text-[#475569] font-bold tracking-widest uppercase text-left">Strategic Weight</span>
-                                            <span className="font-serif text-3xl text-[#bef264] text-right">{protein.toFixed(1)}<span className="text-xs ml-1">g</span></span>
+                                            <span className="text-[8px] text-[#475569] font-bold tracking-widest uppercase">Strategic Weight</span>
+                                            <span className="font-serif text-3xl text-[#bef264]">{protein.toFixed(1)}<span className="text-xs ml-1">g</span></span>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <button type="button" onClick={() => setProtein(p => Math.max(0, p - 0.5))} className="px-3 py-2 bg-white/5 border border-white/10 text-[#bef264] rounded-xl font-mono text-xs font-black active:scale-90">-0.5</button>
+                                            <button onClick={() => setProtein(p => Math.max(0, p - 0.5))} className="px-3 py-2 bg-white/5 border border-white/10 text-[#bef264] rounded-xl font-mono text-xs font-black active:scale-90">-0.5</button>
                                             <input type="range" min="0" max="60" step="0.5" value={protein} onChange={e => setProtein(parseFloat(e.target.value))} className="flex-1" />
-                                            <button type="button" onClick={() => setProtein(p => Math.min(60, p + 0.5))} className="px-3 py-2 bg-white/5 border border-white/10 text-[#bef264] rounded-xl font-mono text-xs font-black active:scale-90">+0.5</button>
+                                            <button onClick={() => setProtein(p => Math.min(60, p + 0.5))} className="px-3 py-2 bg-white/5 border border-white/10 text-[#bef264] rounded-xl font-mono text-xs font-black active:scale-90">+0.5</button>
                                         </div>
                                     </div>
                                     <button onClick={() => handleSave(mainMenu, protein, mealType)} className="w-full py-4 bg-gradient-to-r from-[#bef264] to-[#84cc16] text-black font-black rounded-2xl shadow-xl active:scale-[0.98] transition-all">STAY HEALTHY →</button>
@@ -455,3 +462,5 @@
     </script>
 </body>
 </html>
+
+```
