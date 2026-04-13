@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>MEAL LOG v8.1.6</title>
+    <title>MEAL LOG v8.1.8</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -90,11 +89,11 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
         const TARGET = 120;
 
-        // 日本時間(JST)の基準日付取得（極めて安定した形式）
+        // 日本時間(JST)の基準日付取得（YYYY-MM-DDを強制）
         const getJstDateString = (date = new Date()) => {
             return new Intl.DateTimeFormat('sv-SE', {
                 timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit'
-            }).format(date); // 2026-04-09
+            }).format(date); 
         };
 
         const getJstTimestamp = (date = new Date()) => {
@@ -129,20 +128,20 @@
                 try {
                     const r = await fetch(`${GAS_URL}?cache=${Date.now()}`);
                     const data = await r.json();
-                    const historyRaw = Array.isArray(data) ? data : (data.history || []);
+                    const historyRaw = data.history || (Array.isArray(data) ? data : []);
                     
-                    const cleanedLogs = (historyRaw || [])
+                    const cleanedLogs = historyRaw
                         .filter(m => {
                             if (!m) return false;
                             const name = (m.main || m.Main_Menu || "").toString().trim();
                             const val = Number(m.protein || m.Protein_g || 0);
-                            return name.length > 1 && name !== "-" && (val > 0 || name.includes("朝セット"));
+                            return name.length > 0 && name !== "-" && (val > 0 || name.includes("朝セット"));
                         })
                         .map(m => {
                             const rawTs = (m.timestamp || m.Timestamp || "").toString();
-                            const datePart = rawTs.split(/[ T]/)[0].replace(/\//g, '-');
-                            const p = datePart.split('-');
-                            const normDate = p.length === 3 ? `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}` : datePart;
+                            // 日付正規化
+                            const dateMatch = rawTs.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+                            let normDate = dateMatch ? `${dateMatch[1]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[3].padStart(2, '0')}` : rawTs.split(/[ T]/)[0].replace(/\//g, '-');
                             
                             return {
                                 id: rawTs + "_" + (m.main || m.Main_Menu),
@@ -164,19 +163,27 @@
                         })));
                     }
                     showToast('SYSTEM SYNCED');
-                } catch (e) { showToast('OFFLINE MODE'); } finally { setSyncing(false); }
+                } catch (e) { 
+                    console.error(e);
+                    showToast('OFFLINE MODE'); 
+                } finally { setSyncing(false); }
             }, []);
 
             useEffect(() => { 
                 fetchData(); 
-                const jstHour = parseInt(new Intl.DateTimeFormat('ja-JP', { hour: 'numeric', hour12: false, timeZone: 'Asia/Tokyo' }).format(new Date()));
+                const jstHour = parseInt(new Intl.DateTimeFormat('ja-JP', { 
+                    hour: 'numeric', hour12: false, timeZone: 'Asia/Tokyo' 
+                }).format(new Date()));
+                
                 if (jstHour >= 4 && jstHour < 11) {
                     setMealType('朝');
                     setShowMorningPrompt(true);
                 } else if (jstHour >= 11 && jstHour < 17) {
                     setMealType('昼');
+                    setShowMorningPrompt(false);
                 } else {
                     setMealType('夜');
+                    setShowMorningPrompt(false);
                 }
             }, [fetchData]);
 
@@ -186,11 +193,18 @@
 
             const handleSave = async (mName, mP, mType) => {
                 if (!mName || mName.trim().length < 2) return;
+                
                 const jstTimestamp = getJstTimestamp();
                 const jstDate = getJstDateString();
-                const newMeal = { id: jstTimestamp + "_" + mName, main: mName.trim(), protein: mP, type: mType, timestamp: jstTimestamp, dateOnly: jstDate };
+                
+                const newMeal = { 
+                    id: jstTimestamp + "_" + mName, main: mName.trim(), protein: mP, 
+                    type: mType, timestamp: jstTimestamp, dateOnly: jstDate 
+                };
+                
                 setMeals(prev => [newMeal, ...prev]);
                 showToast('SAVING...');
+                
                 try { 
                     await fetch(GAS_URL, { 
                         method:'POST', 
@@ -259,7 +273,7 @@
             return (
                 <div className="flex flex-col h-screen max-w-[430px] mx-auto overflow-hidden">
                     {toast && (
-                        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-[#bef264] text-black px-6 py-2 rounded-full mono text-[10px] font-black z-[999] shadow-lg animate-bounce text-center">{toast}</div>
+                        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-[#bef264] text-black px-6 py-2 rounded-full mono text-[10px] font-black z-[999] shadow-lg animate-bounce text-center whitespace-nowrap">{toast}</div>
                     )}
 
                     {tab === 'suggest' && (
@@ -272,7 +286,7 @@
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h1 className="serif text-3xl text-[#bef264] leading-none">MEAL LOG</h1>
-                                <p className="mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase">v8.1.6 Zero-Crash Precision</p>
+                                <p className="mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase">v8.1.8 Rescue Edition</p>
                             </div>
                             <button onClick={fetchData} className={`w-9 h-9 bg-white/5 rounded-full border border-white/10 flex items-center justify-center text-[#bef264] ${syncing ? 'animate-spin' : ''}`}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
@@ -298,9 +312,7 @@
                             <div className="flex flex-col h-full animate-slide">
                                 <div className="flex justify-center gap-5 items-center mb-4 shrink-0">
                                     <button onClick={() => { 
-                                        const parts = selDate.split('-');
-                                        const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 12, 0, 0);
-                                        d.setDate(d.getDate()-1);
+                                        const d = new Date(selDate + 'T12:00:00'); d.setDate(d.getDate()-1);
                                         setSelDate(getJstDateString(d));
                                     }} className="text-[#475569] p-2 text-xl">◀</button>
                                     <div className="serif text-xl">{selDate.split('-')[1]}/{selDate.split('-')[2]}</div>
@@ -310,7 +322,7 @@
                                 <section className="bg-white/5 p-5 rounded-3xl mb-5 shrink-0 text-left">
                                     <div className="flex gap-2 mb-4">
                                         {['朝','昼','夜','他'].map(t => (
-                                            <button key={t} onClick={() => { setMealType(t); setShowMorningPrompt(t === '朝'); }} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mealType === t ? 'bg-[#bef264] text-black shadow-[0_0_15px_rgba(190,242,100,0.3)]' : 'bg-white/5 text-[#475569]'}`}>{t}</button>
+                                            <button key={t} onClick={() => { setMealType(t); setShowMorningPrompt(t === '朝'); }} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${mealType === t ? 'bg-[#bef264] text-black shadow-lg' : 'bg-white/5 text-[#475569]'}`}>{t}</button>
                                         ))}
                                     </div>
 
@@ -324,10 +336,10 @@
                                         </div>
                                     )}
 
-                                    <input value={mainMenu} onChange={e => setMainMenu(e.target.value)} placeholder="Main Menu" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-[#f1f3f9] outline-none mb-4 focus:border-[#bef264]/50" />
+                                    <input value={mainMenu} onChange={e => setMainMenu(e.target.value)} placeholder="Main Menu" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-[#tx] outline-none mb-4 focus:border-[#bef264]/50" />
                                     <div className="mb-5">
                                         <div className="flex justify-between items-end mb-2">
-                                            <span className="text-[8px] text-[#475569] font-bold tracking-widest uppercase">Strategic Weight</span>
+                                            <span className="text-[8px] text-[#mu] font-bold tracking-widest uppercase">Strategic Weight</span>
                                             <span className="serif text-3xl text-[#bef264]">{protein.toFixed(1)}<span className="text-xs ml-1 font-mono">g</span></span>
                                         </div>
                                         <div className="flex items-center gap-3">
@@ -349,7 +361,7 @@
                                                     <span className="text-[8px] bg-[#bef264] text-black px-1.5 py-0.5 rounded font-black uppercase">{m.type}</span>
                                                     <span className="serif text-base">{m.main}</span>
                                                 </div>
-                                                <div className="text-[7px] text-[#475569] mono tracking-tighter uppercase">{m.timestamp.split(/[ T]/)[1]?.slice(0,5)} • Verified</div>
+                                                <div className="text-[7px] text-[#475569] mono tracking-tighter uppercase">{m.timestamp.split(/[ T]/)[1]?.slice(0,5) || "--:--"} • Verified</div>
                                             </div>
                                             <div className="serif text-xl text-[#bef264]">{m.protein.toFixed(1)}g</div>
                                         </div>
@@ -391,14 +403,14 @@
                         {tab === 'stats' && (
                             <div className="flex flex-col h-full animate-slide">
                                 <div className="bg-white/5 p-5 rounded-3xl mb-4 shrink-0">
-                                    <div className="flex justify-between mono text-[9px] text-[#475569] tracking-widest mb-3 uppercase">
+                                    <div className="flex justify-between mono text-[9px] text-[#475569] tracking-widest mb-3 uppercase px-1">
                                         <span>7-Day Trend Analysis</span>
                                         <span className="text-[#fbbf24]">Target: 120g</span>
                                     </div>
                                     <div className="h-40">{chartSvg}</div>
                                 </div>
                                 <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
-                                    <p className="text-[8px] text-[#475569] font-bold tracking-widest mb-3 uppercase text-left">Last 3 Days Discipline</p>
+                                    <p className="text-[8px] text-[#475569] font-bold tracking-widest mb-3 uppercase text-left px-1">Last 3 Days Discipline</p>
                                     {[0, 1, 2].map(offset => {
                                         const ds = getJstDateString(new Date(Date.now() - offset * 86400000));
                                         const dayMeals = (meals || []).filter(m => m.dateOnly === ds);
@@ -426,7 +438,7 @@
                             { id: 'suggest', lbl: 'STRATEGY', icon: 'M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.7-3.3 6l-.7 4H9l-.7-4A7 7 0 0 1 5 9a7 7 0 0 1 7-7z' },
                             { id: 'stats', lbl: 'ANALYSIS', icon: 'M22 12h-4l-3 9L9 3l-3 9H2' }
                         ].map(t => (
-                            <button key={t.id} onClick={() => setTab(t.id)} className={`flex-1 flex flex-col items-center gap-1.5 transition-all duration-300 px-6 ${tab === t.id ? 'text-[#bef264]' : 'text-[#475569] hover:text-[#dde0ea]'}`}>
+                            <button key={t.id} onClick={() => setTab(t.id)} className={`flex-1 flex flex-col items-center gap-1.5 transition-all duration-300 px-6 ${tab === t.id ? 'text-[#bef264]' : 'text-[#475569] hover:text-[#f1f3f9]'}`}>
                                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d={t.icon} /></svg>
                                 <span className="mono text-[8px] font-black">{t.lbl}</span>
                                 {tab === t.id && <div className="w-1 h-1 bg-[#bef264] rounded-full shadow-[0_0_10px_#bef264] mt-1" />}
@@ -442,5 +454,3 @@
     </script>
 </body>
 </html>
-
-```
