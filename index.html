@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>MEAL LOG v8.1.8</title>
+    <title>MEAL LOG v8.1.9</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -89,7 +89,7 @@
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzTJRcZnupMLgvX28yX6wqpSZj2vIs8JydRv2AMJNj4ULsIpm_Hh-C16eVCgYOcE97kwQ/exec";
         const TARGET = 120;
 
-        // 日本時間(JST)の基準日付取得（YYYY-MM-DDを強制）
+        // 日本時間(JST)の厳密なYYYY-MM-DD取得
         const getJstDateString = (date = new Date()) => {
             return new Intl.DateTimeFormat('sv-SE', {
                 timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit'
@@ -107,13 +107,13 @@
         };
 
         const App = () => {
-            const todayStr = useMemo(() => getJstDateString(), []);
+            const [todayStr, setTodayStr] = useState(getJstDateString());
             const [meals, setMeals] = useState([]);
             const [masterMenus, setMasterMenus] = useState([]);
             const [tab, setTab] = useState('log');
             const [syncing, setSyncing] = useState(false);
             const [toast, setToast] = useState('');
-            const [selDate, setSelDate] = useState(todayStr);
+            const [selDate, setSelDate] = useState(getJstDateString());
             const [mealType, setMealType] = useState('昼');
             const [mainMenu, setMainMenu] = useState('');
             const [protein, setProtein] = useState(25.0);
@@ -125,6 +125,10 @@
 
             const fetchData = useCallback(async () => {
                 setSyncing(true);
+                // 同期タイミングで「今」のJST日付を再取得
+                const freshToday = getJstDateString();
+                setTodayStr(freshToday);
+                
                 try {
                     const r = await fetch(`${GAS_URL}?cache=${Date.now()}`);
                     const data = await r.json();
@@ -139,9 +143,20 @@
                         })
                         .map(m => {
                             const rawTs = (m.timestamp || m.Timestamp || "").toString();
-                            // 日付正規化
-                            const dateMatch = rawTs.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
-                            let normDate = dateMatch ? `${dateMatch[1]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[3].padStart(2, '0')}` : rawTs.split(/[ T]/)[0].replace(/\//g, '-');
+                            // 日付正規化: 形式を問わず YYYY-MM-DD を抽出
+                            const dateMatch = rawTs.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/) || 
+                                              rawTs.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+                            
+                            let normDate = "";
+                            if (dateMatch) {
+                                if (dateMatch[1].length === 4) { // YYYY-MM-DD
+                                    normDate = `${dateMatch[1]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[3].padStart(2, '0')}`;
+                                } else { // DD-MM-YYYY or MM-DD-YYYY
+                                    normDate = `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`;
+                                }
+                            } else {
+                                normDate = rawTs.split(/[ T]/)[0].replace(/\//g, '-');
+                            }
                             
                             return {
                                 id: rawTs + "_" + (m.main || m.Main_Menu),
@@ -193,7 +208,6 @@
 
             const handleSave = async (mName, mP, mType) => {
                 if (!mName || mName.trim().length < 2) return;
-                
                 const jstTimestamp = getJstTimestamp();
                 const jstDate = getJstDateString();
                 
@@ -286,7 +300,7 @@
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h1 className="serif text-3xl text-[#bef264] leading-none">MEAL LOG</h1>
-                                <p className="mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase">v8.1.8 Rescue Edition</p>
+                                <p className="mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase">v8.1.9 JST Absolute</p>
                             </div>
                             <button onClick={fetchData} className={`w-9 h-9 bg-white/5 rounded-full border border-white/10 flex items-center justify-center text-[#bef264] ${syncing ? 'animate-spin' : ''}`}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
