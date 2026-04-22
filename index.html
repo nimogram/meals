@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>MEAL LOG v8.5.1</title>
+    <title>MEAL LOG v8.5.2</title>
     
     <!-- Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -220,8 +220,16 @@
 
             const handleSave = async (mName, mP, mType) => {
                 if (!mName.trim()) return;
-                const ts = getJstTimestamp();
-                const newMeal = { id: ts + "_" + mName, main: mName, protein: mP, type: mType, timestamp: ts, dateOnly: getJstDateString() };
+                
+                // 修正ポイント：現在時刻を取得し、選択中の日付（selDate）と結合してタイムスタンプを生成
+                const now = new Date();
+                const timeStr = new Intl.DateTimeFormat('ja-JP', {
+                    timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+                }).format(now);
+                
+                const ts = `${selDate}T${timeStr}`;
+                const newMeal = { id: ts + "_" + mName, main: mName, protein: mP, type: mType, timestamp: ts, dateOnly: selDate };
+                
                 setMeals(prev => [newMeal, ...prev]);
                 showToast('SAVING...');
                 try { 
@@ -293,7 +301,7 @@
                         <div className="flex justify-between items-start mb-4">
                             <div>
                                 <h1 className="serif text-3xl text-[#bef264] leading-none">MEAL LOG</h1>
-                                <p className="mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase">v8.5.1 Visual Upgrade</p>
+                                <p className="mono text-[8px] text-[#475569] tracking-widest mt-1 uppercase">v8.5.2 JST Date Locked</p>
                             </div>
                             <button onClick={fetchData} className={`w-9 h-9 bg-white/5 rounded-full border border-white/10 flex items-center justify-center text-[#bef264] ${syncing ? 'animate-spin' : ''}`}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
@@ -302,7 +310,7 @@
 
                         <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 p-5 rounded-2xl relative overflow-hidden text-left">
                             <div className="flex justify-between items-center mb-4 text-left">
-                                <span className="mono text-[8px] text-[#475569] font-bold tracking-widest uppercase">DAILY PROTEIN FLOW</span>
+                                <span className="mono text-[8px] text-[#475569] font-bold tracking-widest uppercase text-left">DAILY PROTEIN FLOW</span>
                                 <span className="mono text-3xl font-black text-[#f1f3f9] leading-none text-right">{totalP.toFixed(1)}<span className="text-[10px] text-[#475569] ml-1">g</span></span>
                             </div>
                             <div className="h-1 bg-white/5 rounded-full relative">
@@ -358,13 +366,13 @@
                                     ) : filteredMeals.map((m, i) => (
                                         <div key={i} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex justify-between items-center text-left animate-slide">
                                             <div>
-                                                <div className="flex items-center gap-2 mb-1">
+                                                <div className="flex items-center gap-2 mb-1 text-left">
                                                     <span className="text-[8px] bg-[#bef264] text-black px-1.5 py-0.5 rounded font-black uppercase">{m.type}</span>
                                                     <span className="serif text-base">{m.main}</span>
                                                 </div>
                                                 <div className="text-[7px] text-[#475569] mono tracking-tighter uppercase">{m.timestamp.split(/[ T]/)[1]?.slice(0,5) || "--:--"} • JST SECURE</div>
                                             </div>
-                                            <div className="serif text-xl text-[#bef264]">{m.protein.toFixed(1)}g</div>
+                                            <div className="serif text-xl text-[#bef264] text-right">{m.protein.toFixed(1)}g</div>
                                         </div>
                                     ))}
                                 </div>
@@ -383,14 +391,14 @@
                                         <div className="text-center py-10 opacity-30 text-[10px] tracking-widest uppercase">Target Achieved / No Suggests</div>
                                     ) : suggestions.map((opt, i) => (
                                         <div key={i} className="bg-white/5 p-5 rounded-3xl border border-white/5 text-left animate-slide">
-                                            <div className="flex justify-between items-center mb-2">
+                                            <div className="flex justify-between items-center mb-2 text-left">
                                                 <div className="serif text-lg">{opt.main}</div>
                                                 <div className="serif text-2xl text-[#bef264]">{opt.p.toFixed(1)}g</div>
                                             </div>
-                                            <div className="bg-[#bef264]/5 border-l-2 border-[#bef264] p-3 rounded-r-lg text-[10px] italic mb-3 opacity-80 leading-relaxed text-[#f1f3f9]">
+                                            <div className="bg-[#bef264]/5 border-l-2 border-[#bef264] p-3 rounded-r-lg text-[10px] italic mb-3 opacity-80 leading-relaxed text-[#f1f3f9] text-left">
                                                 "{STRATEGIC_REASONS[Object.keys(STRATEGIC_REASONS).find(k => opt.main.includes(k))] || '規律ある身体資産の構築へ。'}"
                                             </div>
-                                            <div className="flex gap-2 flex-wrap mb-4">{(opt.tags || []).map(tag => <span key={tag} className="text-[8px] text-[#bef264] border border-[#bef264] px-2 py-0.5 rounded font-black uppercase tracking-tight">{tag}</span>)}</div>
+                                            <div className="flex gap-2 flex-wrap mb-4 text-left">{(opt.tags || []).map(tag => <span key={tag} className="text-[8px] text-[#bef264] border border-[#bef264] px-2 py-0.5 rounded font-black uppercase tracking-tight">{tag}</span>)}</div>
                                             <button onClick={() => { setMainMenu(opt.main); setProtein(opt.p); setMealType('夜'); setTab('log'); }} className="w-full py-2 bg-[#bef264]/10 border border-[#bef264]/20 text-[#bef264] rounded-lg text-[10px] font-black uppercase tracking-[0.1em]">Select This Strategy</button>
                                         </div>
                                     ))}
@@ -400,7 +408,7 @@
 
                         {tab === 'stats' && (
                             <div className="flex flex-col h-full animate-slide">
-                                <div className="bg-white/5 p-5 rounded-3xl mb-4 shrink-0 border border-white/5">
+                                <div className="bg-white/5 p-5 rounded-3xl mb-4 shrink-0 border border-white/5 text-left">
                                     <div className="flex justify-between mono text-[9px] text-[#475569] tracking-widest mb-3 uppercase px-1"><span>7-Day Trend Analysis</span><span className="text-[#fbbf24]">Target: 120g</span></div>
                                     <div className="h-40">{chartSvg}</div>
                                 </div>
